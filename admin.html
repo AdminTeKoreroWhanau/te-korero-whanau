@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="mi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin — Te Kōrero Whānau</title>
+    <meta name="description" content="Admin panel to manage content across the site." />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="papa">
+      <div class="logo">Te Kōrero Whānau</div>
+      <nav>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="whanau-nav" title="Whakatuwhera tahua / Open menu">≡</button>
+        <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Kōwhiri āhua / Toggle theme">☀︎</button>
+        <ul id="whanau-nav" class="nav-list">
+          <li><a href="index.html">Kāinga</a></li>
+          <li><a href="whakapapa.html">Whakapapa</a></li>
+          <li><a href="korero.html">Kōrero</a></li>
+          <li><a href="waiata.html">Waiata</a></li>
+          <li><a href="karakia.html">Karakia</a></li>
+          <li><a href="nga-toi.html">Ngā Toi</a></li>
+          <li id="nav-admin-item" style="display:none"><a href="admin.html">Admin</a></li>
+          <li id="nav-login-item"><a id="open-auth" href="#">Login</a></li>
+          <li id="nav-profile-item" style="display:none"><a href="profile.html">Kōtaha / Profile</a></li>
+          <li id="nav-signout-item" style="display:none"><button id="signout" class="btn-link">Takiputa / Sign out</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h1>Admin Panel</h1>
+        <p class="muted small">Only visible to admin users. Use this panel to review and delete content. Configure Supabase in <code>assets/backend.js</code> or operate in local mode.</p>
+        <p id="admin-msg" class="muted"></p>
+      </section>
+
+      <section class="panel" id="admin-korero">
+        <h2>Kōrero — Posts</h2>
+        <form id="admin-korero-form" class="form">
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+            <label style="flex:1;min-width:240px">Type
+              <select id="admin-post-type">
+                <option value="story">Story</option>
+                <option value="vlog">Vlog (URL)</option>
+              </select>
+            </label>
+            <label style="flex:2;min-width:260px" id="admin-story-wrap">
+              <span>Story text</span>
+              <textarea id="admin-story-text" rows="2" placeholder="Tāuruhia he kōrero..."></textarea>
+            </label>
+            <label style="flex:2;min-width:260px" id="admin-vlog-wrap" hidden>
+              <span>Video URL</span>
+              <input id="admin-vlog-url" type="url" placeholder="https://..." />
+            </label>
+            <button type="submit" class="btn">Tāpiri / Add</button>
+          </div>
+        </form>
+        <div id="korero-admin-list" class="cards" aria-live="polite" aria-busy="false"></div>
+        <p id="korero-admin-empty" class="muted small">Kāore he kōrero i kitea.</p>
+      </section>
+
+      <section class="panel" id="admin-waiata">
+        <h2>Waiata — Audio/Lyrics</h2>
+        <div id="waiata-admin-list" class="cards" aria-live="polite" aria-busy="false"></div>
+        <p id="waiata-admin-empty" class="muted small">Kāore i kitea.</p>
+      </section>
+
+      <section class="panel" id="admin-karakia">
+        <h2>Karakia — Documents</h2>
+        <div id="karakia-admin-list" class="cards" aria-live="polite" aria-busy="false"></div>
+        <p id="karakia-admin-empty" class="muted small">Kāore i kitea.</p>
+      </section>
+    </main>
+
+    <!-- Auth modal -->
+    <div id="auth-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="auth-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="auth-close">×</button>
+        <h2 id="auth-title">Takiuru / Rēhita</h2>
+        <div class="tabpanes">
+          <form id="login-form" class="form" autocomplete="on">
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Takiuru</button>
+            <p class="muted small" id="login-msg"></p>
+          </form>
+          <form id="register-form" class="form" autocomplete="on" hidden>
+            <label>Ingoa / Full name (optional)
+              <input type="text" name="full_name" />
+            </label>
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Rēhita</button>
+            <p class="muted small" id="register-msg"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
+    </footer>
+
+    <script src="assets/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/backend.js"></script>
+    <script src="assets/auth.js"></script>
+    <script src="assets/admin.js"></script>
+  </body>
+</html>

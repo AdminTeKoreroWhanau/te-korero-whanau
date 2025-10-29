@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="mi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Karakia — Te Kōrero Whānau</title>
+    <meta name="description" content="Karakia: Upload and share faith-based documents." />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="papa">
+      <div class="logo">Te Kōrero Whānau</div>
+      <nav>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="whanau-nav" title="Whakatuwhera tahua / Open menu">≡</button>
+        <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Kōwhiri āhua / Toggle theme">☀︎</button>
+        <ul id="whanau-nav" class="nav-list">
+          <li><a href="index.html">Kāinga</a></li>
+          <li><a href="whakapapa.html">Whakapapa</a></li>
+          <li><a href="korero.html">Kōrero</a></li>
+          <li><a href="waiata.html">Waiata</a></li>
+          <li><a href="karakia.html">Karakia</a></li>
+          <li><a href="nga-toi.html">Ngā Toi</a></li>
+          <li id="nav-login-item"><a id="open-auth" href="#">Login</a></li>
+          <li id="nav-profile-item" style="display:none"><a href="profile.html">Kōtaha / Profile</a></li>
+          <li id="nav-signout-item" style="display:none"><button id="signout" class="btn-link">Takiputa / Sign out</button></li>
+          <li id="nav-admin-item" style="display:none"><a href="admin.html">Admin</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section id="karakia" class="panel">
+        <h1>Karakia</h1>
+        <figure class="hero-figure">
+          <img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Karakia — ahi/candle" src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&h=420&q=80" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&h=420&q=80';" />
+          <figcaption class="visually-hidden">Karakia — candle and light</figcaption>
+        </figure>
+        <p>Upload and share karakia documents with whānau.</p>
+
+        <section id="karakia-showcase" class="panel" aria-labelledby="karakia-showcase-heading">
+          <h2 id="karakia-showcase-heading">Ngā Tirohanga / Previews</h2>
+          <div class="slideshow" id="karakia-slideshow">
+            <div class="slides" id="karakia-slides">
+              <div class="slide">
+                <article class="card">
+                  <div class="card-body">
+                    <div><span class="tag">Doc</span></div>
+                    <h3>Karakia Timatanga (example)</h3>
+                    <p class="meta">PDF • Te Whānau o ...</p>
+                  </div>
+                </article>
+              </div>
+              <div class="slide">
+                <article class="card">
+                  <div class="card-body">
+                    <div><span class="tag">Doc</span></div>
+                    <h3>Karakia Mō Te Kai (example)</h3>
+                    <p class="meta">DOCX • Ngā kai o te rā</p>
+                  </div>
+                </article>
+              </div>
+            </div>
+            <div class="slide-nav">
+              <button type="button" id="karakia-prev" aria-label="Previous">‹</button>
+              <button type="button" id="karakia-next" aria-label="Next">›</button>
+            </div>
+            <div class="slide-dots" id="karakia-dots" aria-hidden="true"></div>
+          </div>
+        </section>
+
+        <form id="form-karakia" class="form">
+          <label>
+            <span>Title</span>
+            <input type="text" id="karakia-title" placeholder="He karakia..." required />
+          </label>
+          <label>
+            <span>Contributor</span>
+            <input type="text" id="karakia-author" placeholder="Ko wai?" />
+          </label>
+          <label>
+            <span>Document (PDF, DOC, DOCX, TXT)</span>
+            <input type="file" id="karakia-file" accept="application/pdf,.pdf,application/msword,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx,text/plain,.txt" required />
+          </label>
+          <button type="submit" class="btn">Tuku / Upload</button>
+        </form>
+
+        <input id="karakia-search" type="text" placeholder="Rapua te taitara, kaituhi..." aria-label="Search karakia" />
+        <div id="karakia-list" class="cards" aria-live="polite" aria-busy="false"></div>
+        <p id="karakia-empty" class="muted small">Kāore anō he karakia kua tukuna. Tāpiri tētahi kōnae ki runga ake nei.</p>
+      </section>
+    </main>
+
+    <footer>
+      <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
+    </footer>
+
+    <!-- Auth modal -->
+    <div id="auth-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="auth-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="auth-close">×</button>
+        <h2 id="auth-title">Takiuru / Rēhita</h2>
+        <div class="tabpanes">
+          <form id="login-form" class="form" autocomplete="on">
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Takiuru</button>
+            <p class="muted small" id="login-msg"></p>
+          </form>
+          <form id="register-form" class="form" autocomplete="on" hidden>
+            <label>Ingoa / Full name (optional)
+              <input type="text" name="full_name" />
+            </label>
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Rēhita</button>
+            <p class="muted small" id="register-msg"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/auth.js"></script>
+    <script src="assets/app.js"></script>
+    <script src="assets/backend.js"></script>
+    <script src="assets/karakia.js"></script>
+  </body>
+</html>

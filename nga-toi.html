@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="mi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ngā Toi — Te Kōrero Whānau</title>
+    <meta name="description" content="Ngā Toi / Media: Gallery of photos and videos." />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="papa">
+      <div class="logo">Te Kōrero Whānau</div>
+      <nav>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="whanau-nav" title="Whakatuwhera tahua / Open menu">≡</button>
+        <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Kōwhiri āhua / Toggle theme">☀︎</button>
+        <ul id="whanau-nav" class="nav-list">
+          <li><a href="index.html">Kāinga</a></li>
+          <li><a href="whakapapa.html">Whakapapa</a></li>
+          <li><a href="korero.html">Kōrero</a></li>
+          <li><a href="waiata.html">Waiata</a></li>
+          <li><a href="karakia.html">Karakia</a></li>
+          <li><a href="nga-toi.html">Ngā Toi</a></li>
+          <li id="nav-login-item"><a id="open-auth" href="#">Login</a></li>
+          <li id="nav-profile-item" style="display:none"><a href="profile.html">Kōtaha / Profile</a></li>
+          <li id="nav-signout-item" style="display:none"><button id="signout" class="btn-link">Takiputa / Sign out</button></li>
+          <li id="nav-admin-item" style="display:none"><a href="admin.html">Admin</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section id="nga-toi" class="panel">
+        <h1>Ngā Toi / Media</h1>
+        <figure class="hero-figure">
+          <img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Whānau photoshoot outdoors — capturing photos and video" src="https://source.unsplash.com/1200x420/?maori,whanau,photoshoot,photography,outdoors" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&w=1200&h=420&q=80';" />
+          <figcaption class="visually-hidden">Whānau photoshoot outdoors</figcaption>
+        </figure>
+        <p>Photos and videos: marae-style gallery layout. B-roll of kāinga, awa, maunga, and homesteads.</p>
+        <p class="muted">Tip: Click an image to open in a lightbox.</p>
+        <div class="gallery">
+          <figure>
+            <img loading="lazy" decoding="async" alt="Maunga (mountain)" src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=900&h=600&q=80" />
+            <figcaption>Maunga</figcaption>
+          </figure>
+          <figure>
+            <img loading="lazy" decoding="async" alt="Awa (river)" src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=900&h=600&q=80" />
+            <figcaption>Awa</figcaption>
+          </figure>
+          <figure>
+            <img loading="lazy" decoding="async" alt="Moana (ocean)" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&h=600&q=80" />
+            <figcaption>Moana</figcaption>
+          </figure>
+          <figure>
+            <img loading="lazy" decoding="async" alt="Ngahere (forest)" src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&h=600&q=80" />
+            <figcaption>Ngāhere</figcaption>
+          </figure>
+          <figure>
+            <img loading="lazy" decoding="async" alt="Kāinga (home)" src="https://images.unsplash.com/photo-1501183638710-841dd1904471?auto=format&fit=crop&w=900&h=600&q=80" />
+            <figcaption>Kāinga</figcaption>
+          </figure>
+          <figure>
+            <img loading="lazy" decoding="async" alt="Ahi (fire)" src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=900&h=600&q=80" />
+            <figcaption>Ahi</figcaption>
+          </figure>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
+    </footer>
+
+    <div id="lightbox" class="lightbox" hidden aria-hidden="true" role="dialog" aria-label="image viewer">
+      <button class="lightbox-close" title="Katia / Close">×</button>
+      <img alt="" />
+    </div>
+
+    <!-- Auth modal -->
+    <div id="auth-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="auth-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="auth-close">×</button>
+        <h2 id="auth-title">Takiuru / Rēhita</h2>
+        <div class="tabpanes">
+          <form id="login-form" class="form" autocomplete="on">
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Takiuru</button>
+            <p class="muted small" id="login-msg"></p>
+          </form>
+          <form id="register-form" class="form" autocomplete="on" hidden>
+            <label>Ingoa / Full name (optional)
+              <input type="text" name="full_name" />
+            </label>
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Rēhita</button>
+            <p class="muted small" id="register-msg"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/auth.js"></script>
+    <script src="assets/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="mi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kōrero — Te Kōrero Whānau</title>
+    <meta name="description" content="Kōrero: Gather interviews and stories for our whānau." />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="papa">
+      <div class="logo">Te Kōrero Whānau</div>
+      <nav>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="whanau-nav" title="Whakatuwhera tahua / Open menu">≡</button>
+        <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Kōwhiri āhua / Toggle theme">☀︎</button>
+        <ul id="whanau-nav" class="nav-list">
+          <li><a href="index.html">Kāinga</a></li>
+          <li><a href="whakapapa.html">Whakapapa</a></li>
+          <li><a href="korero.html">Kōrero</a></li>
+          <li><a href="waiata.html">Waiata</a></li>
+          <li><a href="karakia.html">Karakia</a></li>
+          <li><a href="nga-toi.html">Ngā Toi</a></li>
+          <li id="nav-login-item"><a id="open-auth" href="#">Login</a></li>
+          <li id="nav-profile-item" style="display:none"><a href="profile.html">Kōtaha / Profile</a></li>
+          <li id="nav-signout-item" style="display:none"><button id="signout" class="btn-link">Takiputa / Sign out</button></li>
+          <li id="nav-admin-item" style="display:none"><a href="admin.html">Admin</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section id="korero" class="panel">
+        <h1>Kōrero</h1>
+        <figure class="hero-figure">
+          <img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Hopukanga reo / Microphone for recording kōrero" src="https://images.unsplash.com/photo-1517511620798-cec17d428bc0?auto=format&fit=crop&w=1200&h=420&q=80" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&h=420&q=80';" />
+          <figcaption class="visually-hidden">Microphone</figcaption>
+        </figure>
+        <p>Gather video interviews, audio kōrero, and photo montages. Share authentic narratives: history, ambitions, and ties to whenua.</p>
+        <details class="fold">
+          <summary>How can I contribute a kōrero?</summary>
+          <p>Record audio/video on your phone and share via cloud link, or write a short story. Include names, places, and dates if known.</p>
+        </details>
+
+        <section id="korero-posts" class="panel" aria-labelledby="korero-posts-heading">
+          <h2 id="korero-posts-heading">Ngā tāurunga / Posts</h2>
+          <div class="cards">
+            <article class="card">
+              <div class="card-body">
+                <div><span class="tag">Story</span></div>
+                <div class="small muted">12/01/2024, 7:30 PM</div>
+                <p style="white-space: pre-wrap; margin:.5rem 0 0">I taku tamarikitanga i tipu ake au ki te taha o te awa... He kōrero poto hei tauira anake.</p>
+                <div class="actions">
+                  <button type="button" class="btn outline" disabled title="Tauira anake / Example only">👍 5</button>
+                  <button type="button" class="btn outline" disabled title="Tauira anake / Example only">💛 2</button>
+                </div>
+              </div>
+            </article>
+            <article class="card">
+              <div class="card-body">
+                <div><span class="tag">Vlog</span></div>
+                <div class="small muted">01/15/2025, 9:12 AM</div>
+                <div style="margin-top:.5rem">
+                  <iframe width="560" height="315" loading="lazy" style="width:100%; aspect-ratio:16/9; border:0" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                </div>
+                <div class="actions">
+                  <button type="button" class="btn outline" disabled title="Tauira anake / Example only">👍 12</button>
+                  <button type="button" class="btn outline" disabled title="Tauira anake / Example only">💛 8</button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="korero-create" class="panel" aria-labelledby="korero-create-heading">
+          <h2 id="korero-create-heading">Tāpiri kōrero / Add a story or vlog</h2>
+          <p class="small muted">By default, posts are stored on your device. Configure Supabase in <code>assets/backend.js</code> to share with whānau.</p>
+          <form id="korero-form" class="form">
+            <label>
+              <span>Momo / Type</span>
+              <select id="post-type">
+                <option value="story">Pūrākau / Story</option>
+                <option value="vlog">Vlog (video link)</option>
+              </select>
+            </label>
+            <label id="story-wrap">
+              <span>Kōrero / Story</span>
+              <textarea id="story-text" rows="4" placeholder="Tāuruhia tō kōrero..."></textarea>
+            </label>
+            <label id="vlog-wrap" hidden>
+              <span>Vlog URL (YouTube, Vimeo, or direct)</span>
+              <input type="url" id="vlog-url" placeholder="https://..." />
+            </label>
+            <button type="submit" class="btn">Tuku / Post</button>
+          </form>
+        </section>
+
+        <section id="korero-feed" class="panel" aria-labelledby="korero-feed-heading">
+          <h2 id="korero-feed-heading">Ngā tāurunga / Posts</h2>
+          <div id="korero-list" class="cards" aria-live="polite" aria-busy="false"></div>
+          <p id="korero-empty" class="muted small">Kāore anō he tāurunga. Tāpiri tētahi kōrero, vlog rānei ki runga ake nei.</p>
+        </section>
+      </section>
+    </main>
+
+    <footer>
+      <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
+    </footer>
+
+    <!-- Auth modal -->
+    <div id="auth-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="auth-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="auth-close">×</button>
+        <h2 id="auth-title">Takiuru / Rēhita</h2>
+        <div class="tabpanes">
+          <form id="login-form" class="form" autocomplete="on">
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Takiuru</button>
+            <p class="muted small" id="login-msg"></p>
+          </form>
+          <form id="register-form" class="form" autocomplete="on" hidden>
+            <label>Ingoa / Full name (optional)
+              <input type="text" name="full_name" />
+            </label>
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Rēhita</button>
+            <p class="muted small" id="register-msg"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="assets/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/auth.js"></script>
+    <script src="assets/backend.js"></script>
+    <script src="assets/korero.js"></script>
+  </body>
+</html>

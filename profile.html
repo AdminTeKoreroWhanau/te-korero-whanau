@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="mi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kōtaha / Profile — Te Kōrero Whānau</title>
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="papa">
+      <div class="logo">Te Kōrero Whānau</div>
+      <nav>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="whanau-nav" title="Whakatuwhera tahua / Open menu">≡</button>
+        <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Kōwhiri āhua / Toggle theme">☀︎</button>
+        <ul id="whanau-nav" class="nav-list">
+          <li><a href="index.html">Kāinga</a></li>
+          <li><a href="whakapapa.html">Whakapapa</a></li>
+          <li><a href="korero.html">Kōrero</a></li>
+          <li><a href="waiata.html">Waiata</a></li>
+          <li><a href="karakia.html">Karakia</a></li>
+          <li><a href="nga-toi.html">Ngā Toi</a></li>
+          <li id="nav-admin-item" style="display:none"><a href="admin.html">Admin</a></li>
+          <li id="nav-login-item"><a id="open-auth" href="#">Login</a></li>
+          <li id="nav-profile-item" style="display:none"><a href="profile.html">Kōtaha / Profile</a></li>
+          <li id="nav-signout-item" style="display:none"><button id="signout" class="btn-link">Takiputa / Sign out</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h1>Kōtaha / Profile</h1>
+        <p class="muted" id="profile-status">Loading...</p>
+        <div id="profile-info" style="display:none">
+          <p><strong>Email:</strong> <span id="user-email"></span></p>
+          <p><strong>Ingoa:</strong> <span id="user-name"></span></p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Tuku Kōnae / Upload media</h2>
+        <form id="upload-form" class="form">
+          <input type="file" name="file" accept="image/*,video/*" required />
+          <button class="btn" type="submit">Tuku / Upload</button>
+          <p class="muted small" id="upload-msg"></p>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Tuhinga Hou / New post</h2>
+        <form id="post-form" class="form">
+          <textarea name="content" rows="3" placeholder="Tuhia ō kōrero..." required></textarea>
+          <button class="btn" type="submit">Tukua / Post</button>
+          <p class="muted small" id="post-msg"></p>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Ō Tuhinga / Your posts</h2>
+        <div id="posts"></div>
+      </section>
+    </main>
+
+    <!-- Auth modal reused here -->
+    <div id="auth-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="auth-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="auth-close">×</button>
+        <h2 id="auth-title">Takiuru / Rēhita</h2>
+        <div class="tabpanes">
+          <form id="login-form" class="form" autocomplete="on">
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Takiuru</button>
+            <p class="muted small" id="login-msg"></p>
+          </form>
+          <form id="register-form" class="form" autocomplete="on" hidden>
+            <label>Ingoa / Full name (optional)
+              <input type="text" name="full_name" />
+            </label>
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Rēhita</button>
+            <p class="muted small" id="register-msg"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/auth.js"></script>
+    <script>
+      (function(){
+        const statusEl = document.getElementById('profile-status');
+        const infoEl = document.getElementById('profile-info');
+        const emailEl = document.getElementById('user-email');
+        const nameEl = document.getElementById('user-name');
+        const postsRoot = document.getElementById('posts');
+        const uploadForm = document.getElementById('upload-form');
+        const uploadMsg = document.getElementById('upload-msg');
+        const postForm = document.getElementById('post-form');
+        const postMsg = document.getElementById('post-msg');
+
+        async function ensureSession(){
+          const { data } = await sb.auth.getSession();
+          const user = data.session?.user;
+          if (!user){
+            statusEl.textContent = 'Me takiuru tuatahitia / Please login first.';
+            const openBtn = document.getElementById('open-auth');
+            if (openBtn) openBtn.click();
+            return null;
+          }
+          statusEl.style.display='none';
+          infoEl.style.display='block';
+          emailEl.textContent = user.email || '';
+          nameEl.textContent = user.user_metadata?.full_name || '—';
+          return user;
+        }
+
+        function renderPosts(list){
+          if (!list || !list.length){ postsRoot.innerHTML = '<p class="muted">Kāore anō he tuhinga / No posts yet.</p>'; return; }
+          postsRoot.innerHTML = '';
+          list.forEach(p => {
+            const wrap = document.createElement('article');
+            wrap.className = 'panel';
+            const t = new Date(p.created_at || Date.now()).toLocaleString();
+            let mediaHtml = '';
+            if (p.type === 'image' && p.media_url){ mediaHtml = `<img src="${p.media_url}" alt="" style="max-width:100%;border-radius:8px;border:1px solid var(--border)"/>`; }
+            if (p.type === 'video' && p.media_url){ mediaHtml = `<video src="${p.media_url}" controls style="max-width:100%;border-radius:8px;border:1px solid var(--border)"></video>`; }
+            wrap.innerHTML = `<div class="muted small">${t}</div>${p.content?`<p>${p.content}</p>`:''}${mediaHtml}`;
+            postsRoot.appendChild(wrap);
+          });
+        }
+
+        async function loadPosts(user){
+          try{
+            const { data, error } = await sb.from('posts').select('*').eq('user_id', user.id).order('created_at', { ascending:false });
+            if (error) throw error;
+            renderPosts(data);
+          }catch(err){
+            postsRoot.innerHTML = `<p class="muted small">Unable to load posts. Ensure a 'posts' table exists in Supabase with columns: id uuid, user_id uuid, content text, type text, media_url text, created_at timestamptz default now().</p>`;
+          }
+        }
+
+        function inferType(file){ return file.type.startsWith('video') ? 'video' : (file.type.startsWith('image') ? 'image' : 'file'); }
+
+        if (uploadForm){
+          uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            uploadMsg.textContent = '';
+            const user = await ensureSession();
+            if (!user) return;
+            const fd = new FormData(uploadForm);
+            const file = fd.get('file');
+            if (!file || !file.name){ uploadMsg.textContent = 'Kōwhiria tētahi kōnae / Choose a file.'; return; }
+            const ext = file.name.split('.').pop();
+            const path = `${user.id}/${Date.now()}.${ext}`;
+            try{
+              const { error: upErr } = await sb.storage.from('media').upload(path, file, { upsert:false, cacheControl:'3600' });
+              if (upErr) throw upErr;
+              const { data: pub } = sb.storage.from('media').getPublicUrl(path);
+              const type = inferType(file);
+              const { error: insErr } = await sb.from('posts').insert({ user_id: user.id, type, media_url: pub.publicUrl });
+              if (insErr) throw insErr;
+              uploadMsg.textContent = 'Kua tukuna! / Uploaded';
+              loadPosts(user);
+            }catch(err){
+              uploadMsg.textContent = 'Kāore i taea te tuku / Upload failed. Ensure a public storage bucket named "media" exists and RLS allows authenticated uploads.';
+            }
+          });
+        }
+
+        if (postForm){
+          postForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            postMsg.textContent = '';
+            const user = await ensureSession();
+            if (!user) return;
+            const fd = new FormData(postForm);
+            const content = String(fd.get('content')||'').trim();
+            if (!content){ postMsg.textContent = 'Tāuruhia tētahi kōrero / Enter some text.'; return; }
+            try{
+              const { error } = await sb.from('posts').insert({ user_id: user.id, content, type: 'text' });
+              if (error) throw error;
+              postMsg.textContent = 'Kua tukua! / Posted';
+              postForm.reset();
+              loadPosts(user);
+            }catch(err){
+              postMsg.textContent = 'Kāore i taea te tuku / Failed to post. Ensure posts table exists and RLS allows authenticated inserts.';
+            }
+          });
+        }
+
+        // Bootstrap
+        (async function init(){
+          const user = await ensureSession();
+          if (user) loadPosts(user);
+        })();
+      })();
+    </script>
+    <script src="assets/app.js"></script>
+  </body>
+</html>

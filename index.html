@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="mi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Te Kōrero Whānau</title>
+    <meta name="description" content="Preserving whānau legacy through stories, waiata, and whakapapa." />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="papa">
+      <div class="logo">Te Kōrero Whānau</div>
+      <nav>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="whanau-nav" title="Whakatuwhera tahua / Open menu">≡</button>
+        <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Kōwhiri āhua / Toggle theme">☀︎</button>
+        <ul id="whanau-nav" class="nav-list">
+          <li><a href="index.html">Kāinga</a></li>
+          <li><a href="whakapapa.html">Whakapapa</a></li>
+          <li><a href="korero.html">Kōrero</a></li>
+          <li><a href="waiata.html">Waiata</a></li>
+          <li><a href="karakia.html">Karakia</a></li>
+          <li><a href="nga-toi.html">Ngā Toi</a></li>
+          <li id="nav-admin-item" style="display:none"><a href="admin.html">Admin</a></li>
+          <li id="nav-login-item"><a id="open-auth" href="#">Login</a></li>
+          <li id="nav-profile-item" style="display:none"><a href="profile.html">Kōtaha / Profile</a></li>
+          <li id="nav-signout-item" style="display:none"><button id="signout" class="btn-link">Takiputa / Sign out</button></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section id="kainga" class="hero">
+        <h1>Te Kōrero Whānau</h1>
+        <p class="lead">He kaupapa hei tiaki i ngā kōrero tuku iho — a living archive of our whānau.</p>
+        <figure class="hero-figure">
+          <img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Wharenui Māori — te whānau gathering place" src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Tamaki_Maori_Village_Wharenui.jpg/1200px-Tamaki_Maori_Village_Wharenui.jpg" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&h=420&q=80';" />
+          <figcaption class="visually-hidden">Wharenui Māori</figcaption>
+        </figure>
+      </section>
+
+      <section class="panel previews">
+        <h2>Tīpako / Highlights</h2>
+        <div class="cards">
+          <article class="card">
+            <img loading="lazy" alt="Whakapapa" src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&h=360&q=80" />
+            <div class="card-body">
+              <h3>Whakapapa</h3>
+              <p>Build our family tree and pepeha. Connect iwi/hapū/waka affiliations.</p>
+              <p class="actions"><a href="whakapapa.html">Tirohia / Explore →</a></p>
+            </div>
+          </article>
+          <article class="card">
+            <img loading="lazy" alt="Kōrero" src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&h=360&q=80" />
+            <div class="card-body">
+              <div><span class="tag">New</span></div>
+              <h3>Kōrero</h3>
+              <p>Post stories or vlog links and see timestamps; whānau can react with Like/Aroha.</p>
+              <p class="actions"><a href="korero.html">Tirohia / Explore →</a></p>
+            </div>
+          </article>
+          <article class="card">
+            <img loading="lazy" alt="Waiata" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&h=360&q=80" />
+            <div class="card-body">
+              <h3>Waiata</h3>
+              <p>Recordings and lyrics to support learning and whakanui i te reo.</p>
+              <p class="actions"><a href="waiata.html">Tirohia / Explore →</a></p>
+            </div>
+          </article>
+          <article class="card">
+            <img loading="lazy" alt="Ngā Toi" src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&h=360&q=80" />
+            <div class="card-body">
+              <h3>Ngā Toi</h3>
+              <p>Photos and videos from kāinga, awa, maunga, and homesteads.</p>
+              <p class="actions"><a href="nga-toi.html">Tirohia / Explore →</a></p>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
+    </footer>
+
+    <!-- Auth modal -->
+    <div id="auth-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="auth-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="auth-close">×</button>
+        <h2 id="auth-title">Takiuru / Rēhita</h2>
+        <div class="tabpanes">
+          <form id="login-form" class="form" autocomplete="on">
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Takiuru</button>
+            <p class="muted small" id="login-msg"></p>
+          </form>
+          <form id="register-form" class="form" autocomplete="on" hidden>
+            <label>Ingoa / Full name (optional)
+              <input type="text" name="full_name" />
+            </label>
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Rēhita</button>
+            <p class="muted small" id="register-msg"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supabase JS and auth logic -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/auth.js"></script>
+    <script src="assets/app.js"></script>
+  </body>
+</html>
