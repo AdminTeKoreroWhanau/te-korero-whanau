@@ -54,11 +54,10 @@
 
       <section class="profile-layout">
         <div class="left-col">
-          <section id="about-section" class="panel">
-            <h2>Mō / About</h2>
-            <div id="profile-info" style="display:none">
-              <p><strong>Ingoa:</strong> <span id="user-name"></span></p>
-            </div>
+          <section id="pepeha-section" class="panel">
+            <h2>Pepeha</h2>
+            <div id="pepeha-view" style="display:none"></div>
+            <p id="pepeha-empty" class="muted small">Kāore anō he pepeha / No pepeha yet.</p>
           </section>
 
           <section id="photos-section" class="panel">
@@ -142,6 +141,27 @@
           <label>Whakaahua Uhi / Cover photo
             <input type="file" id="edit-cover" name="cover" accept="image/*" />
           </label>
+          <fieldset>
+            <legend>Pepeha</legend>
+            <label>Maunga
+              <input type="text" id="edit-maunga" name="pepeha_maunga" />
+            </label>
+            <label>Awa
+              <input type="text" id="edit-awa" name="pepeha_awa" />
+            </label>
+            <label>Iwi
+              <input type="text" id="edit-iwi" name="pepeha_iwi" />
+            </label>
+            <label>Hapū
+              <input type="text" id="edit-hapu" name="pepeha_hapu" />
+            </label>
+            <label>Waka
+              <input type="text" id="edit-waka" name="pepeha_waka" />
+            </label>
+            <label>Marae
+              <input type="text" id="edit-marae" name="pepeha_marae" />
+            </label>
+          </fieldset>
           <button type="submit" class="btn">Tiaki / Save</button>
           <p class="muted small" id="profile-msg"></p>
         </form>
@@ -159,8 +179,8 @@
     <script>
       (function(){
         const statusEl = document.getElementById('profile-status');
-        const infoEl = document.getElementById('profile-info');
-        const nameEl = document.getElementById('user-name');
+        const pepehaView = document.getElementById('pepeha-view');
+        const pepehaEmpty = document.getElementById('pepeha-empty');
         const postsRoot = document.getElementById('posts');
         const uploadForm = document.getElementById('upload-form');
         const uploadMsg = document.getElementById('upload-msg');
@@ -171,7 +191,6 @@
         const photosEmpty = document.getElementById('photos-empty');
         const profileName = document.getElementById('profile-name');
         const avatarImg = document.getElementById('avatar-img');
-        const coverImg = document.getElementById('cover-img');
         const editBtn = document.getElementById('edit-profile');
         const editModal = document.getElementById('profile-modal');
         const editClose = document.getElementById('profile-close');
@@ -179,6 +198,12 @@
         const editFullName = document.getElementById('edit-full-name');
         const editAvatar = document.getElementById('edit-avatar');
         const editCover = document.getElementById('edit-cover');
+        const editMaunga = document.getElementById('edit-maunga');
+        const editAwa = document.getElementById('edit-awa');
+        const editIwi = document.getElementById('edit-iwi');
+        const editHapu = document.getElementById('edit-hapu');
+        const editWaka = document.getElementById('edit-waka');
+        const editMarae = document.getElementById('edit-marae');
         const profileMsg = document.getElementById('profile-msg');
 
         async function ensureSession(){
@@ -191,10 +216,11 @@
             return null;
           }
           statusEl.style.display='none';
-          infoEl.style.display='block';
           const fullName = user.user_metadata?.full_name || '';
-          nameEl.textContent = fullName || '—';
           if (profileName) profileName.textContent = fullName || '—';
+          // Render pepeha if present
+          const pepeha = user.user_metadata?.pepeha || null;
+          renderPepeha(pepeha);
           // Optional profile images from metadata
           const avatarUrl = user.user_metadata?.avatar_url || '';
           if (avatarImg){ if (avatarUrl) { avatarImg.src = avatarUrl; } else { avatarImg.src = placeholderAvatar(user); } avatarImg.style.display='block'; }
@@ -202,6 +228,14 @@
           if (coverImg){ if (coverUrl){ coverImg.src = coverUrl; } else { coverImg.src = placeholderCover(user); } coverImg.style.display='block'; }
           // Prefill edit form
           if (editFullName) editFullName.value = fullName || '';
+          if (pepeha){
+            if (editMaunga) editMaunga.value = pepeha.maunga || '';
+            if (editAwa) editAwa.value = pepeha.awa || '';
+            if (editIwi) editIwi.value = pepeha.iwi || '';
+            if (editHapu) editHapu.value = pepeha.hapu || '';
+            if (editWaka) editWaka.value = pepeha.waka || '';
+            if (editMarae) editMarae.value = pepeha.marae || '';
+          }
           return user;
         }
 
@@ -218,6 +252,27 @@
             wrap.innerHTML = `<div class="muted small">${t}</div>${p.content?`<p>${p.content}</p>`:''}${mediaHtml}`;
             postsRoot.appendChild(wrap);
           });
+        }
+
+        function renderPepeha(p){
+          if (!pepehaView || !pepehaEmpty) return;
+          const has = p && Object.keys(p).some(k => (p[k]||'').trim() !== '');
+          if (!has){
+            pepehaView.style.display='none';
+            pepehaView.innerHTML='';
+            pepehaEmpty.style.display='block';
+            return;
+          }
+          pepehaEmpty.style.display='none';
+          const rows = [];
+          if (p.maunga) rows.push(`<p><strong>Maunga:</strong> ${p.maunga}</p>`);
+          if (p.awa) rows.push(`<p><strong>Awa:</strong> ${p.awa}</p>`);
+          if (p.iwi) rows.push(`<p><strong>Iwi:</strong> ${p.iwi}</p>`);
+          if (p.hapu) rows.push(`<p><strong>Hapū:</strong> ${p.hapu}</p>`);
+          if (p.waka) rows.push(`<p><strong>Waka:</strong> ${p.waka}</p>`);
+          if (p.marae) rows.push(`<p><strong>Marae:</strong> ${p.marae}</p>`);
+          pepehaView.innerHTML = rows.join('');
+          pepehaView.style.display='block';
         }
 
         function renderPhotos(list){
@@ -358,6 +413,14 @@
             const user = data.session?.user; if (!user){ profileMsg.textContent='Takiuru tuatahitia / Please login.'; return; }
             const updates = {};
             const full = (editFullName && editFullName.value || '').trim(); if (full) updates.full_name = full;
+            const pepehaUpdates = {};
+            if (editMaunga && editMaunga.value.trim()) pepehaUpdates.maunga = editMaunga.value.trim();
+            if (editAwa && editAwa.value.trim()) pepehaUpdates.awa = editAwa.value.trim();
+            if (editIwi && editIwi.value.trim()) pepehaUpdates.iwi = editIwi.value.trim();
+            if (editHapu && editHapu.value.trim()) pepehaUpdates.hapu = editHapu.value.trim();
+            if (editWaka && editWaka.value.trim()) pepehaUpdates.waka = editWaka.value.trim();
+            if (editMarae && editMarae.value.trim()) pepehaUpdates.marae = editMarae.value.trim();
+            if (Object.keys(pepehaUpdates).length) updates.pepeha = pepehaUpdates;
             try{
               if (editAvatar && editAvatar.files && editAvatar.files[0]){
                 const url = await uploadProfileFile('avatar', editAvatar.files[0], user);
@@ -373,6 +436,7 @@
                 // Update UI
                 const newUser = upd.user || user;
                 if (profileName) profileName.textContent = (updates.full_name || newUser.user_metadata?.full_name || '—');
+                renderPepeha(newUser.user_metadata?.pepeha || updates.pepeha || null);
                 if (avatarImg) { const url = updates.avatar_url || newUser.user_metadata?.avatar_url || placeholderAvatar(newUser); avatarImg.src = url; avatarImg.style.display='block'; }
                 if (coverImg) { const url = updates.cover_url || newUser.user_metadata?.cover_url || placeholderCover(newUser); coverImg.src = url; coverImg.style.display='block'; }
               }
