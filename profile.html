@@ -190,7 +190,8 @@
         const photosGrid = document.getElementById('photos-grid');
         const photosEmpty = document.getElementById('photos-empty');
         const profileName = document.getElementById('profile-name');
-        const avatarImg = document.getElementById('avatar-img');
+        const coverImg = document.getElementById('cover-img');
+        const coverWrap = document.querySelector('.profile-header .cover');
         const editBtn = document.getElementById('edit-profile');
         const editModal = document.getElementById('profile-modal');
         const editClose = document.getElementById('profile-close');
@@ -230,7 +231,7 @@
           const avatarUrl = user.user_metadata?.avatar_url || '';
           if (avatarImg){ if (avatarUrl) { avatarImg.src = avatarUrl; } else { avatarImg.src = placeholderAvatar(user); } avatarImg.style.display='block'; }
           const coverUrl = user.user_metadata?.cover_url || '';
-          if (coverImg){ if (coverUrl){ coverImg.src = coverUrl; } else { coverImg.src = placeholderCover(user); } coverImg.style.display='block'; }
+          applyCover(coverUrl || placeholderCover(user), user);
           // Prefill edit form
           if (editFullName) editFullName.value = fullName || '';
           if (pepeha){
@@ -257,6 +258,17 @@
             wrap.innerHTML = `<div class="muted small">${t}</div>${p.content?`<p>${p.content}</p>`:''}${mediaHtml}`;
             postsRoot.appendChild(wrap);
           });
+        }
+
+        function applyCover(url){
+          try{
+            if (coverImg){ coverImg.src = url; coverImg.style.display='block'; }
+            if (coverWrap){
+              coverWrap.style.backgroundImage = `linear-gradient(135deg, rgba(0,196,179,.25), transparent 60%), url('${url}')`;
+              coverWrap.style.backgroundSize = 'auto, cover';
+              coverWrap.style.backgroundPosition = 'center, center';
+            }
+          }catch(_){/* noop */}
         }
 
         function renderPepeha(p){
@@ -455,7 +467,7 @@
                 if (profileName) profileName.textContent = (updates.full_name || newUser.user_metadata?.full_name || '—');
                 renderPepeha(newUser.user_metadata?.pepeha || updates.pepeha || null);
                 if (avatarImg) { const url = updates.avatar_url || newUser.user_metadata?.avatar_url || placeholderAvatar(newUser); avatarImg.src = url; avatarImg.style.display='block'; }
-                if (coverImg) { const url = updates.cover_url || newUser.user_metadata?.cover_url || placeholderCover(newUser); coverImg.src = url; coverImg.style.display='block'; }
+                { const url = updates.cover_url || newUser.user_metadata?.cover_url || placeholderCover(newUser); applyCover(url); }
               }
               profileMsg.textContent = 'Kua tiakina / Saved';
               // reset file inputs
