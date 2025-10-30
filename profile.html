@@ -339,7 +339,7 @@
         async function uploadProfileFile(kind, file, user){
           const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
           const path = `profile/${user.id}/${kind}-${Date.now()}.${ext}`;
-          const up = await sb.storage.from('media').upload(path, file, { upsert:true, cacheControl:'3600' });
+          const up = await sb.storage.from('media').upload(path, file, { upsert:true, cacheControl:'3600', contentType: file.type || undefined });
           if (up.error) throw up.error;
           const { data: pub } = sb.storage.from('media').getPublicUrl(path);
           return pub.publicUrl;
@@ -423,12 +423,24 @@
             if (Object.keys(pepehaUpdates).length) updates.pepeha = pepehaUpdates;
             try{
               if (editAvatar && editAvatar.files && editAvatar.files[0]){
-                const url = await uploadProfileFile('avatar', editAvatar.files[0], user);
-                updates.avatar_url = url;
+                try{
+                  const url = await uploadProfileFile('avatar', editAvatar.files[0], user);
+                  updates.avatar_url = url;
+                }catch(err){
+                  console.error('Avatar upload failed', err);
+                  profileMsg.textContent = 'Kāore i taea te tuku whakaahua kōtaha / Avatar upload failed.';
+                  return;
+                }
               }
               if (editCover && editCover.files && editCover.files[0]){
-                const url = await uploadProfileFile('cover', editCover.files[0], user);
-                updates.cover_url = url;
+                try{
+                  const url = await uploadProfileFile('cover', editCover.files[0], user);
+                  updates.cover_url = url;
+                }catch(err){
+                  console.error('Cover upload failed', err);
+                  profileMsg.textContent = 'Kāore i taea te tuku whakaahua uhi / Cover upload failed.';
+                  return;
+                }
               }
               if (Object.keys(updates).length){
                 const { data: upd, error } = await sb.auth.updateUser({ data: updates });
@@ -441,6 +453,9 @@
                 if (coverImg) { const url = updates.cover_url || newUser.user_metadata?.cover_url || placeholderCover(newUser); coverImg.src = url; coverImg.style.display='block'; }
               }
               profileMsg.textContent = 'Kua tiakina / Saved';
+              // reset file inputs
+              if (editAvatar) editAvatar.value = '';
+              if (editCover) editCover.value = '';
               hideEdit();
             }catch(err){ profileMsg.textContent = 'Hapa / Error saving profile.'; }
           });
