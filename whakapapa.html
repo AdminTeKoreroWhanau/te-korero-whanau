@@ -63,53 +63,7 @@
         <p id="whakapapa-msg" class="muted small"></p>
       </section>
 
-      <section class="panel">
-        <h2>Tāpiri Hononga / Add relation</h2>
-        <form id="rel-form" class="form">
-          <div style="display:flex;flex-wrap:wrap;gap:.5rem 1rem">
-            <label style="flex:1;min-width:200px">Person A
-              <select id="rel-a" required></select>
-            </label>
-            <label style="flex:0 0 160px">Type
-              <select id="rel-type" required>
-                <option value="parent">Parent of →</option>
-                <option value="mother">Mother of →</option>
-                <option value="father">Father of →</option>
-                <option value="spouse">Spouse/Partner ↔</option>
-                <option value="partner">Partner ↔</option>
-              </select>
-            </label>
-            <label style="flex:1;min-width:200px">Person B
-              <select id="rel-b" required></select>
-            </label>
-          </div>
-          <p class="muted small">For parent types, we add A → B (parent to child). Spouse/partner is shown as a dashed line.</p>
-          <div>
-            <button class="btn" type="submit">Tāpiri / Add</button>
-            <button class="btn outline" id="rel-fit" type="button">Whakarite / Fit</button>
-          </div>
-          <p id="rel-msg" class="muted small"></p>
-        </form>
-      </section>
 
-      <section class="panel">
-        <h2>Tāpiri Tāngata / Add person</h2>
-        <form id="person-form" class="form" enctype="multipart/form-data">
-          <label>Ingoa Katoa / Full name
-            <input type="text" id="person-name" required />
-          </label>
-          <label>Īmēra / Email (optional)
-            <input type="email" id="person-email" />
-          </label>
-          <label>Whakaahua / Avatar (optional)
-            <input type="file" id="person-avatar" accept="image/*" />
-          </label>
-          <div>
-            <button class="btn" type="submit">Waihanga / Create</button>
-          </div>
-          <p id="person-msg" class="muted small"></p>
-        </form>
-      </section>
     </main>
 
     <!-- Auth modal -->
@@ -150,6 +104,8 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/config.js"></script>
+    <script src="assets/backend.js"></script>
     <script src="assets/auth.js"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <script>
@@ -239,9 +195,17 @@
           const keep = neighborsWithin(rootId, d);
           const nodes = new vis.DataSet(allNodes.get({ filter: n => keep.has(n.id) }));
           const edges = new vis.DataSet(allEdges.get({ filter: e => keep.has(e.from) && keep.has(e.to) }));
-          network.setData({ nodes, edges });
-          network.focus(rootId, { animation: true, scale: 1 });
+            network.setData({ nodes, edges });
+            network.focus(rootId, { animation: true, scale: 1 });
         }
+
+        // Click a node to open that person's profile (if using Supabase profiles)
+        network.on('selectNode', (params) => {
+          const id = (params && params.nodes && params.nodes[0]) ? params.nodes[0] : null;
+          if (id){
+            try { location.href = `profile.html?user=${encodeURIComponent(String(id))}`; } catch(_){}
+          }
+        });
 
         function populateRootSelect(list){
           sel.innerHTML = '';
@@ -278,26 +242,7 @@
               if (!r.error && Array.isArray(r.data)) relations = r.data;
             }
             if (!profiles.length){
-              // Fallback sample data (with placeholder avatars)
-              const ph = (name) => `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`;
-              profiles = [
-                { id: 'A', full_name: 'Koro A', avatar_url: ph('Koro A') },
-                { id: 'B', full_name: 'Kuia B', avatar_url: ph('Kuia B') },
-                { id: 'C', full_name: 'Matua C', avatar_url: ph('Matua C') },
-                { id: 'D', full_name: 'Whaea D', avatar_url: ph('Whaea D') },
-                { id: 'E', full_name: 'Tamariki E', avatar_url: ph('Tamariki E') },
-                { id: 'F', full_name: 'Tamariki F', avatar_url: ph('Tamariki F') }
-              ];
-              relations = [
-                { from_id: 'A', to_id: 'C', type: 'parent' },
-                { from_id: 'B', to_id: 'C', type: 'parent' },
-                { from_id: 'C', to_id: 'E', type: 'parent' },
-                { from_id: 'D', to_id: 'E', type: 'parent' },
-                { from_id: 'C', to_id: 'D', type: 'spouse' },
-                { from_id: 'C', to_id: 'F', type: 'parent' },
-                { from_id: 'D', to_id: 'F', type: 'parent' }
-              ];
-              if (msg) msg.textContent = 'Using sample data. Create Supabase tables "profiles" (add avatar_url) and "relationships" to load real whānau.';
+              if (msg) msg.textContent = 'No whānau found yet. Connect Supabase to load real data.';
             } else {
               if (msg) msg.textContent = '';
             }
@@ -327,89 +272,6 @@
         depthInput.addEventListener('input', applyFilter);
         fitBtn.addEventListener('click', () => network.fit({ animation: true }));
 
-        // Add relation form
-        const relForm = document.getElementById('rel-form');
-        const relFit = document.getElementById('rel-fit');
-        const relMsg = document.getElementById('rel-msg');
-        if (relFit) relFit.addEventListener('click', () => network.fit({ animation: true }));
-        if (relForm){
-          relForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            relMsg.textContent = '';
-            const from_id = document.getElementById('rel-a').value;
-            const to_id = document.getElementById('rel-b').value;
-            const type = document.getElementById('rel-type').value;
-            if (!from_id || !to_id || !type){ relMsg.textContent = 'Kōwhiria te tāngata me te momo hononga / Select people and relation type.'; return; }
-            if (from_id === to_id){ relMsg.textContent = 'Kāore e tika te hono ki a ia anō / Cannot relate a person to themselves.'; return; }
-            try{
-              if (sb){
-                const { error } = await sb.from('relationships').insert({ from_id, to_id, type });
-                if (error) throw error;
-                relMsg.textContent = 'Kua tāpirihia / Added.';
-              } else {
-                relMsg.textContent = 'Added locally (not saved). Configure Supabase to persist.';
-              }
-              // Update local graph
-              relations.push({ from_id, to_id, type });
-              allEdges.add(toEdge({ from_id, to_id, type }));
-              applyFilter();
-            }catch(err){
-              relMsg.textContent = 'Hapa tāpiri / Failed to add relation.';
-            }
-          });
-        }
-
-        // Add person form
-        const personForm = document.getElementById('person-form');
-        const personMsg = document.getElementById('person-msg');
-        if (personForm){
-          personForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            personMsg.textContent = '';
-            const full_name = String(document.getElementById('person-name').value || '').trim();
-            const email = String(document.getElementById('person-email').value || '').trim() || null;
-            const fileInput = document.getElementById('person-avatar');
-            const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-            if (!full_name){ personMsg.textContent = 'Tāuruhia te ingoa / Enter a name.'; return; }
-            try{
-              let newProfile = null;
-              if (sb){
-                // Insert profile row
-                const ins = await sb.from('profiles').insert({ full_name, email }).select('id, full_name, email').single();
-                if (ins.error) throw ins.error;
-                newProfile = ins.data;
-                // Upload avatar if present
-                if (file){
-                  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-                  const path = `avatars/${newProfile.id}-${Date.now()}.${ext}`;
-                  const up = await sb.storage.from('media').upload(path, file, { upsert: false, cacheControl: '3600' });
-                  if (up.error) throw up.error;
-                  const pub = sb.storage.from('media').getPublicUrl(path);
-                  const upd = await sb.from('profiles').update({ avatar_url: pub.data.publicUrl }).eq('id', newProfile.id);
-                  if (upd.error) throw upd.error;
-                  newProfile.avatar_url = pub.data.publicUrl;
-                }
-              } else {
-                // Local-only fallback
-                const id = 'P' + Date.now();
-                let avatar_url = null;
-                if (file){ avatar_url = URL.createObjectURL(file); }
-                newProfile = { id, full_name, email, avatar_url };
-              }
-
-              // Update UI datasets
-              profiles.push(newProfile);
-              allNodes.add(toNode(newProfile));
-              populateRootSelect(profiles);
-              populateRelSelects(profiles);
-              applyFilter();
-              personForm.reset();
-              personMsg.textContent = sb ? 'Kua waihangatia / Created.' : 'Created locally (not saved). Configure Supabase to persist.';
-            } catch(err){
-              personMsg.textContent = 'Hapa waihanga / Failed to create person. Ensure profiles table exists and storage bucket "media" allows uploads.';
-            }
-          });
-        }
 
         bootstrap();
       })();
