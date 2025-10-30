@@ -1,8 +1,8 @@
 // Supabase auth + modal UI handlers
 (function(){
-  const SUPABASE_URL = window.SUPABASE_URL || 'https://qnugrhzytvbfetqpgzlw.supabase.co';
-  const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudWdyaHp5dHZiZmV0cXBnemx3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3MDk4NTQsImV4cCI6MjA3NzI4NTg1NH0.0lSP_Oms9Rya7nyXwHr7i_-2ku3lLImMKVhFBil2HyY';
-  if (!window.supabase) return;
+  const SUPABASE_URL = window.SUPABASE_URL;
+  const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
+  if (!window.supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY) { console.error('Supabase client not configured. Set window.SUPABASE_URL and window.SUPABASE_ANON_KEY.'); return; }
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   window.sb = sb; // expose for other scripts (e.g., profile)
 

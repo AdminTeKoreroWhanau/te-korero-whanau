@@ -1,18 +1,21 @@
 // Backend configuration. Default is local-only storage.
-// To enable Supabase multi-user sharing, replace with your project details:
-// window.WAIATA_BACKEND = { type: 'supabase', url: 'https://YOUR-PROJECT.supabase.co', anonKey: 'YOUR_ANON_PUBLIC_KEY', bucket: 'waiata' };
-// window.KORERO_BACKEND = { type: 'supabase', url: 'https://YOUR-PROJECT.supabase.co', anonKey: 'YOUR_ANON_PUBLIC_KEY', bucket: 'korero' };
+// To enable Supabase multi-user sharing, set window.SUPABASE_URL and window.SUPABASE_ANON_KEY (see assets/config.js).
+// Example:
+// window.SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
+// window.SUPABASE_ANON_KEY = 'YOUR_ANON_PUBLIC_KEY';
 
-window.WAIATA_BACKEND = { 
-  type: 'supabase', 
-  url: 'https://qnugrhzytvbfetqpgzlw.supabase.co', 
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudWdyaHp5dHZiZmV0cXBnemx3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3MDk4NTQsImV4cCI6MjA3NzI4NTg1NH0.0lSP_Oms9Rya7nyXwHr7i_-2ku3lLImMKVhFBil2HyY', 
-  bucket: 'waiata' 
-};
-window.KORERO_BACKEND = { 
-  type: 'supabase', 
-  url: 'https://qnugrhzytvbfetqpgzlw.supabase.co', 
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudWdyaHp5dHZiZmV0cXBnemx3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3MDk4NTQsImV4cCI6MjA3NzI4NTg1NH0.0lSP_Oms9Rya7nyXwHr7i_-2ku3lLImMKVhFBil2HyY' 
-};
+(function(){
+  const url = window.SUPABASE_URL;
+  const anon = window.SUPABASE_ANON_KEY;
+  if (url && anon){
+    window.WAIATA_BACKEND = { type: 'supabase', url, anonKey: anon, bucket: 'waiata' };
+    window.KORERO_BACKEND = { type: 'supabase', url, anonKey: anon };
+  } else {
+    // Fallback to local-only backend if not configured
+    window.WAIATA_BACKEND = { type: 'local' };
+    window.KORERO_BACKEND = { type: 'local' };
+  }
+})();
+
 // Admin config: list admin emails here to grant admin UI access (optional; Supabase table also supported)
 window.ADMIN_EMAILS = ['demonystica@gmail.com'];
