@@ -103,7 +103,17 @@
 
   // Initial nav state and on changes
   setNavBySession();
-  sb.auth.onAuthStateChange(() => setNavBySession());
+  sb.auth.onAuthStateChange((_event, session) => {
+    setNavBySession();
+    try {
+      const onIndex = /(^\/$|index\.html$)/i.test(location.pathname);
+      const modal = document.getElementById('auth-modal');
+      const modalActive = !!(modal && modal.hidden === false);
+      if (session && (onIndex || modalActive)) {
+        location.href = 'profile.html';
+      }
+    } catch (_) {}
+  });
 
   if (signoutBtn){
     signoutBtn.addEventListener('click', async () => {
