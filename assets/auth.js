@@ -71,22 +71,17 @@
     const { data } = await sb.auth.getSession();
     const user = data.session?.user || null;
 
-    // Always show the login item but change its label/behavior
-    if (navLogin) {
+  // Show login link only when signed out
+  if (navLogin) {
+    const loginLink = navLogin.querySelector('a#open-auth');
+    if (user){
+      navLogin.style.display = 'none';
+      if (loginLink){ loginLink.textContent = 'Login'; loginLink.setAttribute('href', '#'); loginLink.dataset.state = 'out'; }
+    } else {
       navLogin.style.display = '';
-      const loginLink = navLogin.querySelector('a#open-auth');
-      if (loginLink){
-        if (user){
-          loginLink.textContent = 'Logged in';
-          loginLink.setAttribute('href', 'profile.html');
-          loginLink.dataset.state = 'in';
-        } else {
-          loginLink.textContent = 'Login';
-          loginLink.setAttribute('href', '#');
-          loginLink.dataset.state = 'out';
-        }
-      }
+      if (loginLink){ loginLink.textContent = 'Login'; loginLink.setAttribute('href', '#'); loginLink.dataset.state = 'out'; }
     }
+  }
 
     // Toggle profile and sign-out buttons
     if (navProfile) navProfile.style.display = user ? '' : 'none';
@@ -103,20 +98,12 @@
 
   // Initial nav state and on changes
   setNavBySession();
-  sb.auth.onAuthStateChange((_event, session) => {
-    setNavBySession();
-    try {
-      const onIndex = /(^\/$|index\.html$)/i.test(location.pathname);
-      const modal = document.getElementById('auth-modal');
-      const modalActive = !!(modal && modal.hidden === false);
-      if (session && (onIndex || modalActive)) {
-        location.href = 'profile.html';
-      }
-    } catch (_) {}
-  });
+  // Only update UI on auth changes; do not force-redirect so home page remains accessible
+  sb.auth.onAuthStateChange(() => setNavBySession());
 
   if (signoutBtn){
-    signoutBtn.addEventListener('click', async () => {
+    signoutBtn.addEventListener('click', async (e) => {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
       await sb.auth.signOut();
       // Return to home on signout when on profile page
       if (location.pathname.toLowerCase().endsWith('profile.html')) location.href = 'index.html';
