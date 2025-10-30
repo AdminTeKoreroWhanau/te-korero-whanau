@@ -1,3 +1,25 @@
+/* Profile layout (Facebook-style) */
+.profile-header{margin:0 0 0.5rem}
+.profile-header .cover{height:260px;border-bottom:1px solid var(--border);background:linear-gradient(135deg, rgba(0,196,179,.25), transparent 60%);position:relative;overflow:hidden}
+.profile-header .cover img{width:100%;height:100%;object-fit:cover;display:none}
+@media (min-width:900px){.profile-header .cover{height:320px}}
+.profile-bar{display:flex;align-items:center;gap:1rem;margin:-3rem 1rem 0;border-radius:12px;padding:0.75rem 1rem}
+.avatar-wrap{margin-top:-3rem}
+.avatar{width:112px;height:112px;border-radius:50%;border:3px solid var(--bg);background:#222;display:none}
+.profile-meta h1{margin:.25rem 0 0}
+.profile-actions{margin-left:auto}
+.profile-tabs{display:flex;gap:.75rem;border-bottom:1px solid var(--border);margin:0.5rem 0 0;padding:0 1rem;position:sticky;top:60px;background:var(--bg);z-index:50}
+.profile-tabs a{padding:0.75rem 0.5rem;color:var(--fg);border-bottom:2px solid transparent}
+.profile-tabs a:hover{text-decoration:none;border-color:var(--border)}
+.profile-layout{display:grid;grid-template-columns:1fr;gap:1rem;margin:1rem}
+.left-col,.right-col{display:flex;flex-direction:column;gap:1rem}
+@media (min-width:900px){.profile-layout{grid-template-columns:1fr 2fr}}
+.composer .row{display:flex;gap:.5rem;align-items:center}
+.photos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.photos-grid a{display:block}
+.photos-grid img{width:100%;height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--border)}
+@media (min-width:900px){.photos-grid{grid-template-columns:repeat(4,1fr)}.photos-grid img{height:120px}}
+
 :root{--bg:#0b0f10;--fg:#eef2f3;--muted:#a7b1b5;--accent:#00c4b3;--panel:#12181a;--border:#1e2629;--font:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -67,7 +89,9 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:1100}
 .modal[hidden]{display:none}
 .modal-content{width:min(560px,92vw);background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:1rem 1rem 1.25rem;position:relative}
-.modal-close{position:absolute;right:.75rem;top:.6rem;background:none;border:1px solid var(--border);color:var(--fg);width:2rem;height:2rem;border-radius:50%;font-size:1.25rem;line-height:1}
+.modal-close{position:absolute;right:.75rem;top:.6rem;background:none;border:1px solid var(--border);color:var(--fg);width:2rem;height:2rem;border-radius:50%;font-size:1.25rem;line-height:1;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .15s ease,box-shadow .15s ease}
+.modal-close:hover,.modal-close:focus{background:rgba(255,255,255,.06);border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(0,196,179,.2);transform:scale(1.05)}
+:root[data-theme="light"] .modal-close:hover,:root[data-theme="light"] .modal-close:focus{background:rgba(0,0,0,.06)}
 .tabs{display:flex;gap:.5rem;margin-top:.25rem}
 .tab{flex:1;background:none;border:1px solid var(--border);border-radius:10px;padding:.5rem;color:var(--fg);cursor:pointer}
 .tab.active{border-color:var(--accent);}

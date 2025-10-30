@@ -28,36 +28,71 @@
     </header>
 
     <main>
-      <section class="panel">
-        <h1>Kōtaha / Profile</h1>
-        <p class="muted" id="profile-status">Loading...</p>
-        <div id="profile-info" style="display:none">
-          <p><strong>Email:</strong> <span id="user-email"></span></p>
-          <p><strong>Ingoa:</strong> <span id="user-name"></span></p>
+      <section class="profile-header">
+        <div class="cover" aria-hidden="true">
+          <img id="cover-img" alt="" />
         </div>
+        <div class="profile-bar panel">
+          <div class="avatar-wrap">
+            <img id="avatar-img" class="avatar" alt="Avatar" />
+          </div>
+          <div class="profile-meta">
+            <h1 id="profile-name">—</h1>
+            <div class="muted small" id="profile-email"></div>
+          </div>
+          <div class="profile-actions">
+            <button class="btn outline" id="edit-profile" type="button">Whakatika / Edit</button>
+          </div>
+        </div>
+        <nav class="profile-tabs">
+          <a href="#posts-section">Posts</a>
+          <a href="#about-section">About</a>
+          <a href="#photos-section">Photos</a>
+        </nav>
       </section>
 
-      <section class="panel">
-        <h2>Tuku Kōnae / Upload media</h2>
-        <form id="upload-form" class="form">
-          <input type="file" name="file" accept="image/*,video/*" required />
-          <button class="btn" type="submit">Tuku / Upload</button>
-          <p class="muted small" id="upload-msg"></p>
-        </form>
-      </section>
+      <p class="muted" id="profile-status">Loading...</p>
 
-      <section class="panel">
-        <h2>Tuhinga Hou / New post</h2>
-        <form id="post-form" class="form">
-          <textarea name="content" rows="3" placeholder="Tuhia ō kōrero..." required></textarea>
-          <button class="btn" type="submit">Tukua / Post</button>
-          <p class="muted small" id="post-msg"></p>
-        </form>
-      </section>
+      <section class="profile-layout">
+        <div class="left-col">
+          <section id="about-section" class="panel">
+            <h2>Mō / About</h2>
+            <div id="profile-info" style="display:none">
+              <p><strong>Email:</strong> <span id="user-email"></span></p>
+              <p><strong>Ingoa:</strong> <span id="user-name"></span></p>
+            </div>
+          </section>
 
-      <section class="panel">
-        <h2>Ō Tuhinga / Your posts</h2>
-        <div id="posts"></div>
+          <section id="photos-section" class="panel">
+            <h2>Whakaahua / Photos</h2>
+            <div class="photos-grid" id="photos-grid"></div>
+            <p class="muted small" id="photos-empty" style="display:none">Kāore anō he whakaahua / No photos yet.</p>
+          </section>
+        </div>
+        <div class="right-col">
+          <section class="panel composer">
+            <h2>Tuhinga Hou / New post</h2>
+            <form id="post-form" class="form">
+              <textarea name="content" rows="3" placeholder="Tuhia ō kōrero..."></textarea>
+              <div class="row">
+                <label class="btn outline" for="composer-file">Tāpiri Whakaahua / Add photo</label>
+                <input id="composer-file" type="file" name="file" accept="image/*,video/*" style="display:none" />
+                <button class="btn" type="submit">Tukua / Post</button>
+              </div>
+              <p class="muted small" id="post-msg"></p>
+            </form>
+            <!-- Kept for compatibility with previous upload handler -->
+            <form id="upload-form" class="form" style="display:none">
+              <input type="file" name="file" accept="image/*,video/*" />
+              <p class="muted small" id="upload-msg"></p>
+            </form>
+          </section>
+
+          <section id="posts-section" class="panel">
+            <h2>Ō Tuhinga / Your posts</h2>
+            <div id="posts"></div>
+          </section>
+        </div>
       </section>
     </main>
 
@@ -94,6 +129,27 @@
       </div>
     </div>
 
+    <!-- Profile edit modal -->
+    <div id="profile-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="profile-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="profile-close">×</button>
+        <h2 id="profile-title">Whakatika Kōtaha / Edit Profile</h2>
+        <form id="profile-form" class="form">
+          <label>Ingoa Katoa / Full name
+            <input type="text" id="edit-full-name" name="full_name" placeholder="e.g., Rangi Tāmati" />
+          </label>
+          <label>Whakaahua Kōtaha / Avatar
+            <input type="file" id="edit-avatar" name="avatar" accept="image/*" />
+          </label>
+          <label>Whakaahua Uhi / Cover photo
+            <input type="file" id="edit-cover" name="cover" accept="image/*" />
+          </label>
+          <button type="submit" class="btn">Tiaki / Save</button>
+          <p class="muted small" id="profile-msg"></p>
+        </form>
+      </div>
+    </div>
+
     <footer>
       <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
     </footer>
@@ -111,6 +167,21 @@
         const uploadMsg = document.getElementById('upload-msg');
         const postForm = document.getElementById('post-form');
         const postMsg = document.getElementById('post-msg');
+        const composerFile = document.getElementById('composer-file');
+        const photosGrid = document.getElementById('photos-grid');
+        const photosEmpty = document.getElementById('photos-empty');
+        const profileName = document.getElementById('profile-name');
+        const profileEmail = document.getElementById('profile-email');
+        const avatarImg = document.getElementById('avatar-img');
+        const coverImg = document.getElementById('cover-img');
+        const editBtn = document.getElementById('edit-profile');
+        const editModal = document.getElementById('profile-modal');
+        const editClose = document.getElementById('profile-close');
+        const editForm = document.getElementById('profile-form');
+        const editFullName = document.getElementById('edit-full-name');
+        const editAvatar = document.getElementById('edit-avatar');
+        const editCover = document.getElementById('edit-cover');
+        const profileMsg = document.getElementById('profile-msg');
 
         async function ensureSession(){
           const { data } = await sb.auth.getSession();
@@ -123,8 +194,18 @@
           }
           statusEl.style.display='none';
           infoEl.style.display='block';
+          const fullName = user.user_metadata?.full_name || '';
           emailEl.textContent = user.email || '';
-          nameEl.textContent = user.user_metadata?.full_name || '—';
+          nameEl.textContent = fullName || '—';
+          if (profileName) profileName.textContent = fullName || (user.email || '').split('@')[0] || '—';
+          if (profileEmail) profileEmail.textContent = user.email || '';
+          // Optional profile images from metadata
+          const avatarUrl = user.user_metadata?.avatar_url || '';
+          if (avatarImg){ if (avatarUrl) { avatarImg.src = avatarUrl; } else { avatarImg.src = placeholderAvatar(user); } avatarImg.style.display='block'; }
+          const coverUrl = user.user_metadata?.cover_url || '';
+          if (coverImg){ if (coverUrl){ coverImg.src = coverUrl; } else { coverImg.src = placeholderCover(user); } coverImg.style.display='block'; }
+          // Prefill edit form
+          if (editFullName) editFullName.value = fullName || '';
           return user;
         }
 
@@ -143,17 +224,75 @@
           });
         }
 
+        function renderPhotos(list){
+          if (!photosGrid) return;
+          const imgs = (list||[]).filter(p => p.type==='image' && p.media_url);
+          photosGrid.innerHTML = '';
+          if (!imgs.length){ if (photosEmpty) photosEmpty.style.display='block'; return; }
+          if (photosEmpty) photosEmpty.style.display='none';
+          const frag = document.createDocumentFragment();
+          imgs.forEach(p => {
+            const a = document.createElement('a'); a.href = p.media_url; a.target='_blank'; a.rel='noopener noreferrer';
+            const img = document.createElement('img'); img.src = p.media_url; img.alt = ''; a.appendChild(img);
+            frag.appendChild(a);
+          });
+          photosGrid.appendChild(frag);
+        }
+
         async function loadPosts(user){
           try{
             const { data, error } = await sb.from('posts').select('*').eq('user_id', user.id).order('created_at', { ascending:false });
             if (error) throw error;
             renderPosts(data);
+            renderPhotos(data);
           }catch(err){
-            postsRoot.innerHTML = `<p class="muted small">Unable to load posts. Ensure a 'posts' table exists in Supabase with columns: id uuid, user_id uuid, content text, type text, media_url text, created_at timestamptz default now().</p>`;
+            postsRoot.innerHTML = `<p class=\"muted small\">Unable to load posts. Ensure a 'posts' table exists in Supabase with columns: id uuid, user_id uuid, content text, type text, media_url text, created_at timestamptz default now().</p>`;
           }
         }
 
         function inferType(file){ return file.type.startsWith('video') ? 'video' : (file.type.startsWith('image') ? 'image' : 'file'); }
+
+        // Placeholder generators (unique per user)
+        function placeholderAvatar(user){
+          const name = (user.user_metadata?.full_name || user.email || 'Whānau').trim();
+          const initials = name.split(/\s+/).map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'WH';
+          const hue = Math.abs(hash(user.id || name)) % 360;
+          const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'>
+            <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='hsl(${hue},70%,45%)'/><stop offset='100%' stop-color='hsl(${(hue+40)%360},70%,45%)'/></linearGradient></defs>
+            <rect width='100%' height='100%' fill='url(#g)'/>
+            <text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='Segoe UI, Roboto, Arial' font-size='56' font-weight='700'>${initials}</text>
+          </svg>`;
+          return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+        }
+        function placeholderCover(user){
+          const hue = Math.abs(hash(user.id || 'cover')) % 360;
+          const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='360'>
+            <defs><linearGradient id='cg' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='hsl(${(hue+20)%360},65%,35%)'/><stop offset='100%' stop-color='hsl(${(hue+80)%360},65%,35%)'/></linearGradient></defs>
+            <rect width='100%' height='100%' fill='url(#cg)'/>
+            <circle cx='90' cy='90' r='40' fill='rgba(255,255,255,.08)'/>
+            <circle cx='220' cy='140' r='26' fill='rgba(255,255,255,.06)'/>
+            <circle cx='400' cy='70' r='18' fill='rgba(255,255,255,.05)'/>
+          </svg>`;
+          return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+        }
+        function hash(s){ let h=0; for (let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; } return h; }
+
+        // Edit modal controls
+        function showEdit(){ if (!editModal) return; editModal.hidden=false; editModal.setAttribute('aria-hidden','false'); }
+        function hideEdit(){ if (!editModal) return; editModal.hidden=true; editModal.setAttribute('aria-hidden','true'); profileMsg.textContent=''; }
+        editBtn && editBtn.addEventListener('click', showEdit);
+        editClose && editClose.addEventListener('click', hideEdit);
+        document.addEventListener('keydown', (e) => { if (e.key==='Escape' && editModal && !editModal.hidden) hideEdit(); });
+        editModal && editModal.addEventListener('click', (e) => { if (e.target === editModal) hideEdit(); });
+
+        async function uploadProfileFile(kind, file, user){
+          const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+          const path = `profile/${user.id}/${kind}-${Date.now()}.${ext}`;
+          const up = await sb.storage.from('media').upload(path, file, { upsert:true, cacheControl:'3600' });
+          if (up.error) throw up.error;
+          const { data: pub } = sb.storage.from('media').getPublicUrl(path);
+          return pub.publicUrl;
+        }
 
         if (uploadForm){
           uploadForm.addEventListener('submit', async (e) => {
@@ -189,16 +328,62 @@
             if (!user) return;
             const fd = new FormData(postForm);
             const content = String(fd.get('content')||'').trim();
-            if (!content){ postMsg.textContent = 'Tāuruhia tētahi kōrero / Enter some text.'; return; }
+            const hasFile = composerFile && composerFile.files && composerFile.files[0];
+            if (!content && !hasFile){ postMsg.textContent = 'Tāuruhia tētahi kōrero, kōwhiria rānei he kōnae / Enter some text or choose a file.'; return; }
             try{
-              const { error } = await sb.from('posts').insert({ user_id: user.id, content, type: 'text' });
+              let insert = { user_id: user.id, content: content || null, type: content ? 'text' : null };
+              if (hasFile){
+                const file = composerFile.files[0];
+                const ext = file.name.split('.').pop();
+                const path = `${user.id}/${Date.now()}.${ext}`;
+                const up = await sb.storage.from('media').upload(path, file, { upsert:false, cacheControl:'3600' });
+                if (up.error) throw up.error;
+                const { data: pub } = sb.storage.from('media').getPublicUrl(path);
+                const type = inferType(file);
+                insert.type = type; insert.media_url = pub.publicUrl;
+              }
+              if (!insert.type) insert.type = 'text';
+              const { error } = await sb.from('posts').insert(insert);
               if (error) throw error;
               postMsg.textContent = 'Kua tukua! / Posted';
-              postForm.reset();
+              postForm.reset(); if (composerFile) composerFile.value = '';
               loadPosts(user);
             }catch(err){
               postMsg.textContent = 'Kāore i taea te tuku / Failed to post. Ensure posts table exists and RLS allows authenticated inserts.';
             }
+          });
+        }
+
+        // Save profile changes
+        if (editForm){
+          editForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); profileMsg.textContent='';
+            const { data } = await sb.auth.getSession();
+            const user = data.session?.user; if (!user){ profileMsg.textContent='Takiuru tuatahitia / Please login.'; return; }
+            const updates = {};
+            const full = (editFullName && editFullName.value || '').trim(); if (full) updates.full_name = full;
+            try{
+              if (editAvatar && editAvatar.files && editAvatar.files[0]){
+                const url = await uploadProfileFile('avatar', editAvatar.files[0], user);
+                updates.avatar_url = url;
+              }
+              if (editCover && editCover.files && editCover.files[0]){
+                const url = await uploadProfileFile('cover', editCover.files[0], user);
+                updates.cover_url = url;
+              }
+              if (Object.keys(updates).length){
+                const { data: upd, error } = await sb.auth.updateUser({ data: updates });
+                if (error) throw error;
+                // Update UI
+                const newUser = upd.user || user;
+                if (profileName) profileName.textContent = (updates.full_name || newUser.user_metadata?.full_name || (newUser.email||'').split('@')[0] || '—');
+                if (profileEmail) profileEmail.textContent = newUser.email || '';
+                if (avatarImg) { const url = updates.avatar_url || newUser.user_metadata?.avatar_url || placeholderAvatar(newUser); avatarImg.src = url; avatarImg.style.display='block'; }
+                if (coverImg) { const url = updates.cover_url || newUser.user_metadata?.cover_url || placeholderCover(newUser); coverImg.src = url; coverImg.style.display='block'; }
+              }
+              profileMsg.textContent = 'Kua tiakina / Saved';
+              hideEdit();
+            }catch(err){ profileMsg.textContent = 'Hapa / Error saving profile.'; }
           });
         }
 

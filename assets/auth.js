@@ -8,6 +8,12 @@
 
   const qs = (sel) => document.querySelector(sel);
   const qsa = (sel) => Array.from(document.querySelectorAll(sel));
+  function requestSubmit(form){
+    try { if (typeof form.requestSubmit === 'function') { form.requestSubmit(); return; } } catch(_){}
+    const btn = form.querySelector('button[type=submit], input[type=submit]');
+    if (btn) btn.click();
+    else form.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
+  }
 
   const modal = qs('#auth-modal');
   const openBtn = qs('#open-auth');
@@ -38,10 +44,16 @@
   }
 
   tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
-  if (openBtn) openBtn.addEventListener('click', (e) => { e.preventDefault(); showModal(); });
+  if (openBtn) openBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const state = openBtn.dataset.state || 'out';
+    if (state === 'out') { showModal(); }
+    else { location.href = 'profile.html'; }
+  });
   if (closeBtn) closeBtn.addEventListener('click', hideModal);
-  document.addEventListener('keydown', (e) => { if (e.key==='Escape' && modal && !modal.hidden) hideModal(); });
-  if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+  // Disable closing auth modal via ESC or backdrop; require explicit close button
+  document.addEventListener('keydown', (e) => { /* ESC close disabled for auth modal */ });
+  if (modal) modal.addEventListener('click', (e) => { /* Backdrop click close disabled for auth modal */ });
 
   async function isAdmin(user){
     try {
@@ -58,7 +70,25 @@
   async function setNavBySession(){
     const { data } = await sb.auth.getSession();
     const user = data.session?.user || null;
-    if (navLogin) navLogin.style.display = user ? 'none' : '';
+
+    // Always show the login item but change its label/behavior
+    if (navLogin) {
+      navLogin.style.display = '';
+      const loginLink = navLogin.querySelector('a#open-auth');
+      if (loginLink){
+        if (user){
+          loginLink.textContent = 'Logged in';
+          loginLink.setAttribute('href', 'profile.html');
+          loginLink.dataset.state = 'in';
+        } else {
+          loginLink.textContent = 'Login';
+          loginLink.setAttribute('href', '#');
+          loginLink.dataset.state = 'out';
+        }
+      }
+    }
+
+    // Toggle profile and sign-out buttons
     if (navProfile) navProfile.style.display = user ? '' : 'none';
     if (navSignout) navSignout.style.display = user ? '' : 'none';
     if (navAdmin) navAdmin.style.display = (user && await isAdmin(user)) ? '' : 'none';
@@ -84,6 +114,9 @@
   }
 
   if (loginForm){
+    loginForm.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); requestSubmit(loginForm); }
+    });
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       loginMsg.textContent = '';
@@ -92,13 +125,7 @@
       const password = String(fd.get('password')||'');
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error){
-        loginMsg.textContent = 'Hapa takiuru. Mēnā kāore anō koe kia rēhita, tīpakohia te Rēhita.';
-        // Auto-switch to register with prefill if likely not registered
-        if (registerForm){
-          const emailInput = registerForm.querySelector('input[name=\"email\"]');
-          if (emailInput) emailInput.value = email;
-          switchTab('register');
-        }
+        loginMsg.textContent = 'Hapa takiuru: ' + (error.message || 'Tē mōhiotia') + '. Mēnā kāore anō koe kia rēhita, tīpakohia te Rēhita.';
         return;
       }
       hideModal();
@@ -108,6 +135,9 @@
   }
 
   if (registerForm){
+    registerForm.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); requestSubmit(registerForm); }
+    });
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       registerMsg.textContent = '';
