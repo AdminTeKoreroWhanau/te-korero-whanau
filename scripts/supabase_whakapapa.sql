@@ -44,32 +44,59 @@ alter table public.whakapapa_relations enable row level security;
 
 -- Policies: users can only manage their own tree
 -- Select
-create policy if not exists "select own people" on public.whakapapa_people
+drop policy if exists "select own people" on public.whakapapa_people;
+create policy "select own people" on public.whakapapa_people
   for select to authenticated using (auth.uid() = user_id);
-create policy if not exists "select own relations" on public.whakapapa_relations
+drop policy if exists "select own relations" on public.whakapapa_relations;
+create policy "select own relations" on public.whakapapa_relations
   for select to authenticated using (auth.uid() = user_id);
 
 -- Insert
-create policy if not exists "insert own people" on public.whakapapa_people
+drop policy if exists "insert own people" on public.whakapapa_people;
+create policy "insert own people" on public.whakapapa_people
   for insert to authenticated with check (auth.uid() = user_id);
-create policy if not exists "insert own relations" on public.whakapapa_relations
+drop policy if exists "insert own relations" on public.whakapapa_relations;
+create policy "insert own relations" on public.whakapapa_relations
   for insert to authenticated with check (auth.uid() = user_id);
 
 -- Update
-create policy if not exists "update own people" on public.whakapapa_people
+drop policy if exists "update own people" on public.whakapapa_people;
+create policy "update own people" on public.whakapapa_people
   for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy if not exists "update own relations" on public.whakapapa_relations
+drop policy if exists "update own relations" on public.whakapapa_relations;
+create policy "update own relations" on public.whakapapa_relations
   for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- Delete
-create policy if not exists "delete own people" on public.whakapapa_people
+drop policy if exists "delete own people" on public.whakapapa_people;
+create policy "delete own people" on public.whakapapa_people
   for delete to authenticated using (auth.uid() = user_id);
-create policy if not exists "delete own relations" on public.whakapapa_relations
+drop policy if exists "delete own relations" on public.whakapapa_relations;
+create policy "delete own relations" on public.whakapapa_relations
   for delete to authenticated using (auth.uid() = user_id);
 
--- OPTIONAL: if your profiles table has RLS enabled and you want all signed-in users
--- to be able to list profiles (id, full_name, avatar_url) for selection in the tree,
--- add a read policy like this (adjust columns as needed):
--- alter table public.profiles enable row level security;
--- create policy if not exists "profiles readable to authenticated" on public.profiles
---   for select to authenticated using (true);
+-- Profiles RLS + read policy for authenticated users (needed for dropdown)
+alter table if exists public.profiles enable row level security;
+drop policy if exists "profiles readable to authenticated" on public.profiles;
+create policy "profiles readable to authenticated" on public.profiles
+  for select to authenticated using (true);
+
+-- Auto-populate profiles on user signup from auth.users metadata
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, full_name, avatar_url)
+  values (new.id,
+          coalesce(nullif(new.raw_user_meta_data->>'full_name',''), null),
+          coalesce(nullif(new.raw_user_meta_data->>'avatar_url',''), null))
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();

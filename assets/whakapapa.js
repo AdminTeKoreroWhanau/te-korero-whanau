@@ -179,8 +179,15 @@
 
       // Load profiles (Supabase only)
       if (sb){
-        const { data: profs, error } = await sb.from('profiles').select('*');
-        if (!error && Array.isArray(profs)) profiles = profs; else profiles = [];
+        const { data: profs, error } = await sb.from('profiles').select('id, full_name, avatar_url');
+        if (error) {
+          profiles = [];
+          if (msg) msg.textContent = 'Kāore e taea te tiki kōtaha. Tukua te here RLS kia pānui ngā kaiwhakamahi takiuru i te profiles. / Cannot load profiles. Add a SELECT policy on profiles for authenticated users.';
+        } else if (Array.isArray(profs)) {
+          profiles = profs;
+        } else {
+          profiles = [];
+        }
       } else {
         profiles = [];
       }
@@ -229,15 +236,20 @@
     const btn = document.getElementById('person-add-btn');
     if (!selP){ return; }
     selP.innerHTML = '';
-    if (!sb || !profiles.length){
-      selP.disabled = true; if (btn) btn.disabled = true; return;
-    }
+    if (!sb){ selP.disabled = true; if (btn) btn.disabled = true; return; }
     // Show profiles not yet included
     const notAdded = profiles.filter(p => !peopleIds.includes(p.id));
+    if (!profiles.length){
+      const opt = document.createElement('option'); opt.value=''; opt.textContent='No profiles available'; selP.appendChild(opt);
+      selP.disabled = true; if (btn) btn.disabled = true; return;
+    }
     for (const p of notAdded){
       const opt = document.createElement('option');
       opt.value = p.id; opt.textContent = displayName(p);
       selP.appendChild(opt);
+    }
+    if (!notAdded.length){
+      const opt = document.createElement('option'); opt.value=''; opt.textContent='All profiles already added'; selP.appendChild(opt);
     }
     const has = notAdded.length > 0;
     selP.disabled = !has; if (btn) btn.disabled = !has;
