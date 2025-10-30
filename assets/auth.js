@@ -98,8 +98,17 @@
 
   // Initial nav state and on changes
   setNavBySession();
-  // Only update UI on auth changes; do not force-redirect so home page remains accessible
-  sb.auth.onAuthStateChange(() => setNavBySession());
+  // Update UI on auth changes and redirect only if the auth modal is open (i.e., an interactive login just occurred)
+  sb.auth.onAuthStateChange((_event, session) => {
+    setNavBySession();
+    try {
+      const modal = document.getElementById('auth-modal');
+      const modalActive = !!(modal && modal.hidden === false);
+      if (session && modalActive) {
+        location.href = 'profile.html';
+      }
+    } catch(_){}
+  });
 
   if (signoutBtn){
     signoutBtn.addEventListener('click', async (e) => {
