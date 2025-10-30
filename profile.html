@@ -262,11 +262,19 @@
 
         function applyCover(url){
           try{
-            if (coverImg){ coverImg.src = url; coverImg.style.display='block'; }
+            const withV = url ? url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now() : '';
+            if (coverImg){
+              coverImg.onerror = () => { coverImg.src = ''; };
+              coverImg.src = withV || url;
+              coverImg.style.display='block';
+            }
             if (coverWrap){
-              coverWrap.style.backgroundImage = `linear-gradient(135deg, rgba(0,196,179,.25), transparent 60%), url('${url}')`;
-              coverWrap.style.backgroundSize = 'auto, cover';
-              coverWrap.style.backgroundPosition = 'center, center';
+              const bgUrl = withV || url || '';
+              if (bgUrl){
+                coverWrap.style.backgroundImage = `linear-gradient(135deg, rgba(0,196,179,.25), transparent 60%), url('${bgUrl}')`;
+                coverWrap.style.backgroundSize = 'auto, cover';
+                coverWrap.style.backgroundPosition = 'center, center';
+              }
             }
           }catch(_){/* noop */}
         }
