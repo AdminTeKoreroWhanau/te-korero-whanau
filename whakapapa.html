@@ -6,7 +6,6 @@
     <title>Whakapapa — Te Kōrero Whānau</title>
     <meta name="description" content="Whakapapa: Build our whānau tree and connections." />
     <link rel="stylesheet" href="assets/styles.css" />
-    <link rel="stylesheet" href="https://unpkg.com/vis-network/styles/vis-network.css" />
   </head>
   <body>
     <header class="papa">
@@ -24,7 +23,7 @@
           <li id="nav-admin-item" style="display:none"><a href="admin.html">Admin</a></li>
           <li id="nav-login-item"><a id="open-auth" href="#">Login</a></li>
           <li id="nav-profile-item" style="display:none"><a href="profile.html">Kōtaha</a></li>
-          <li id="nav-signout-item" style="display:none"><button id="signout" class="btn-link">Takiputa</button></li>
+          <li id="nav-signout-item" style="display:none"><a id="signout" href="#">Takiputa</a></li>
         </ul>
       </nav>
     </header>
@@ -41,28 +40,67 @@
           <summary>What info is helpful for whakapapa?</summary>
           <p>Full names, birth years, marae, iwi/hapū, and known relationships. Photos are a bonus.</p>
         </details>
-      </section>
 
-      <section class="panel">
-        <h2>Te Rākau Whakapapa / Family tree</h2>
-        <div class="tree-controls">
+        <p id="whakapapa-msg" class="muted"></p>
+
+        <div class="toolbar" role="group" aria-label="Whakapapa controls" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin:.5rem 0 1rem;">
           <label>Root
-            <select id="root-select"></select>
+            <select id="root-select" title="Choose a root person"></select>
           </label>
-          <label>
-            <input id="only-connected" type="checkbox" checked /> Only connected to root
+          <label><input type="checkbox" id="only-connected" checked /> Only connected</label>
+          <label>Depth <span id="depth-val">3</span>
+            <input type="range" id="depth" min="1" max="6" step="1" value="3" />
           </label>
-          <label>
-            Depth
-            <input id="depth" type="range" min="1" max="6" value="3" />
-            <span id="depth-val">3</span>
-          </label>
-          <button id="fit" class="btn outline" type="button">Whakarite / Fit</button>
+          <button id="fit" class="btn outline" type="button">Fit</button>
         </div>
-        <div id="whakapapa-tree" role="img" aria-label="Whānau relationship network"></div>
-        <p id="whakapapa-msg" class="muted small"></p>
-      </section>
 
+        <div id="whakapapa-tree" style="height: 520px; border: 1px solid var(--border); border-radius: .5rem;" aria-busy="false"></div>
+
+        <div class="grid" style="margin-top:1rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+          <article class="card">
+            <div class="card-body">
+              <h3>Tāpirihia he tangata / Add person</h3>
+              <form id="person-form" class="form">
+                <label>Kōwhiria te kōtaha / Select profile
+                  <select id="person-select"></select>
+                </label>
+                <button id="person-add-btn" type="submit" class="btn">Tāpiri / Add</button>
+                <p class="small muted">Avatars and names come from user profiles.</p>
+                <p id="person-msg" class="small muted"></p>
+              </form>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-body">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:.5rem;">
+                <h3>Tāpirihia he hononga / Add relationship</h3>
+                <button id="rel-fit" class="btn outline" type="button" title="Fit to view">Fit</button>
+              </div>
+              <form id="rel-form" class="form">
+                <label>Tangata A
+                  <select id="rel-a"></select>
+                </label>
+                <label>Momo / Type
+                  <select id="rel-type">
+                    <option value="parent">Mātua / Parent → Child</option>
+                    <option value="mother">Whaea / Mother → Child</option>
+                    <option value="father">Matua / Father → Child</option>
+                    <option value="spouse">Hoa rangatira / Spouse</option>
+                    <option value="partner">Hoa / Partner</option>
+                    <option value="sibling">Tuakana/Teina / Sibling</option>
+                  </select>
+                </label>
+                <label>Tangata B
+                  <select id="rel-b"></select>
+                </label>
+                <button type="submit" class="btn">Tāpiri / Add</button>
+                <p id="rel-msg" class="small muted"></p>
+              </form>
+            </div>
+          </article>
+        </div>
+      </section>
 
     </main>
 
@@ -105,177 +143,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/config.js"></script>
-    <script src="assets/backend.js"></script>
     <script src="assets/auth.js"></script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <script>
-      (function(){
-        const msg = document.getElementById('whakapapa-msg');
-        const container = document.getElementById('whakapapa-tree');
-        const sel = document.getElementById('root-select');
-        const onlyConnected = document.getElementById('only-connected');
-        const depthInput = document.getElementById('depth');
-        const depthVal = document.getElementById('depth-val');
-        const fitBtn = document.getElementById('fit');
-
-        const hasVis = !!window.vis;
-        if (!container || !hasVis){
-          if (msg) msg.textContent = 'Network library failed to load.';
-          return;
-        }
-
-        const sb = window.sb; // Supabase client from auth.js (if configured)
-
-        function avatarOf(p){
-          return p.avatar_url || p.photo_url || p.image_url || p.avatar || null;
-        }
-        function displayName(p){
-          return p.full_name || p.name || p.email || '—';
-        }
-        function toNode(p){
-          const img = avatarOf(p);
-          if (img){
-            return { id: p.id, label: displayName(p), shape: 'circularImage', image: img, borderWidth: 1 };
-          }
-          return { id: p.id, label: displayName(p), shape: 'box' };
-        }
-        function toEdge(r){
-          if (r.type === 'parent' || r.type === 'mother' || r.type === 'father'){
-            return { from: r.from_id, to: r.to_id, arrows: 'to', label: 'parent', color: { color: '#6ec5be' } };
-          }
-          if (r.type === 'spouse' || r.type === 'partner'){
-            return { from: r.from_id, to: r.to_id, dashes: true, label: 'spouse', color: { color: '#c58f6e' } };
-          }
-          return { from: r.from_id, to: r.to_id, color: { color: '#9aa3a7' } };
-        }
-
-        const opts = {
-          layout: { hierarchical: { enabled: true, direction: 'UD', sortMethod: 'directed', nodeSpacing: 150, levelSeparation: 120 } },
-          physics: false,
-          nodes: { color: { background: 'var(--panel)', border: 'var(--border)' }, font: { color: 'var(--fg)' }, borderWidth: 1 },
-          edges: { smooth: { type: 'cubicBezier' }, font: { color: 'var(--muted)' } }
-        };
-
-        let profiles = [];
-        let relations = [];
-        let allNodes = new vis.DataSet([]);
-        let allEdges = new vis.DataSet([]);
-        let network = new vis.Network(container, { nodes: allNodes, edges: allEdges }, opts);
-
-        function neighborsWithin(rootId, maxDepth){
-          const adj = new Map();
-          allEdges.forEach(e => {
-            if (!adj.has(e.from)) adj.set(e.from, []);
-            if (!adj.has(e.to)) adj.set(e.to, []);
-            adj.get(e.from).push(e.to);
-            adj.get(e.to).push(e.from);
-          });
-          const seen = new Set([rootId]);
-          const q = [[rootId,0]];
-          while (q.length){
-            const [u,d] = q.shift();
-            if (d >= maxDepth) continue;
-            const ns = adj.get(u) || [];
-            for (const v of ns){
-              if (!seen.has(v)) { seen.add(v); q.push([v,d+1]); }
-            }
-          }
-          return seen;
-        }
-
-        function applyFilter(){
-          const rootId = sel.value || (allNodes.getIds()[0] || null);
-          const d = parseInt(depthInput.value || '3', 10);
-          depthVal.textContent = String(d);
-          if (!onlyConnected.checked || !rootId){
-            network.setData({ nodes: allNodes, edges: allEdges });
-            if (rootId) network.focus(rootId, { animation: true, scale: 1 });
-            return;
-          }
-          const keep = neighborsWithin(rootId, d);
-          const nodes = new vis.DataSet(allNodes.get({ filter: n => keep.has(n.id) }));
-          const edges = new vis.DataSet(allEdges.get({ filter: e => keep.has(e.from) && keep.has(e.to) }));
-            network.setData({ nodes, edges });
-            network.focus(rootId, { animation: true, scale: 1 });
-        }
-
-        // Click a node to open that person's profile (if using Supabase profiles)
-        network.on('selectNode', (params) => {
-          const id = (params && params.nodes && params.nodes[0]) ? params.nodes[0] : null;
-          if (id){
-            try { location.href = `profile.html?user=${encodeURIComponent(String(id))}`; } catch(_){}
-          }
-        });
-
-        function populateRootSelect(list){
-          sel.innerHTML = '';
-          list.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.id; opt.textContent = displayName(p);
-            sel.appendChild(opt);
-          });
-        }
-        function populateRelSelects(list){
-          const a = document.getElementById('rel-a');
-          const b = document.getElementById('rel-b');
-          if (!a || !b) return;
-          const add = (el) => {
-            el.innerHTML = '';
-            list.forEach(p => {
-              const opt = document.createElement('option');
-              opt.value = p.id; opt.textContent = displayName(p);
-              el.appendChild(opt);
-            });
-          };
-          add(a); add(b);
-        }
-
-        async function bootstrap(){
-          try{
-            profiles = [];
-            relations = [];
-            if (sb){
-              // Try load from Supabase tables if they exist (select * to tolerate optional avatar fields)
-              const p = await sb.from('profiles').select('*');
-              const r = await sb.from('relationships').select('from_id, to_id, type');
-              if (!p.error && Array.isArray(p.data)) profiles = p.data;
-              if (!r.error && Array.isArray(r.data)) relations = r.data;
-            }
-            if (!profiles.length){
-              if (msg) msg.textContent = 'No whānau found yet. Connect Supabase to load real data.';
-            } else {
-              if (msg) msg.textContent = '';
-            }
-
-            allNodes = new vis.DataSet(profiles.map(toNode));
-            allEdges = new vis.DataSet(relations.map(toEdge));
-            network.setData({ nodes: allNodes, edges: allEdges });
-
-            populateRootSelect(profiles);
-            populateRelSelects(profiles);
-
-            // Default root: current user if available
-            if (sb){
-              const { data } = await sb.auth.getSession();
-              const uid = data.session?.user?.id;
-              if (uid && profiles.some(p => p.id === uid)) sel.value = uid;
-            }
-
-            applyFilter();
-          }catch(err){
-            if (msg) msg.textContent = 'Kāore i taea te uta te rākau whakapapa / Unable to load family tree.';
-          }
-        }
-
-        sel.addEventListener('change', applyFilter);
-        onlyConnected.addEventListener('change', applyFilter);
-        depthInput.addEventListener('input', applyFilter);
-        fitBtn.addEventListener('click', () => network.fit({ animation: true }));
-
-
-        bootstrap();
-      })();
-    </script>
+    <script src="assets/whakapapa.js"></script>
     <script src="assets/app.js"></script>
   </body>
 </html>

@@ -31,8 +31,8 @@ header.papa{position:sticky;top:0;z-index:100;display:flex;align-items:center;ju
 .nav-toggle,.theme-toggle{display:none;background:none;border:1px solid var(--border);color:var(--fg);padding:0.5rem 0.75rem;border-radius:6px;font-size:1.25rem}
 .theme-toggle{margin-left:0.5rem}
 .nav-list{display:flex;gap:1.5rem;list-style:none;margin:0;padding:0}
-.nav-list a{padding:0.65rem 0.65rem;border-bottom:2px solid transparent;font-size:1.2rem;font-weight:600}
-.nav-list a:hover{text-decoration:none}
+.nav-list a,.nav-list button{padding:0.65rem 0.65rem;border-bottom:2px solid transparent;font-size:1.2rem;font-weight:600;background:none;border-left:0;border-right:0;border-top:0;color:var(--accent);cursor:pointer}
+.nav-list a:hover,.nav-list button:hover{text-decoration:none}
 .nav-list a.active{border-color:var(--accent)}
 @media (max-width:720px){.nav-toggle,.theme-toggle{display:inline-block}.nav-list{display:none;flex-direction:column;gap:0.5rem}}
 
@@ -80,7 +80,8 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 .btn{background:var(--accent);color:white;border:0;border-radius:10px;padding:0.6rem 0.9rem;cursor:pointer}
 .btn:hover{opacity:.9}
 .btn.outline{background:transparent;color:var(--accent);border:1px solid var(--accent)}
-.btn-link{background:none;border:0;color:var(--accent);cursor:pointer;padding:0.25rem 0.35rem}
+.btn-link{background:none;border:0;color:var(--accent);cursor:pointer;padding:0.65rem 0.65rem;border-bottom:2px solid transparent;font-size:1.2rem;font-weight:600}
+.btn-link:hover{text-decoration:none}
 .form{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem}
 .form input[type="email"],.form input[type="password"],.form input[type="text"],.form input[type="file"],.form textarea{width:100%;padding:.6rem .75rem;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--fg)}
 .small{font-size:.9rem}
