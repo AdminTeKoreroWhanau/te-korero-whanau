@@ -38,7 +38,6 @@
           </div>
           <div class="profile-meta">
             <h1 id="profile-name">—</h1>
-            <div class="muted small" id="profile-email"></div>
           </div>
           <div class="profile-actions">
             <button class="btn outline" id="edit-profile" type="button">Whakatika / Edit</button>
@@ -58,7 +57,6 @@
           <section id="about-section" class="panel">
             <h2>Mō / About</h2>
             <div id="profile-info" style="display:none">
-              <p><strong>Email:</strong> <span id="user-email"></span></p>
               <p><strong>Ingoa:</strong> <span id="user-name"></span></p>
             </div>
           </section>
@@ -162,7 +160,6 @@
       (function(){
         const statusEl = document.getElementById('profile-status');
         const infoEl = document.getElementById('profile-info');
-        const emailEl = document.getElementById('user-email');
         const nameEl = document.getElementById('user-name');
         const postsRoot = document.getElementById('posts');
         const uploadForm = document.getElementById('upload-form');
@@ -173,7 +170,6 @@
         const photosGrid = document.getElementById('photos-grid');
         const photosEmpty = document.getElementById('photos-empty');
         const profileName = document.getElementById('profile-name');
-        const profileEmail = document.getElementById('profile-email');
         const avatarImg = document.getElementById('avatar-img');
         const coverImg = document.getElementById('cover-img');
         const editBtn = document.getElementById('edit-profile');
@@ -197,10 +193,8 @@
           statusEl.style.display='none';
           infoEl.style.display='block';
           const fullName = user.user_metadata?.full_name || '';
-          emailEl.textContent = user.email || '';
           nameEl.textContent = fullName || '—';
-          if (profileName) profileName.textContent = fullName || (user.email || '').split('@')[0] || '—';
-          if (profileEmail) profileEmail.textContent = user.email || '';
+          if (profileName) profileName.textContent = fullName || '—';
           // Optional profile images from metadata
           const avatarUrl = user.user_metadata?.avatar_url || '';
           if (avatarImg){ if (avatarUrl) { avatarImg.src = avatarUrl; } else { avatarImg.src = placeholderAvatar(user); } avatarImg.style.display='block'; }
@@ -378,8 +372,7 @@
                 if (error) throw error;
                 // Update UI
                 const newUser = upd.user || user;
-                if (profileName) profileName.textContent = (updates.full_name || newUser.user_metadata?.full_name || (newUser.email||'').split('@')[0] || '—');
-                if (profileEmail) profileEmail.textContent = newUser.email || '';
+                if (profileName) profileName.textContent = (updates.full_name || newUser.user_metadata?.full_name || '—');
                 if (avatarImg) { const url = updates.avatar_url || newUser.user_metadata?.avatar_url || placeholderAvatar(newUser); avatarImg.src = url; avatarImg.style.display='block'; }
                 if (coverImg) { const url = updates.cover_url || newUser.user_metadata?.cover_url || placeholderCover(newUser); coverImg.src = url; coverImg.style.display='block'; }
               }
