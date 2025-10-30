@@ -188,6 +188,18 @@
         } else {
           profiles = [];
         }
+        // Fallback: include the current user as a selectable profile if table is empty
+        if (!profiles.length){
+          try {
+            const { data: sess } = await sb.auth.getSession();
+            const u = sess?.session?.user;
+            if (u){
+              const full_name = (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name)) || u.email || '—';
+              const avatar_url = (u.user_metadata && (u.user_metadata.avatar_url || u.user_metadata.picture)) || null;
+              profiles = [{ id: u.id, full_name, avatar_url }];
+            }
+          } catch {}
+        }
       } else {
         profiles = [];
       }
