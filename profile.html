@@ -207,8 +207,13 @@
         const profileMsg = document.getElementById('profile-msg');
 
         async function ensureSession(){
-          const { data } = await sb.auth.getSession();
-          const user = data.session?.user;
+          const { data: sess } = await sb.auth.getSession();
+          let user = sess.session?.user;
+          // Fetch fresh user to ensure latest metadata (e.g., cover_url)
+          try {
+            const { data: u } = await sb.auth.getUser();
+            if (u && u.user) user = u.user;
+          } catch {}
           if (!user){
             statusEl.textContent = 'Me takiuru tuatahitia / Please login first.';
             const openBtn = document.getElementById('open-auth');
