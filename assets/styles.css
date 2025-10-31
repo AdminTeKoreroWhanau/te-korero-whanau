@@ -82,6 +82,22 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 .btn.outline{background:transparent;color:var(--accent);border:1px solid var(--accent)}
 .btn-link{background:none;border:0;color:var(--accent);cursor:pointer;padding:0.65rem 0.65rem;border-bottom:2px solid transparent;font-size:1.2rem;font-weight:600}
 .btn-link:hover{text-decoration:none}
+/* Image button for Kōrero create */
+.image-btn{display:block;background:none;border:0;padding:0;border-radius:12px;cursor:pointer;text-align:left;width:100%;position:relative;overflow:hidden}
+.image-btn-img{width:100%;height:360px;object-fit:contain;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:block;transition:opacity .2s ease, transform .2s ease}
+@media (min-width:900px){.image-btn-img{height:520px}}
+.image-btn-label{display:inline-block;margin-top:.5rem;font-weight:700}
+/* Hover/focus overlay plus */
+.image-btn::after{content:'+';position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:3.75rem;font-weight:900;opacity:0;transform:scale(.9);text-shadow:0 2px 8px rgba(0,0,0,.6);transition:opacity .2s ease, transform .2s ease;pointer-events:none}
+.image-btn:hover .image-btn-img,.image-btn:focus-visible .image-btn-img{opacity:.6}
+.image-btn:hover::after,.image-btn:focus-visible::after{opacity:1;transform:scale(1.4)}
+
+/* Ensure add button card is fully visible in grid and image fills card */
+.card.add-card{overflow:hidden; aspect-ratio: 3 / 4;}
+.card.add-card .card-body{padding:0; height:100%}
+.card.add-card .image-btn{height:100%; border-radius:0}
+.card.add-card .image-btn-img{height:100%; border-radius:0; border:0; object-fit:cover; object-position:center}
+.card.add-card .image-btn-label{margin:.5rem 0 0 0}
 .form{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem}
 .form input[type="email"],.form input[type="password"],.form input[type="text"],.form input[type="file"],.form textarea{width:100%;padding:.6rem .75rem;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--fg)}
 .small{font-size:.9rem}
@@ -105,7 +121,7 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 
 /* Previews grid */
 .previews h2{margin:0 0 .5rem}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
 .card>img{width:100%;height:140px;object-fit:cover;border-bottom:1px solid var(--border)}
 .card-body{padding:.75rem 1rem;display:flex;flex-direction:column;gap:.5rem}

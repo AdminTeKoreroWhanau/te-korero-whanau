@@ -30,43 +30,9 @@
 
     <main>
       <section id="korero" class="panel">
-        <h1>Kōrero</h1>
-        <figure class="hero-figure">
-          <img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Hopukanga reo / Microphone for recording kōrero" src="https://images.unsplash.com/photo-1517511620798-cec17d428bc0?auto=format&fit=crop&w=1200&h=420&q=80" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&h=420&q=80';" />
-          <figcaption class="visually-hidden">Microphone</figcaption>
-        </figure>
-        <p>Gather video interviews, audio kōrero, and photo montages. Share authentic narratives: history, ambitions, and ties to whenua.</p>
-        <details class="fold">
-          <summary>How can I contribute a kōrero?</summary>
-          <p>Record audio/video on your phone and share via cloud link, or write a short story. Include names, places, and dates if known.</p>
-        </details>
-
-
-        <section id="korero-create" class="panel" aria-labelledby="korero-create-heading">
-          <h2 id="korero-create-heading">Tāpiri kōrero / Add a story or vlog</h2>
-          <p class="small muted">By default, posts are stored on your device. Configure Supabase in <code>assets/backend.js</code> to share with whānau.</p>
-          <form id="korero-form" class="form">
-            <label>
-              <span>Momo / Type</span>
-              <select id="post-type">
-                <option value="story">Pūrākau / Story</option>
-                <option value="vlog">Vlog (video link)</option>
-              </select>
-            </label>
-            <label id="story-wrap">
-              <span>Kōrero / Story</span>
-              <textarea id="story-text" rows="4" placeholder="Tāuruhia tō kōrero..."></textarea>
-            </label>
-            <label id="vlog-wrap" hidden>
-              <span>Vlog URL (YouTube, Vimeo, or direct)</span>
-              <input type="url" id="vlog-url" placeholder="https://..." />
-            </label>
-            <button type="submit" class="btn">Tuku / Post</button>
-          </form>
-        </section>
-
+        <h1>Ngā kōrero / Stories</h1>
         <section id="korero-feed" class="panel" aria-labelledby="korero-feed-heading">
-          <h2 id="korero-feed-heading">Ngā tāurunga / Posts</h2>
+          <h2 id="korero-feed-heading" class="visually-hidden">Ngā kōrero / Stories</h2>
           <div id="korero-list" class="cards" aria-live="polite" aria-busy="false"></div>
           <p id="korero-empty" class="muted small">Kāore anō he tāurunga. Tāpiri tētahi kōrero, vlog rānei ki runga ake nei.</p>
         </section>
@@ -107,6 +73,36 @@
             <p class="muted small" id="register-msg"></p>
           </form>
         </div>
+      </div>
+    </div>
+
+    <!-- Korero create modal -->
+    <div id="korero-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="korero-modal-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="korero-modal-close">×</button>
+        <h2 id="korero-modal-title">Tāpiri kōrero / Add a story or vlog</h2>
+        <p class="small muted">By default, posts are stored on your device. Configure Supabase in <code>assets/backend.js</code> to share with whānau.</p>
+        <form id="korero-form" class="form">
+          <label>
+            <span>Momo / Type</span>
+            <select id="post-type">
+              <option value="story">Pūrākau / Story</option>
+              <option value="vlog">Vlog (video link)</option>
+            </select>
+          </label>
+          <label id="story-wrap">
+            <span>Kōrero / Story</span>
+            <textarea id="story-text" rows="4" placeholder="Tāuruhia tō kōrero..."></textarea>
+          </label>
+          <label id="vlog-wrap" hidden>
+            <span>Vlog URL (YouTube, Vimeo, or direct)</span>
+            <input type="url" id="vlog-url" placeholder="https://..." />
+          </label>
+          <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.25rem">
+            <button type="button" class="btn outline" id="korero-cancel">Cancel</button>
+            <button type="submit" class="btn">Tuku / Post</button>
+          </div>
+        </form>
       </div>
     </div>
 

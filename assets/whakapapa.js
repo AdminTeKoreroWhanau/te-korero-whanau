@@ -34,10 +34,23 @@
 
   function avatarOf(p){ return p.avatar_url || p.photo_url || p.image_url || p.avatar || null; }
   function displayName(p){ return p.full_name || p.name || p.email || '—'; }
+  function avatarPlaceholder(name){
+    const seed = encodeURIComponent(String(name||'—'));
+    // DiceBear initials - lightweight fallback when no avatar provided
+    return `https://api.dicebear.com/7.x/initials/svg?seed=${seed}&backgroundType=gradientLinear`;
+  }
   function toNode(p){
-    const img = avatarOf(p);
-    if (img){ return { id: p.id, label: displayName(p), shape: 'circularImage', image: img, borderWidth: 1 }; }
-    return { id: p.id, label: displayName(p), shape: 'box' };
+    const name = displayName(p);
+    const img = avatarOf(p) || avatarPlaceholder(name);
+    return {
+      id: p.id,
+      label: name,
+      title: name,
+      shape: 'circularImage',
+      image: img,
+      borderWidth: 1,
+      size: 36
+    };
   }
   function toEdge(r){
     if (r.type === 'parent' || r.type === 'mother' || r.type === 'father'){
@@ -52,8 +65,13 @@
   const opts = {
     layout: { hierarchical: { enabled: true, direction: 'UD', sortMethod: 'directed', nodeSpacing: 150, levelSeparation: 120 } },
     physics: false,
-    nodes: { color: { background: 'var(--panel)', border: 'var(--border)' }, font: { color: 'var(--fg)' }, borderWidth: 1 },
-    edges: { smooth: { type: 'cubicBezier' }, font: { color: 'var(--muted)' } }
+    nodes: { 
+      color: { background: '#12181a', border: '#1e2629' },
+      font: { color: '#eef2f3', size: 14, face: 'arial', strokeWidth: 1, strokeColor: '#000000' },
+      borderWidth: 2,
+      shapeProperties: { useBorderWithImage: true }
+    },
+    edges: { smooth: { type: 'cubicBezier' }, font: { color: '#a7b1b5' } }
   };
 
   // All available profiles (from Supabase)
@@ -65,6 +83,33 @@
   let allNodes = new vis.DataSet([]);
   let allEdges = new vis.DataSet([]);
   let network = new vis.Network(container, { nodes: allNodes, edges: allEdges }, opts);
+
+  // Adapt node/edge colors to current theme (dark/light)
+  function getCSSVar(name, fallback=''){
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name);
+    return (v && v.trim()) || fallback;
+  }
+  function currentTheme(){ return document.documentElement.getAttribute('data-theme') || 'dark'; }
+  function applyThemeToNetwork(){
+    const theme = currentTheme();
+    const fg = getCSSVar('--fg', theme === 'light' ? '#0a0e10' : '#eef2f3');
+    const muted = getCSSVar('--muted', theme === 'light' ? '#485256' : '#a7b1b5');
+    const panel = getCSSVar('--panel', theme === 'light' ? '#ffffff' : '#12181a');
+    const border = getCSSVar('--border', theme === 'light' ? '#d8e1e5' : '#1e2629');
+    const strokeColor = theme === 'light' ? '#ffffff' : '#000000';
+    network.setOptions({
+      nodes: {
+        color: { background: panel, border },
+        font: { color: fg, size: 14, face: 'arial', strokeWidth: 1, strokeColor },
+        borderWidth: 2,
+        shapeProperties: { useBorderWithImage: true }
+      },
+      edges: { font: { color: muted } }
+    });
+  }
+  // Observe theme changes and apply immediately
+  const themeObserver = new MutationObserver(() => applyThemeToNetwork());
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   function neighborsWithin(rootId, maxDepth){
     const adj = new Map();
@@ -214,6 +259,8 @@
       allNodes = new vis.DataSet(nodes);
       allEdges = new vis.DataSet(relations.map(toEdge));
       network.setData({ nodes: allNodes, edges: allEdges });
+      // Ensure colors match current theme after initial data load
+      applyThemeToNetwork();
 
       populateRootSelect();
       populateRelSelects();
