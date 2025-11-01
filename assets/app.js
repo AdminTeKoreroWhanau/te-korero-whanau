@@ -159,6 +159,21 @@ if (searchInput) {
   fetch('assets/updates.json', { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(map => {
+      // Helper to mark a slug as seen (to now or its lastUpdated)
+      const markSlugSeen = (slug) => {
+        if (!slug) return;
+        const lu = Date.parse(map[slug]?.lastUpdated || 0) || Date.now();
+        try { localStorage.setItem('seen_' + slug, String(lu)); } catch {}
+      };
+
+      // If we are currently ON one of the mapped pages, mark it seen on load
+      try {
+        const current = (location.pathname.split('/').pop() || '').toLowerCase();
+        const currentSlug = current.replace(/\.html$/, '');
+        if (currentSlug && map[currentSlug]) markSlugSeen(currentSlug);
+      } catch {}
+
+      // Render badges on index cards and set click handlers on the cards
       cards.forEach(card => {
         const link = card.querySelector('a.card-link');
         const h3 = card.querySelector('h3');
@@ -176,8 +191,16 @@ if (searchInput) {
             h3.appendChild(tag);
           }
         }
-        const markSeen = () => { try { localStorage.setItem('seen_' + slug, String(lastUpdated || Date.now())); } catch {} };
-        link.addEventListener('click', markSeen, { once: true });
+        link.addEventListener('click', () => markSlugSeen(slug), { once: true });
+      });
+
+      // Also attach to top nav page links so clicking them clears badges too
+      const navLinks = Array.from(document.querySelectorAll('.nav-list a'))
+        .filter(a => !!a.getAttribute('href') && !a.getAttribute('href').startsWith('#'));
+      navLinks.forEach(a => {
+        const slug = slugFromHref(a.getAttribute('href'));
+        if (!slug || !map[slug]) return;
+        a.addEventListener('click', () => markSlugSeen(slug));
       });
     })
     .catch(() => { /* ignore if missing */ });

@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Karakia — Te Kōrero Whānau</title>
-    <meta name="description" content="Karakia: Upload and share faith-based documents." />
+    <title>Mahi — Te Kōrero Whānau</title>
+    <meta name="description" content="Mahi: Ngā mahi a te whānau — projects, tasks, and initiatives." />
     <link rel="stylesheet" href="assets/styles.css" />
   </head>
   <body>
@@ -30,64 +30,21 @@
     </header>
 
     <main>
-      <section id="karakia" class="panel">
-        <h1>Karakia</h1>
+      <section id="mahi" class="panel">
+        <h1>Mahi</h1>
         <figure class="hero-figure">
-          <img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Karakia — ahi/candle" src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&h=420&q=80" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&h=420&q=80';" />
-          <figcaption class="visually-hidden">Karakia — candle and light</figcaption>
+          <img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Ngā mahi a te whānau — working together" src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&h=420&q=80" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&h=420&q=80';" />
+          <figcaption class="visually-hidden">Working together</figcaption>
         </figure>
-        <p>Upload and share karakia documents with whānau.</p>
-
-        <section id="karakia-showcase" class="panel" aria-labelledby="karakia-showcase-heading">
-          <h2 id="karakia-showcase-heading">Ngā Tirohanga / Previews</h2>
-          <div class="slideshow" id="karakia-slideshow">
-            <div class="slides" id="karakia-slides">
-              <div class="slide">
-                <article class="card">
-                  <div class="card-body">
-                    <div><span class="tag">Doc</span></div>
-                    <h3>Karakia Timatanga (example)</h3>
-                    <p class="meta">PDF • Te Whānau o ...</p>
-                  </div>
-                </article>
-              </div>
-              <div class="slide">
-                <article class="card">
-                  <div class="card-body">
-                    <div><span class="tag">Doc</span></div>
-                    <h3>Karakia Mō Te Kai (example)</h3>
-                    <p class="meta">DOCX • Ngā kai o te rā</p>
-                  </div>
-                </article>
-              </div>
+        <p>Ngā mahi a te whānau: use this space to outline projects, kaupapa, and tasks we’re working on.</p>
+        <div class="cards">
+          <article class="card">
+            <div class="card-body">
+              <h3>He tauira / Example</h3>
+              <p class="muted small">Add your mahi here — e.g., reunion planning, archiving photos, marae visits.</p>
             </div>
-            <div class="slide-nav">
-              <button type="button" id="karakia-prev" aria-label="Previous">‹</button>
-              <button type="button" id="karakia-next" aria-label="Next">›</button>
-            </div>
-            <div class="slide-dots" id="karakia-dots" aria-hidden="true"></div>
-          </div>
-        </section>
-
-        <form id="form-karakia" class="form">
-          <label>
-            <span>Title</span>
-            <input type="text" id="karakia-title" placeholder="He karakia..." required />
-          </label>
-          <label>
-            <span>Contributor</span>
-            <input type="text" id="karakia-author" placeholder="Ko wai?" />
-          </label>
-          <label>
-            <span>Document (PDF, DOC, DOCX, TXT)</span>
-            <input type="file" id="karakia-file" accept="application/pdf,.pdf,application/msword,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx,text/plain,.txt" required />
-          </label>
-          <button type="submit" class="btn">Tuku / Upload</button>
-        </form>
-
-        <input id="karakia-search" type="text" placeholder="Rapua te taitara, kaituhi..." aria-label="Search karakia" />
-        <div id="karakia-list" class="cards" aria-live="polite" aria-busy="false"></div>
-        <p id="karakia-empty" class="muted small">Kāore anō he karakia kua tukuna. Tāpiri tētahi kōnae ki runga ake nei.</p>
+          </article>
+        </div>
       </section>
     </main>
 
@@ -132,7 +89,5 @@
     <script src="assets/config.js"></script>
     <script src="assets/auth.js"></script>
     <script src="assets/app.js"></script>
-    <script src="assets/backend.js"></script>
-    <script src="assets/karakia.js"></script>
   </body>
 </html>

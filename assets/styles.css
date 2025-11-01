@@ -135,6 +135,8 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 /* Previews grid */
 .previews h2{margin:0 0 .5rem}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}
+/* Korero page: remove extra spacing and prevent overlap on hover */
+#korero .cards{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
 .card>img,.card>a.card-link>img{width:100%;height:140px;object-fit:cover;border-bottom:1px solid var(--border)}
 .card-body{padding:.75rem 1rem;display:flex;flex-direction:column;gap:.5rem;position:relative}
@@ -156,6 +158,11 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 .cards .card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;will-change:transform}
 .cards .card:hover,
 .cards .card:focus-within{transform:scale(1.02);border-color:var(--accent);box-shadow:0 8px 24px rgba(0,196,179,.25),0 0 0 2px var(--accent)}
+
+/* Korero-specific overrides to avoid overlap and increase spacing */
+#korero .cards{gap:2rem}
+#korero .cards .card:hover,
+#korero .cards .card:focus-within{transform:none;box-shadow:0 4px 12px rgba(0,196,179,.18);}
 
 /* Tags */
 .tag{display:inline-block;background:var(--border);color:var(--muted);border-radius:999px;padding:.15rem .5rem;font-size:.8rem;margin-right:.4rem}

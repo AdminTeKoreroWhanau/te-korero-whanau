@@ -8,7 +8,7 @@
   const vlogWrap = document.getElementById('vlog-wrap');
   const storyText = document.getElementById('story-text');
   const vlogUrl = document.getElementById('vlog-url');
-  const postTitle = document.getElementById('post-title');
+  const postTitle = document.getElementById('post-subject');
   // Modal elements for create
   const createOpenBtn = document.getElementById('open-korero-modal');
   const createModal = document.getElementById('korero-modal');
@@ -23,7 +23,7 @@
   const editStoryText = document.getElementById('edit-story-text');
   const editVlogUrl = document.getElementById('edit-vlog-url');
   const editTitleHeading = document.getElementById('korero-edit-title');
-  const editTitleInput = document.getElementById('edit-title');
+  const editTitleInput = document.getElementById('edit-subject');
   const editCancelBtn = document.getElementById('korero-edit-cancel');
   // Delete modal elements
   const deleteModal = document.getElementById('korero-delete-modal');
@@ -382,7 +382,6 @@
     const title = (postTitle?.value||'').trim();
     const text = (t==='story') ? (storyText.value||'').trim() : '';
     const url = (t==='vlog') ? (vlogUrl.value||'').trim() : '';
-    if (!title) return alert('Tāuruhia te taitara. / Enter a title.');
     if (t==='story' && !text) return alert('Tāuruhia he kōrero. / Enter a story.');
     if (t==='vlog' && !url) return alert('Whakaurua he hono ataata. / Enter a video URL.');
     listEl.setAttribute('aria-busy','true');
