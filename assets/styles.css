@@ -117,7 +117,8 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 /* Modal */
 .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:1100}
 .modal[hidden]{display:none}
-.modal-content{width:min(560px,92vw);background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:1rem 1rem 1.25rem;position:relative}
+.modal-content{width:min(560px,92vw);background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:1rem 1rem 1.25rem;position:relative;max-height:80vh;overflow:auto}
+@media (min-width:900px){#korero-view-modal .modal-content,#korero-edit-modal .modal-content,#korero-delete-modal .modal-content{width:min(820px,90vw)}}
 .modal-close{position:absolute;right:.75rem;top:.6rem;background:none;border:1px solid var(--border);color:var(--fg);width:2rem;height:2rem;border-radius:50%;font-size:1.25rem;line-height:1;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .15s ease,box-shadow .15s ease}
 .modal-close:hover,.modal-close:focus{background:rgba(255,255,255,.06);border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(0,196,179,.2);transform:scale(1.05)}
 :root[data-theme="light"] .modal-close:hover,:root[data-theme="light"] .modal-close:focus{background:rgba(0,0,0,.06)}
@@ -136,7 +137,11 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
 .card>img{width:100%;height:140px;object-fit:cover;border-bottom:1px solid var(--border)}
-.card-body{padding:.75rem 1rem;display:flex;flex-direction:column;gap:.5rem}
+.card-body{padding:.75rem 1rem;display:flex;flex-direction:column;gap:.5rem;position:relative}
+/* Align owner actions with reactions (right-aligned in same row) */
+.card .actions{display:flex;gap:.5rem;align-items:center}
+.owner-actions{margin-left:auto;display:flex;gap:.5rem}
+.owner-actions .btn{padding:.45rem .65rem}
 .card h3{margin:.25rem 0}
 .card .actions a{display:inline-block}
 

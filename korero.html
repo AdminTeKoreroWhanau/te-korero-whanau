@@ -91,6 +91,10 @@
               <option value="vlog">Vlog (video link)</option>
             </select>
           </label>
+          <label>
+            <span>Kaupapa / Subject</span>
+            <input type="text" id="post-subject" placeholder="What is this about?" />
+          </label>
           <label id="story-wrap">
             <span>Kōrero / Story</span>
             <textarea id="story-text" rows="4" placeholder="Tāuruhia tō kōrero..."></textarea>
@@ -113,6 +117,10 @@
         <button class="modal-close" aria-label="Katia te matapihi / Close" id="korero-edit-close">×</button>
         <h2 id="korero-edit-title">Whakatika / Edit</h2>
         <form id="korero-edit-form" class="form">
+          <label>
+            <span>Kaupapa / Subject</span>
+            <input type="text" id="edit-subject" placeholder="Subject" />
+          </label>
           <label id="edit-story-wrap">
             <span>Kōrero / Story</span>
             <textarea id="edit-story-text" rows="5" placeholder="Tāuruhia tō kōrero..."></textarea>
@@ -141,6 +149,15 @@
             <button type="button" class="btn danger" id="korero-delete-confirm">Delete</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Korero view modal (read more) -->
+    <div id="korero-view-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="korero-view-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="korero-view-close">×</button>
+        <h2 id="korero-view-title">Kōrero</h2>
+        <div id="korero-view-body" style="white-space:pre-wrap"></div>
       </div>
     </div>
 

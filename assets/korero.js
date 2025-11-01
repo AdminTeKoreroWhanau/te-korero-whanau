@@ -8,6 +8,7 @@
   const vlogWrap = document.getElementById('vlog-wrap');
   const storyText = document.getElementById('story-text');
   const vlogUrl = document.getElementById('vlog-url');
+  const postTitle = document.getElementById('post-title');
   // Modal elements for create
   const createOpenBtn = document.getElementById('open-korero-modal');
   const createModal = document.getElementById('korero-modal');
@@ -21,13 +22,18 @@
   const editVlogWrap = document.getElementById('edit-vlog-wrap');
   const editStoryText = document.getElementById('edit-story-text');
   const editVlogUrl = document.getElementById('edit-vlog-url');
-  const editTitle = document.getElementById('korero-edit-title');
+  const editTitleHeading = document.getElementById('korero-edit-title');
+  const editTitleInput = document.getElementById('edit-title');
   const editCancelBtn = document.getElementById('korero-edit-cancel');
   // Delete modal elements
   const deleteModal = document.getElementById('korero-delete-modal');
   const deleteCloseBtn = document.getElementById('korero-delete-close');
   const deleteCancelBtn = document.getElementById('korero-delete-cancel');
   const deleteConfirmBtn = document.getElementById('korero-delete-confirm');
+  // View modal elements
+  const viewModal = document.getElementById('korero-view-modal');
+  const viewCloseBtn = document.getElementById('korero-view-close');
+  const viewBody = document.getElementById('korero-view-body');
   if (!listEl) return;
 
   const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -50,8 +56,8 @@
     const local = {
       async listPosts(){ try { return JSON.parse(localStorage.getItem(KEY_P) || '[]'); } catch { return []; } },
       async userId(){ return getAnonId(); },
-      async addPost(type, text, mediaUrl, authorId){
-        const p = { id: uid(), type, text: text || '', mediaUrl: mediaUrl || '', authorId: authorId || getAnonId(), createdAt: Date.now(), updatedAt: Date.now() };
+      async addPost(type, title, text, mediaUrl, authorId){
+        const p = { id: uid(), type, title: title||'', text: text || '', mediaUrl: mediaUrl || '', authorId: authorId || getAnonId(), createdAt: Date.now(), updatedAt: Date.now() };
         const cur = await this.listPosts(); cur.unshift(p);
         try { localStorage.setItem(KEY_P, JSON.stringify(cur)); } catch {}
         return p;
@@ -60,7 +66,13 @@
         const cur = await this.listPosts();
         const i = cur.findIndex(p => p.id === id);
         if (i >= 0) {
-          const next = { ...cur[i], ...('text' in fields ? { text: fields.text } : {}), ...('mediaUrl' in fields ? { mediaUrl: fields.mediaUrl } : {}), updatedAt: Date.now() };
+          const next = {
+            ...cur[i],
+            ...('title' in fields ? { title: fields.title } : {}),
+            ...('text' in fields ? { text: fields.text } : {}),
+            ...('mediaUrl' in fields ? { mediaUrl: fields.mediaUrl } : {}),
+            updatedAt: Date.now()
+          };
           cur[i] = next;
           try { localStorage.setItem(KEY_P, JSON.stringify(cur)); } catch {}
           return next;
@@ -101,6 +113,7 @@
         return (data||[]).map(r => ({
           id: r.id,
           type: r.type,
+          title: r.title || '',
           text: r.text || '',
           mediaUrl: r.media_url || '',
           authorId: r.author_id || '',
@@ -108,21 +121,27 @@
           updatedAt: r.updated_at ? new Date(r.updated_at).getTime() : undefined
         }));
       },
-      async addPost(type, text, mediaUrl){
+      async addPost(type, title, text, mediaUrl){
         const { data: sess } = await sb.auth.getSession();
         const user = sess.session?.user; if (!user) throw new Error('login-required');
-        const payload = { id: uid(), type, text, media_url: mediaUrl || null, author_id: user.id };
-        const { error } = await sb.from('korero_posts').insert([payload]);
-        if (error) throw error;
-        return { id: payload.id, type, text, mediaUrl: payload.media_url||'', authorId: payload.author_id, createdAt: Date.now() };
+        let payload = { id: uid(), type, title, text, media_url: mediaUrl || null, author_id: user.id };
+        let { error } = await sb.from('korero_posts').insert([payload]);
+        if (error && String(error.message||'').toLowerCase().includes('title')){
+          payload = { id: payload.id, type, text, media_url: payload.media_url, author_id: payload.author_id };
+          const retry = await sb.from('korero_posts').insert([payload]); if (retry.error) throw retry.error;
+        } else if (error) throw error;
+        return { id: payload.id, type, title: payload.title||'', text, mediaUrl: payload.media_url||'', authorId: payload.author_id, createdAt: Date.now() };
       },
       async updatePost(id, fields){
         const patch = {};
+        if (typeof fields.title === 'string') patch.title = fields.title;
         if (typeof fields.text === 'string') patch.text = fields.text;
         if (typeof fields.mediaUrl === 'string') patch.media_url = fields.mediaUrl;
         patch.updated_at = new Date().toISOString();
-        const { error } = await sb.from('korero_posts').update(patch).eq('id', id);
-        if (error) throw error;
+        let { error } = await sb.from('korero_posts').update(patch).eq('id', id);
+        if (error && String(error.message||'').toLowerCase().includes('title')){
+          delete patch.title; const retry = await sb.from('korero_posts').update(patch).eq('id', id); if (retry.error) throw retry.error;
+        } else if (error) throw error;
       },
       async removePost(id){ await sb.from('korero_posts').delete().eq('id', id); },
       async userId(){ const { data } = await sb.auth.getSession(); return data.session?.user?.id || ''; },
@@ -181,7 +200,9 @@
   if (deleteCancelBtn) deleteCancelBtn.addEventListener('click', hideDelete);
   if (editModal) editModal.addEventListener('click', (e) => { if (e.target === editModal) hideEdit(); });
   if (deleteModal) deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) hideDelete(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { hideCreate(); hideEdit(); hideDelete(); } });
+  if (viewCloseBtn) viewCloseBtn.addEventListener('click', () => { if (viewModal){ viewModal.hidden = true; viewModal.setAttribute('aria-hidden','true'); } });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { hideCreate(); hideEdit(); hideDelete(); if (viewModal){ viewModal.hidden=true; viewModal.setAttribute('aria-hidden','true'); } } });
+  if (viewModal) viewModal.addEventListener('click', (e) => { if (e.target === viewModal){ viewModal.hidden=true; viewModal.setAttribute('aria-hidden','true'); } });
 
   // Toggle form fields based on type
   if (selType && storyWrap && vlogWrap){
@@ -205,10 +226,20 @@
     const body = document.createElement('div'); body.className='card-body';
     const tag = p.type === 'vlog' ? 'Vlog' : 'Story';
     body.innerHTML = `<div><span class=\"tag\">${tag}</span></div>` +
+      (p.title ? `<h3 class=\"post-title\">${esc(p.title)}</h3>` : '') +
       `<div class=\"small muted\">${fmtTS(p.createdAt)}</div>`;
 
     if (p.type === 'story' && p.text){
-      const pre = document.createElement('p'); pre.textContent = p.text; pre.style.whiteSpace='pre-wrap'; pre.style.margin='.5rem 0 0'; body.appendChild(pre);
+      const T = String(p.text||'');
+      const LIMIT = 280; // characters
+      if (T.length > LIMIT){
+        const preview = document.createElement('p'); preview.textContent = T.slice(0, LIMIT).trim() + '…'; preview.style.whiteSpace='pre-wrap'; preview.style.margin='.5rem 0 0'; body.appendChild(preview);
+        const more = document.createElement('button'); more.type='button'; more.className='btn link'; more.textContent='Read more'; more.style.alignSelf='flex-start';
+        more.addEventListener('click', ()=>{ if (viewBody) viewBody.textContent = T; if (viewModal){ viewModal.hidden=false; viewModal.setAttribute('aria-hidden','false'); } });
+        body.appendChild(more);
+      } else {
+        const pre = document.createElement('p'); pre.textContent = T; pre.style.whiteSpace='pre-wrap'; pre.style.margin='.5rem 0 0'; body.appendChild(pre);
+      }
     }
     if (p.type === 'vlog' && p.mediaUrl){
       const url = p.mediaUrl.trim();
@@ -253,25 +284,25 @@
     btnAroha.addEventListener('click', async () => { try { await backend.toggleReaction(p.id, 'aroha'); await refresh(); } catch (e){ if (String(e&&e.message).includes('login-required')) alert('Takiuru kia urupare. / Sign in to react.'); } });
     actions.appendChild(btnLike); actions.appendChild(btnAroha);
 
+    // Owner buttons in bottom-right container
+    const ownerActions = document.createElement('div'); ownerActions.className='owner-actions';
     const isOwner = p.authorId && currentUserId && p.authorId === currentUserId;
     if (isOwner){
-      const gap = document.createElement('span'); gap.style.flex='1'; actions.appendChild(gap);
       const btnEdit = document.createElement('button'); btnEdit.type='button'; btnEdit.className='btn'; btnEdit.textContent='Whakatika / Edit';
       btnEdit.addEventListener('click', () => {
         managePost = p;
-        editTitle && (editTitle.textContent = p.type==='story' ? 'Whakatika Kōrero / Edit Story' : 'Whakatika Vlog URL');
+        editTitleHeading && (editTitleHeading.textContent = p.type==='story' ? 'Whakatika Kōrero / Edit Story' : 'Whakatika Vlog URL');
+        if (editTitleInput) editTitleInput.value = p.title || '';
         if (p.type==='story'){ editStoryWrap.hidden = false; editVlogWrap.hidden = true; if (editStoryText) editStoryText.value = p.text || ''; }
         else { editStoryWrap.hidden = true; editVlogWrap.hidden = false; if (editVlogUrl) editVlogUrl.value = p.mediaUrl || ''; }
         showEdit();
       });
       const btnDel = document.createElement('button'); btnDel.type='button'; btnDel.className='btn danger outline'; btnDel.textContent='Muku / Delete';
-      btnDel.addEventListener('click', () => {
-        managePost = p;
-        showDelete();
-      });
-      actions.appendChild(btnEdit); actions.appendChild(btnDel);
+      btnDel.addEventListener('click', () => { managePost = p; showDelete(); });
+      ownerActions.appendChild(btnEdit); ownerActions.appendChild(btnDel);
     }
 
+    if (isOwner) actions.appendChild(ownerActions);
     body.appendChild(actions);
     markMine();
     card.appendChild(body);
@@ -345,13 +376,15 @@
   form && form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const t = selType ? selType.value : 'story';
+    const title = (postTitle?.value||'').trim();
     const text = (t==='story') ? (storyText.value||'').trim() : '';
     const url = (t==='vlog') ? (vlogUrl.value||'').trim() : '';
+    if (!title) return alert('Tāuruhia te taitara. / Enter a title.');
     if (t==='story' && !text) return alert('Tāuruhia he kōrero. / Enter a story.');
     if (t==='vlog' && !url) return alert('Whakaurua he hono ataata. / Enter a video URL.');
     listEl.setAttribute('aria-busy','true');
     try {
-      await backend.addPost(t, text, url);
+      await backend.addPost(t, title, text, url);
       form.reset(); if (selType) selType.value='story'; if (storyWrap && vlogWrap) { storyWrap.hidden=false; vlogWrap.hidden=true; }
       hideCreate();
       await refresh();
@@ -365,12 +398,13 @@
     editForm.addEventListener('submit', async (e) => {
       e.preventDefault(); if (!managePost) return;
       try {
+        const title = (editTitleInput?.value||'').trim();
         if (managePost.type==='story'){
           const text = (editStoryText?.value||'').trim(); if (!text) return alert('Kōrero wātea kore.');
-          await backend.updatePost(managePost.id, { text });
+          await backend.updatePost(managePost.id, { title, text });
         } else {
           const mediaUrl = (editVlogUrl?.value||'').trim(); if (!mediaUrl) return alert('Tāuruhia te URL.');
-          await backend.updatePost(managePost.id, { mediaUrl });
+          await backend.updatePost(managePost.id, { title, mediaUrl });
         }
         hideEdit(); await refresh();
       } catch(err){ alert('Hapa whakatika'); console.error(err); }
