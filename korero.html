@@ -107,6 +107,43 @@
       </div>
     </div>
 
+    <!-- Korero edit modal -->
+    <div id="korero-edit-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="korero-edit-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="korero-edit-close">×</button>
+        <h2 id="korero-edit-title">Whakatika / Edit</h2>
+        <form id="korero-edit-form" class="form">
+          <label id="edit-story-wrap">
+            <span>Kōrero / Story</span>
+            <textarea id="edit-story-text" rows="5" placeholder="Tāuruhia tō kōrero..."></textarea>
+          </label>
+          <label id="edit-vlog-wrap" hidden>
+            <span>Vlog URL (YouTube, Vimeo, or direct)</span>
+            <input type="url" id="edit-vlog-url" placeholder="https://..." />
+          </label>
+          <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.25rem">
+            <button type="button" class="btn outline" id="korero-edit-cancel">Cancel</button>
+            <button type="submit" class="btn" id="korero-edit-save">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Korero delete modal -->
+    <div id="korero-delete-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="korero-delete-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="korero-delete-close">×</button>
+        <h2 id="korero-delete-title">Muku / Delete</h2>
+        <div class="form">
+          <p>Are you sure you want to delete this post?</p>
+          <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.25rem">
+            <button type="button" class="btn outline" id="korero-delete-cancel">Cancel</button>
+            <button type="button" class="btn danger" id="korero-delete-confirm">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="assets/app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/config.js"></script>

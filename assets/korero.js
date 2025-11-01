@@ -13,6 +13,21 @@
   const createModal = document.getElementById('korero-modal');
   const createCloseBtn = document.getElementById('korero-modal-close');
   const createCancelBtn = document.getElementById('korero-cancel');
+  // Edit modal elements
+  const editModal = document.getElementById('korero-edit-modal');
+  const editCloseBtn = document.getElementById('korero-edit-close');
+  const editForm = document.getElementById('korero-edit-form');
+  const editStoryWrap = document.getElementById('edit-story-wrap');
+  const editVlogWrap = document.getElementById('edit-vlog-wrap');
+  const editStoryText = document.getElementById('edit-story-text');
+  const editVlogUrl = document.getElementById('edit-vlog-url');
+  const editTitle = document.getElementById('korero-edit-title');
+  const editCancelBtn = document.getElementById('korero-edit-cancel');
+  // Delete modal elements
+  const deleteModal = document.getElementById('korero-delete-modal');
+  const deleteCloseBtn = document.getElementById('korero-delete-close');
+  const deleteCancelBtn = document.getElementById('korero-delete-cancel');
+  const deleteConfirmBtn = document.getElementById('korero-delete-confirm');
   if (!listEl) return;
 
   const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -153,7 +168,20 @@
   if (createCloseBtn) createCloseBtn.addEventListener('click', hideCreate);
   if (createCancelBtn) createCancelBtn.addEventListener('click', hideCreate);
   if (createModal) createModal.addEventListener('click', (e) => { if (e.target === createModal) hideCreate(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideCreate(); });
+
+  // Manage state
+  let managePost = null;
+  function showEdit(){ if (editModal){ editModal.hidden = false; editModal.setAttribute('aria-hidden','false'); } }
+  function hideEdit(){ if (editModal){ editModal.hidden = true; editModal.setAttribute('aria-hidden','true'); } managePost=null; }
+  function showDelete(){ if (deleteModal){ deleteModal.hidden = false; deleteModal.setAttribute('aria-hidden','false'); } }
+  function hideDelete(){ if (deleteModal){ deleteModal.hidden = true; deleteModal.setAttribute('aria-hidden','true'); } managePost=null; }
+  if (editCloseBtn) editCloseBtn.addEventListener('click', hideEdit);
+  if (editCancelBtn) editCancelBtn.addEventListener('click', hideEdit);
+  if (deleteCloseBtn) deleteCloseBtn.addEventListener('click', hideDelete);
+  if (deleteCancelBtn) deleteCancelBtn.addEventListener('click', hideDelete);
+  if (editModal) editModal.addEventListener('click', (e) => { if (e.target === editModal) hideEdit(); });
+  if (deleteModal) deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) hideDelete(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { hideCreate(); hideEdit(); hideDelete(); } });
 
   // Toggle form fields based on type
   if (selType && storyWrap && vlogWrap){
@@ -229,30 +257,17 @@
     if (isOwner){
       const gap = document.createElement('span'); gap.style.flex='1'; actions.appendChild(gap);
       const btnEdit = document.createElement('button'); btnEdit.type='button'; btnEdit.className='btn'; btnEdit.textContent='Whakatika / Edit';
-      btnEdit.addEventListener('click', async () => {
-        try {
-          if (p.type === 'story'){
-            const val = prompt('Whakatika kōrero / Edit story', p.text || '');
-            if (val == null) return;
-            const text = String(val).trim();
-            if (!text) return alert('Koa, kaua e waiho kia koretake. / Text cannot be empty.');
-            await backend.updatePost(p.id, { text });
-          } else if (p.type === 'vlog'){
-            const val = prompt('Whakatika hono vlog / Edit vlog URL', p.mediaUrl || '');
-            if (val == null) return;
-            const mediaUrl = String(val).trim();
-            if (!mediaUrl) return alert('Whakaurua he hono tika. / URL cannot be empty.');
-            await backend.updatePost(p.id, { mediaUrl });
-          }
-          await refresh();
-        } catch (e){
-          alert('Hapa whakatika / Edit error'); console.error(e);
-        }
+      btnEdit.addEventListener('click', () => {
+        managePost = p;
+        editTitle && (editTitle.textContent = p.type==='story' ? 'Whakatika Kōrero / Edit Story' : 'Whakatika Vlog URL');
+        if (p.type==='story'){ editStoryWrap.hidden = false; editVlogWrap.hidden = true; if (editStoryText) editStoryText.value = p.text || ''; }
+        else { editStoryWrap.hidden = true; editVlogWrap.hidden = false; if (editVlogUrl) editVlogUrl.value = p.mediaUrl || ''; }
+        showEdit();
       });
       const btnDel = document.createElement('button'); btnDel.type='button'; btnDel.className='btn danger outline'; btnDel.textContent='Muku / Delete';
-      btnDel.addEventListener('click', async () => {
-        if (!confirm('Muku tēnei tāurunga? / Delete this post?')) return;
-        try { await backend.removePost(p.id); await refresh(); } catch(e){ alert('Hapa muku / Delete error'); console.error(e); }
+      btnDel.addEventListener('click', () => {
+        managePost = p;
+        showDelete();
       });
       actions.appendChild(btnEdit); actions.appendChild(btnDel);
     }
@@ -344,6 +359,28 @@
       if (String(err&&err.message).includes('login-required')) alert('Takiuru kia tuku. / Sign in to post.'); else { alert('Hapa tuku / Post error'); console.error(err); }
     } finally { listEl.setAttribute('aria-busy','false'); }
   });
+
+  // Edit form submit
+  if (editForm){
+    editForm.addEventListener('submit', async (e) => {
+      e.preventDefault(); if (!managePost) return;
+      try {
+        if (managePost.type==='story'){
+          const text = (editStoryText?.value||'').trim(); if (!text) return alert('Kōrero wātea kore.');
+          await backend.updatePost(managePost.id, { text });
+        } else {
+          const mediaUrl = (editVlogUrl?.value||'').trim(); if (!mediaUrl) return alert('Tāuruhia te URL.');
+          await backend.updatePost(managePost.id, { mediaUrl });
+        }
+        hideEdit(); await refresh();
+      } catch(err){ alert('Hapa whakatika'); console.error(err); }
+    });
+  }
+  if (deleteConfirmBtn){
+    deleteConfirmBtn.addEventListener('click', async () => {
+      if (!managePost) return; try { await backend.removePost(managePost.id); hideDelete(); await refresh(); } catch(err){ alert('Hapa muku'); console.error(err); }
+    });
+  }
 
   refresh();
 })();
