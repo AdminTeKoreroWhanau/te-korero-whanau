@@ -7,12 +7,18 @@
   const karakiaList = document.getElementById('karakia-admin-list');
   const karakiaEmpty = document.getElementById('karakia-admin-empty');
 
-  const form = document.getElementById('admin-korero-form');
-  const typeSel = document.getElementById('admin-post-type');
-  const storyWrap = document.getElementById('admin-story-wrap');
-  const vlogWrap = document.getElementById('admin-vlog-wrap');
-  const storyText = document.getElementById('admin-story-text');
-  const vlogUrl = document.getElementById('admin-vlog-url');
+  // Admin story view modal
+  const viewModal = document.getElementById('admin-view-modal');
+  const viewClose = document.getElementById('admin-view-close');
+  const viewBody = document.getElementById('admin-view-body');
+
+  // Admin delete confirm modal
+  const delModal = document.getElementById('admin-delete-modal');
+  const delClose = document.getElementById('admin-delete-close');
+  const delCancel = document.getElementById('admin-delete-cancel');
+  const delConfirm = document.getElementById('admin-delete-confirm');
+  let pendingDelete = null; // { kind: 'korero'|'waiata'|'karakia', id?, item? }
+
 
   const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
   const esc = (s) => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
@@ -41,19 +47,6 @@
       const { data, error } = await sb.from('korero_posts').select('*').order('created_at', { ascending:false });
       if (error) { console.error(error); return []; }
       return (data||[]).map(r => ({ id:r.id, type:r.type, text:r.text||'', mediaUrl:r.media_url||'', createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now() }));
-    },
-    async addKorero(t, text, url){
-      if (!isSupa(kb)){
-        const cur = await this.listKorero();
-        cur.unshift({ id: uid(), type:t, text:text||'', mediaUrl:url||'', createdAt: Date.now(), updatedAt: Date.now() });
-        try { localStorage.setItem(localKeys.KORERO, JSON.stringify(cur)); } catch {}
-        return;
-      }
-      const { data: sess } = await sb.auth.getSession();
-      const user = sess.session?.user; if (!user) throw new Error('login-required');
-      const payload = { id: uid(), type:t, text, media_url: (url||null), author_id: user.id };
-      const { error } = await sb.from('korero_posts').insert([payload]);
-      if (error) throw error;
     },
     async delKorero(id){
       if (!isSupa(kb)){
@@ -112,10 +105,32 @@
       const card = document.createElement('article'); card.className='card';
       const body = document.createElement('div'); body.className='card-body';
       const tag = p.type === 'vlog' ? 'Vlog' : 'Story';
-      body.innerHTML = `<div><span class="tag">${tag}</span></div><div class="small muted">${fmt(p.createdAt||Date.now())}</div>` + (p.text?`<p>${esc(p.text)}</p>`:'');
+      const header = document.createElement('div');
+      header.innerHTML = `<span class=\"tag\">${tag}</span>`;
+      const meta = document.createElement('div'); meta.className = 'small muted'; meta.textContent = fmt(p.createdAt||Date.now());
+      body.appendChild(header); body.appendChild(meta);
+
+      if (p.type==='story'){
+        const T = String(p.text||'');
+        if (T.length > 280){
+          const preview = document.createElement('p'); preview.style.whiteSpace='pre-wrap'; preview.style.margin='.5rem 0 0';
+          preview.textContent = T.slice(0, 280).trim() + '… ';
+          const more = document.createElement('a'); more.href='#'; more.textContent='Read more'; more.style.color='var(--accent)'; more.style.textDecoration='none'; more.style.cursor='pointer';
+          more.addEventListener('click', (e)=>{ e.preventDefault(); if (viewBody) viewBody.textContent = T; if (viewModal){ viewModal.hidden=false; viewModal.setAttribute('aria-hidden','false'); } });
+          preview.appendChild(more);
+          body.appendChild(preview);
+        } else if (T){
+          const pre = document.createElement('p'); pre.textContent = T; pre.style.whiteSpace='pre-wrap'; pre.style.margin='.5rem 0 0'; body.appendChild(pre);
+        }
+      }
+
       if (p.type==='vlog' && p.mediaUrl){ const a=document.createElement('a'); a.href=p.mediaUrl; a.target='_blank'; a.rel='noopener'; a.textContent='Open video'; body.appendChild(a); }
+
       const actions = document.createElement('div'); actions.className='actions';
-      const del = document.createElement('button'); del.className='btn outline'; del.textContent='Muku / Delete'; del.addEventListener('click', async()=>{ if (!confirm('Delete this post?')) return; await backend.delKorero(p.id); await refresh(); });
+      const del = document.createElement('button'); del.className='btn outline'; del.textContent='Muku';
+      del.addEventListener('mouseenter', ()=>{ del.textContent='Delete'; });
+      del.addEventListener('mouseleave', ()=>{ del.textContent='Muku'; });
+      del.addEventListener('click', ()=>{ pendingDelete = { kind:'korero', id: p.id }; showDelete(); });
       actions.appendChild(del); body.appendChild(actions);
       card.appendChild(body); frag.appendChild(card);
     }
@@ -132,9 +147,33 @@
       const body = document.createElement('div'); body.className='card-body';
       const title = it.title || it.filename || it.id;
       const ts = it.createdAt || (it.created_at ? new Date(it.created_at).getTime() : Date.now());
-      body.innerHTML = `<h3>${esc(title)}</h3><div class="small muted">${fmt(ts)}</div>`;
+      body.innerHTML = `<h3>${esc(title)}</h3><div class=\"small muted\">${fmt(ts)}</div>`;
+
+      // Optional description/lyrics/body preview with Read more
+      try {
+        const desc = (it.lyrics || it.description || it.text || it.content || it.body || '').toString();
+        if (desc){
+          if (desc.length > 280){
+            const p = document.createElement('p'); p.style.whiteSpace='pre-wrap'; p.style.margin='.5rem 0 0';
+            p.textContent = desc.slice(0,280).trim() + '… ';
+            const more = document.createElement('a'); more.href='#'; more.textContent='Read more'; more.style.color='var(--accent)'; more.style.textDecoration='none'; more.style.cursor='pointer';
+            more.addEventListener('click', (e) => { e.preventDefault(); if (viewBody) viewBody.textContent = desc; if (viewModal){ viewModal.hidden=false; viewModal.setAttribute('aria-hidden','false'); } });
+            p.appendChild(more); body.appendChild(p);
+          } else {
+            const p = document.createElement('p'); p.textContent = desc; p.style.whiteSpace='pre-wrap'; p.style.margin='.5rem 0 0'; body.appendChild(p);
+          }
+        }
+      } catch(_){}
+
       const actions = document.createElement('div'); actions.className='actions';
-      const del = document.createElement('button'); del.className='btn outline'; del.textContent='Muku / Delete'; del.addEventListener('click', async()=>{ if (!confirm('Delete item?')) return; if (root===waiataList) await backend.delWaiata(it); else await backend.delKarakia(it); await refresh(); });
+      const del = document.createElement('button'); del.className='btn outline'; del.textContent='Muku';
+      del.addEventListener('mouseenter', ()=>{ del.textContent='Delete'; });
+      del.addEventListener('mouseleave', ()=>{ del.textContent='Muku'; });
+      del.addEventListener('click', ()=>{
+        const kind = (root===waiataList) ? 'waiata' : (root===karakiaList ? 'karakia' : 'unknown');
+        pendingDelete = { kind, item: it };
+        showDelete();
+      });
       actions.appendChild(del); body.appendChild(actions);
       card.appendChild(body); frag.appendChild(card);
     }
@@ -155,27 +194,28 @@
     }
   }
 
-  // type switch
-  if (typeSel){
-    const apply = () => { const isS = typeSel.value==='story'; storyWrap.hidden=!isS; vlogWrap.hidden=isS; if (isS) vlogUrl.value=''; else storyText.value=''; };
-    typeSel.addEventListener('change', apply); apply();
-  }
+  // View modal handlers
+  function hideView(){ if (viewModal){ viewModal.hidden = true; viewModal.setAttribute('aria-hidden','true'); } }
+  if (viewClose) viewClose.addEventListener('click', hideView);
+  if (viewModal) viewModal.addEventListener('click', (e) => { if (e.target === viewModal) hideView(); });
 
-  form && form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const t = typeSel.value;
-    const text = t==='story' ? (storyText.value||'').trim() : '';
-    const url = t==='vlog' ? (vlogUrl.value||'').trim() : '';
-    if (t==='story' && !text) return alert('Enter story text.');
-    if (t==='vlog' && !url) return alert('Enter video URL.');
+  // Delete modal handlers
+  function showDelete(){ if (delModal){ delModal.hidden = false; delModal.setAttribute('aria-hidden','false'); } }
+  function hideDelete(){ if (delModal){ delModal.hidden = true; delModal.setAttribute('aria-hidden','true'); } pendingDelete = null; }
+  if (delClose) delClose.addEventListener('click', hideDelete);
+  if (delCancel) delCancel.addEventListener('click', hideDelete);
+  if (delModal) delModal.addEventListener('click', (e) => { if (e.target === delModal) hideDelete(); });
+  if (delConfirm) delConfirm.addEventListener('click', async () => {
+    if (!pendingDelete) return;
     try {
-      await backend.addKorero(t, text, url);
-      form.reset(); typeSel.value='story'; storyWrap.hidden=false; vlogWrap.hidden=true;
+      if (pendingDelete.kind === 'korero') await backend.delKorero(pendingDelete.id);
+      else if (pendingDelete.kind === 'waiata') await backend.delWaiata(pendingDelete.item);
+      else if (pendingDelete.kind === 'karakia') await backend.delKarakia(pendingDelete.item);
       await refresh();
-    } catch (e){
-      alert('Failed to add post. Make sure you are logged in and have admin rights.');
-    }
+    } finally { hideDelete(); }
   });
+
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { hideView(); hideDelete(); } });
 
   // Admin gate message (best effort)
   (async function guard(){

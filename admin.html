@@ -38,25 +38,6 @@
 
       <section class="panel" id="admin-korero">
         <h2>Kōrero — Posts</h2>
-        <form id="admin-korero-form" class="form">
-          <div style="display:flex;gap:.75rem;flex-wrap:wrap">
-            <label style="flex:1;min-width:240px">Type
-              <select id="admin-post-type">
-                <option value="story">Story</option>
-                <option value="vlog">Vlog (URL)</option>
-              </select>
-            </label>
-            <label style="flex:2;min-width:260px" id="admin-story-wrap">
-              <span>Story text</span>
-              <textarea id="admin-story-text" rows="2" placeholder="Tāuruhia he kōrero..."></textarea>
-            </label>
-            <label style="flex:2;min-width:260px" id="admin-vlog-wrap" hidden>
-              <span>Video URL</span>
-              <input id="admin-vlog-url" type="url" placeholder="https://..." />
-            </label>
-            <button type="submit" class="btn">Tāpiri / Add</button>
-          </div>
-        </form>
         <div id="korero-admin-list" class="cards" aria-live="polite" aria-busy="false"></div>
         <p id="korero-admin-empty" class="muted small">Kāore he kōrero i kitea.</p>
       </section>
@@ -103,6 +84,28 @@
             <button type="submit" class="btn">Rēhita</button>
             <p class="muted small" id="register-msg"></p>
           </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin story viewer modal -->
+    <div id="admin-view-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="admin-view-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="admin-view-close">×</button>
+        <h2 id="admin-view-title">Kōrero Katoa / Full Story</h2>
+        <div id="admin-view-body" class="muted" style="white-space:pre-wrap;margin-top:.5rem"></div>
+      </div>
+    </div>
+
+    <!-- Admin delete confirm modal -->
+    <div id="admin-delete-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="admin-delete-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="admin-delete-close">×</button>
+        <h2 id="admin-delete-title">Muku Tūemi? / Delete Item?</h2>
+        <p class="muted" style="margin:.5rem 0 1rem">E tino mōhio ana koe? Kāore e taea te whakahoki. / This action cannot be undone.</p>
+        <div style="display:flex;gap:.5rem;justify-content:flex-end">
+          <button class="btn outline" id="admin-delete-cancel">Whakakore / Cancel</button>
+          <button class="btn danger" id="admin-delete-confirm">Muku / Delete</button>
         </div>
       </div>
     </div>

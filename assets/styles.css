@@ -77,11 +77,17 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 :root[data-theme="light"]{--bg:#f7fbfc;--fg:#0a0e10;--muted:#485256;--accent:#007a72;--panel:#ffffff;--border:#d8e1e5}
 
 /* Buttons/inputs */
-.btn{background:var(--accent);color:white;border:0;border-radius:10px;padding:0.6rem 0.9rem;cursor:pointer}
+.btn{background:var(--accent);color:white;border:0;border-radius:10px;padding:0.6rem 0.9rem;cursor:pointer;transition:transform .2s ease,opacity .2s ease}
 .btn:hover{opacity:.9}
 .btn.outline{background:transparent;color:var(--accent);border:1px solid var(--accent)}
 .btn-link{background:none;border:0;color:var(--accent);cursor:pointer;padding:0.65rem 0.65rem;border-bottom:2px solid transparent;font-size:1.2rem;font-weight:600}
 .btn-link:hover{text-decoration:none}
+/* Lang swap hover for action buttons (Māori default -> English on hover) */
+.btn.lang-swap .lang.en{display:none}
+.btn.lang-swap:hover .lang.mi,
+.btn.lang-swap:focus-visible .lang.mi{display:none}
+.btn.lang-swap:hover .lang.en,
+.btn.lang-swap:focus-visible .lang.en{display:inline}
 /* Image button for Kōrero create */
 .image-btn{display:block;background:none;border:0;padding:0;border-radius:12px;cursor:pointer;text-align:left;width:100%;position:relative;overflow:hidden}
 .image-btn-img{width:100%;height:360px;object-fit:contain;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:block;transition:opacity .2s ease, transform .2s ease}
@@ -162,7 +168,24 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 /* Korero-specific overrides to avoid overlap and increase spacing */
 #korero .cards{gap:2rem}
 #korero .cards .card:hover,
-#korero .cards .card:focus-within{transform:none;box-shadow:0 4px 12px rgba(0,196,179,.18);}
+#korero .cards .card:focus-within{transform:none;box-shadow:0 4px 12px rgba(0,196,179,.18);} 
+
+/* Admin: place delete/actions at bottom-left of cards */
+#admin-korero .card .actions,
+#admin-waiata .card .actions,
+#admin-karakia .card .actions{margin-top:auto;align-self:flex-start;padding-top:.85rem}
+
+/* Reaction button hover effect - scale emoji only */
+.card .actions .btn.outline{display:inline-flex;align-items:center;gap:.25rem}
+.card .actions .btn.outline:hover{transform:none}
+.card .actions .btn.outline .emoji{display:inline-block;transition:transform .2s ease}
+.card .actions .btn.outline:hover .emoji{transform:scale(1.4)}
+
+/* Aroha popup animation */
+.aroha-popup{position:fixed;font-size:3rem;font-weight:900;color:var(--accent);pointer-events:none;z-index:9999;animation:aroha-rise 1.2s ease-out forwards;text-shadow:0 2px 8px rgba(0,196,179,.6);transform:translate(-50%,-50%)}
+@keyframes aroha-rise{0%{opacity:1;transform:translate(-50%,-50%) translateY(0) scale(0.5)}30%{transform:translate(-50%,-50%) translateY(-40px) scale(1.2)}60%{transform:translate(-50%,-50%) translateY(-60px) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) translateY(-100px) scale(0.8)}}
+.firework{position:fixed;width:6px;height:6px;border-radius:50%;pointer-events:none;z-index:9998}
+@keyframes firework-burst{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}}
 
 /* Tags */
 .tag{display:inline-block;background:var(--border);color:var(--muted);border-radius:999px;padding:.15rem .5rem;font-size:.8rem;margin-right:.4rem}

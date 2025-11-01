@@ -40,6 +40,38 @@
   const esc = (s) => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
   const fmtTS = (ts) => new Date(ts).toLocaleString();
 
+  // Aroha animation with fireworks
+  function showArohaAnimation(x, y) {
+    // Create "Aroha!" text popup
+    const popup = document.createElement('div');
+    popup.className = 'aroha-popup';
+    popup.textContent = 'Aroha!';
+    popup.style.left = x + 'px';
+    popup.style.top = y + 'px';
+    document.body.appendChild(popup);
+    setTimeout(() => popup.remove(), 1200);
+
+    // Create fireworks particles
+    const colors = ['#00c4b3', '#ffd700', '#ff6b6b', '#4ecdc4', '#ffe66d'];
+    const particleCount = 12;
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'firework';
+      const angle = (Math.PI * 2 * i) / particleCount;
+      const distance = 60 + Math.random() * 40;
+      const tx = Math.cos(angle) * distance;
+      const ty = Math.sin(angle) * distance;
+      particle.style.left = x + 'px';
+      particle.style.top = y + 'px';
+      particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+      particle.style.setProperty('--tx', tx + 'px');
+      particle.style.setProperty('--ty', ty + 'px');
+      particle.style.animation = 'firework-burst 0.8s ease-out forwards';
+      document.body.appendChild(particle);
+      setTimeout(() => particle.remove(), 800);
+    }
+  }
+
   function getAnonId(){
     try {
       const k = 'korero.anonId';
@@ -273,25 +305,28 @@
 
     const r = reactMap.get(p.id) || { like:0, aroha:0, mine: new Set() };
     const actions = document.createElement('div'); actions.className='actions'; actions.style.marginTop='1rem';
-    const btnLike = document.createElement('button'); btnLike.type='button'; btnLike.className='btn outline';
     const btnAroha = document.createElement('button'); btnAroha.type='button'; btnAroha.className='btn outline';
     const markMine = () => {
-      const mineLike = r.mine.has(currentUserId+':like');
       const mineAroha = r.mine.has(currentUserId+':aroha');
-      btnLike.classList.toggle('active', !!mineLike);
       btnAroha.classList.toggle('active', !!mineAroha);
     };
-    btnLike.textContent = `👍 ${r.like||0}`;
-    btnAroha.textContent = `💛 ${r.aroha||0}`;
-    btnLike.addEventListener('click', async () => { try { await backend.toggleReaction(p.id, 'like'); await refresh(); } catch (e){ if (String(e&&e.message).includes('login-required')) alert('Takiuru kia urupare. / Sign in to react.'); } });
-    btnAroha.addEventListener('click', async () => { try { await backend.toggleReaction(p.id, 'aroha'); await refresh(); } catch (e){ if (String(e&&e.message).includes('login-required')) alert('Takiuru kia urupare. / Sign in to react.'); } });
-    actions.appendChild(btnLike); actions.appendChild(btnAroha);
+    btnAroha.innerHTML = `<span class="emoji">💛</span> ${r.aroha||0}`;
+    btnAroha.addEventListener('click', async (e) => { 
+      // Show aroha animation
+      const rect = btnAroha.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      showArohaAnimation(x, y);
+      
+      try { await backend.toggleReaction(p.id, 'aroha'); await refresh(); } catch (e){ if (String(e&&e.message).includes('login-required')) alert('Takiuru kia urupare. / Sign in to react.'); } 
+    });
+    actions.appendChild(btnAroha);
 
     // Owner buttons in bottom-right container
     const ownerActions = document.createElement('div'); ownerActions.className='owner-actions';
     const isOwner = p.authorId && currentUserId && p.authorId === currentUserId;
     if (isOwner){
-      const btnEdit = document.createElement('button'); btnEdit.type='button'; btnEdit.className='btn'; btnEdit.textContent='Whakatika / Edit';
+      const btnEdit = document.createElement('button'); btnEdit.type='button'; btnEdit.className='btn lang-swap'; btnEdit.innerHTML='<span class="lang mi">Whakatika</span><span class="lang en" aria-hidden="true">Edit</span>';
       btnEdit.addEventListener('click', () => {
         managePost = p;
         editTitleHeading && (editTitleHeading.textContent = p.type==='story' ? 'Whakatika Kōrero / Edit Story' : 'Whakatika Vlog URL');
@@ -300,7 +335,7 @@
         else { editStoryWrap.hidden = true; editVlogWrap.hidden = false; if (editVlogUrl) editVlogUrl.value = p.mediaUrl || ''; }
         showEdit();
       });
-      const btnDel = document.createElement('button'); btnDel.type='button'; btnDel.className='btn danger outline'; btnDel.textContent='Muku / Delete';
+      const btnDel = document.createElement('button'); btnDel.type='button'; btnDel.className='btn danger outline lang-swap'; btnDel.innerHTML='<span class="lang mi">Muku</span><span class="lang en" aria-hidden="true">Delete</span>';
       btnDel.addEventListener('click', () => { managePost = p; showDelete(); });
       ownerActions.appendChild(btnEdit); ownerActions.appendChild(btnDel);
     }
