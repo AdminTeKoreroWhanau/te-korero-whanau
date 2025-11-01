@@ -76,10 +76,10 @@
     const loginLink = navLogin.querySelector('a#open-auth');
     if (user){
       navLogin.style.display = 'none';
-      if (loginLink){ loginLink.textContent = 'Login'; loginLink.setAttribute('href', '#'); loginLink.dataset.state = 'out'; }
+      if (loginLink){ loginLink.textContent = 'Takiuru'; loginLink.setAttribute('href', '#'); loginLink.dataset.state = 'out'; }
     } else {
       navLogin.style.display = '';
-      if (loginLink){ loginLink.textContent = 'Login'; loginLink.setAttribute('href', '#'); loginLink.dataset.state = 'out'; }
+      if (loginLink){ loginLink.textContent = 'Takiuru'; loginLink.setAttribute('href', '#'); loginLink.dataset.state = 'out'; }
     }
   }
 

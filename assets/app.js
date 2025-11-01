@@ -145,5 +145,43 @@ if (searchInput) {
   });
 })();
 
+// Updates badge logic for preview cards: show 'New' only when updated since user last viewed.
+(function updatesBadges(){
+  const cards = Array.from(document.querySelectorAll('.previews .card'));
+  if (!cards.length) return;
+  const slugFromHref = (href) => {
+    try {
+      const url = new URL(href, location.href);
+      const file = (url.pathname.split('/').pop() || '').toLowerCase();
+      return file.replace(/\.html$/, '');
+    } catch { return ''; }
+  };
+  fetch('assets/updates.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(map => {
+      cards.forEach(card => {
+        const link = card.querySelector('a.card-link');
+        const h3 = card.querySelector('h3');
+        if (!link || !h3) return;
+        const slug = slugFromHref(link.getAttribute('href') || '');
+        if (!slug || !map[slug]) return;
+        const lastUpdated = Date.parse(map[slug].lastUpdated || 0) || 0;
+        let seen = 0;
+        try { seen = parseInt(localStorage.getItem('seen_' + slug) || '0', 10) || 0; } catch {}
+        if (lastUpdated > seen) {
+          if (!h3.querySelector('.tag.new')){
+            const tag = document.createElement('span');
+            tag.className = 'tag new';
+            tag.textContent = 'New';
+            h3.appendChild(tag);
+          }
+        }
+        const markSeen = () => { try { localStorage.setItem('seen_' + slug, String(lastUpdated || Date.now())); } catch {} };
+        link.addEventListener('click', markSeen, { once: true });
+      });
+    })
+    .catch(() => { /* ignore if missing */ });
+})();
+
 // Future: load content JSON for profiles, waiata, and whakapapa
 // fetch('content/whanau.json').then(r => r.json()).then(data => {/* render */});

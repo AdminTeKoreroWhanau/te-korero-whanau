@@ -221,11 +221,12 @@
   let currentUserId = '';
   const setBusy = (b) => listEl.setAttribute('aria-busy', String(!!b));
 
-  function buildPostCard(p){
+  function buildPostCard(p, opts){
     const card = document.createElement('article'); card.className='card';
     const body = document.createElement('div'); body.className='card-body';
-    const tag = p.type === 'vlog' ? 'Vlog' : 'Story';
-    body.innerHTML = `<div><span class=\"tag\">${tag}</span></div>` +
+    const tagLabel = p.type === 'vlog' ? 'Vlog' : 'Story';
+    const popularTag = (opts && opts.popular) ? ' <span class="tag popular">Most popular</span>' : '';
+    body.innerHTML = `<div><span class=\"tag\">${tagLabel}</span>${popularTag}</div>` +
       (p.title ? `<h3 class=\"post-title\">${esc(p.title)}</h3>` : '') +
       `<div class=\"small muted\">${fmtTS(p.createdAt)}</div>`;
 
@@ -233,10 +234,12 @@
       const T = String(p.text||'');
       const LIMIT = 280; // characters
       if (T.length > LIMIT){
-        const preview = document.createElement('p'); preview.textContent = T.slice(0, LIMIT).trim() + '…'; preview.style.whiteSpace='pre-wrap'; preview.style.margin='.5rem 0 0'; body.appendChild(preview);
-        const more = document.createElement('button'); more.type='button'; more.className='btn link'; more.textContent='Read more'; more.style.alignSelf='flex-start';
-        more.addEventListener('click', ()=>{ if (viewBody) viewBody.textContent = T; if (viewModal){ viewModal.hidden=false; viewModal.setAttribute('aria-hidden','false'); } });
-        body.appendChild(more);
+        const preview = document.createElement('p'); preview.style.whiteSpace='pre-wrap'; preview.style.margin='.5rem 0 0';
+        preview.textContent = T.slice(0, LIMIT).trim() + '… ';
+        const more = document.createElement('a'); more.href='#'; more.textContent='Read more'; more.style.color='var(--accent)'; more.style.textDecoration='none'; more.style.cursor='pointer';
+        more.addEventListener('click', (e)=>{ e.preventDefault(); if (viewBody) viewBody.textContent = T; if (viewModal){ viewModal.hidden=false; viewModal.setAttribute('aria-hidden','false'); } });
+        preview.appendChild(more);
+        body.appendChild(preview);
       } else {
         const pre = document.createElement('p'); pre.textContent = T; pre.style.whiteSpace='pre-wrap'; pre.style.margin='.5rem 0 0'; body.appendChild(pre);
       }
@@ -269,7 +272,7 @@
     }
 
     const r = reactMap.get(p.id) || { like:0, aroha:0, mine: new Set() };
-    const actions = document.createElement('div'); actions.className='actions';
+    const actions = document.createElement('div'); actions.className='actions'; actions.style.marginTop='1rem';
     const btnLike = document.createElement('button'); btnLike.type='button'; btnLike.className='btn outline';
     const btnAroha = document.createElement('button'); btnAroha.type='button'; btnAroha.className='btn outline';
     const markMine = () => {
@@ -346,7 +349,7 @@
         } else if (featured === null) { featured = p; bestScore = score; }
       }
       if (featuredEl){
-        if (featured) ffrag.appendChild(buildPostCard(featured));
+        if (featured) ffrag.appendChild(buildPostCard(featured, { popular: true }));
         featuredEl.appendChild(ffrag);
       }
 
