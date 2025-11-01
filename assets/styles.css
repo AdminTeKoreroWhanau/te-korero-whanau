@@ -88,11 +88,14 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 @media (min-width:900px){.image-btn-img{height:520px}}
 .image-btn-label{display:inline-block;margin-top:.5rem;font-weight:700}
 /* Hover/focus overlay with plus and label */
-.image-btn::before{content:'+';position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:4rem;font-weight:900;opacity:0;transform:scale(.9);text-shadow:0 2px 8px rgba(0,0,0,.6);transition:opacity .2s ease, transform .2s ease;pointer-events:none}
-.image-btn::after{content:'Add story or vlog';position:absolute;left:50%;top:64%;transform:translate(-50%,-50%) scale(.98);color:#fff;font-weight:900;font-size:clamp(1.2rem,3.6vw,2rem);letter-spacing:.05em;text-shadow:0 2px 6px rgba(0,0,0,.6);opacity:0;transition:opacity .2s ease, transform .2s ease;pointer-events:none;white-space:nowrap;width:100%;text-align:center;text-transform:uppercase}
+.image-btn::before{content:'+';position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:4rem;font-weight:900;opacity:0;transform:none;text-shadow:0 2px 8px rgba(0,0,0,.6);transition:opacity .2s ease, transform .2s ease;pointer-events:none;z-index:1}
+.image-btn::after{content:'Add story or vlog';position:absolute;left:50%;top:64%;transform:translate(-50%,-50%) scale(.98);color:#fff;font-weight:900;font-size:clamp(1.1rem,3vw,1.8rem);letter-spacing:.05em;text-shadow:0 2px 6px rgba(0,0,0,.6);opacity:0;transition:opacity .2s ease, transform .2s ease;pointer-events:none;white-space:nowrap;width:100%;text-align:center;text-transform:uppercase;z-index:1}
 .image-btn:hover .image-btn-img,.image-btn:focus-visible .image-btn-img{opacity:.6}
-.image-btn:hover::before,.image-btn:focus-visible::before{opacity:.9;transform:scale(1.4)}
-.image-btn:hover::after,.image-btn:focus-visible::after{opacity:.9;transform:translate(-50%,-50%) scale(1)}
+.image-btn:hover::before,.image-btn:focus-visible::before{opacity:.9;animation:spinonce .9s ease-out 1}
+.image-btn:hover::after,.image-btn:focus-visible::after{opacity:.9;transform:translate(-50%,-50%) scale(1);animation:textpulse 1.5s ease-in-out infinite}
+@keyframes addspin{0%{transform:rotate(0deg)}15%{transform:rotate(360deg)}100%{transform:rotate(360deg)}}
+@keyframes textpulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.06)}}
+@keyframes spinonce{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* Ensure add button card is fully visible in grid and image fills card */
 .card.add-card{overflow:hidden; aspect-ratio: 3 / 4;}
@@ -100,6 +103,13 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 .card.add-card .image-btn{height:100%; border-radius:0}
 .card.add-card .image-btn-img{height:100%; border-radius:0; border:0; object-fit:cover; object-position:center}
 .card.add-card .image-btn-label{margin:.5rem 0 0 0}
+
+/* Always show plus/text on touch devices or small screens */
+@media (hover: none), (max-width: 800px) {
+  .image-btn .image-btn-img{opacity:.6}
+  .image-btn::before{opacity:.9; animation:addspin 6s infinite ease-in-out}
+  .image-btn::after{opacity:.9; transform:translate(-50%,-50%) scale(1)}
+}
 .form{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem}
 .form input[type="email"],.form input[type="password"],.form input[type="text"],.form input[type="file"],.form textarea{width:100%;padding:.6rem .75rem;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--fg)}
 .small{font-size:.9rem}

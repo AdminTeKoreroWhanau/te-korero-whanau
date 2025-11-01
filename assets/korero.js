@@ -1,5 +1,6 @@
 (function(){
   const listEl = document.getElementById('korero-list');
+  const featuredEl = document.getElementById('korero-featured');
   const emptyEl = document.getElementById('korero-empty');
   const form = document.getElementById('korero-form');
   const selType = document.getElementById('post-type');
@@ -171,6 +172,97 @@
   let currentUserId = '';
   const setBusy = (b) => listEl.setAttribute('aria-busy', String(!!b));
 
+  function buildPostCard(p){
+    const card = document.createElement('article'); card.className='card';
+    const body = document.createElement('div'); body.className='card-body';
+    const tag = p.type === 'vlog' ? 'Vlog' : 'Story';
+    body.innerHTML = `<div><span class=\"tag\">${tag}</span></div>` +
+      `<div class=\"small muted\">${fmtTS(p.createdAt)}</div>`;
+
+    if (p.type === 'story' && p.text){
+      const pre = document.createElement('p'); pre.textContent = p.text; pre.style.whiteSpace='pre-wrap'; pre.style.margin='.5rem 0 0'; body.appendChild(pre);
+    }
+    if (p.type === 'vlog' && p.mediaUrl){
+      const url = p.mediaUrl.trim();
+      const ytId = (u) => {
+        try {
+          const x = new URL(u);
+          const host = x.hostname.replace(/^www\./,'');
+          if (host.includes('youtu.be')) return (x.pathname.split('/')[1]||'').slice(0,11);
+          if (host.includes('youtube.com')){
+            const v = x.searchParams.get('v');
+            if (v) return v.slice(0,11);
+            if (x.pathname.startsWith('/embed/')) return (x.pathname.split('/')[2]||'').slice(0,11);
+          }
+        } catch {}
+        return '';
+      };
+      const id = ytId(url);
+      if (id){
+        const iframe = document.createElement('iframe');
+        iframe.width = '560'; iframe.height = '315'; iframe.loading = 'lazy';
+        iframe.src = `https://www.youtube.com/embed/${id}`; iframe.title='YouTube video'; iframe.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'; iframe.allowFullscreen = true;
+        iframe.style.width='100%'; iframe.style.aspectRatio='16/9'; iframe.style.border='0';
+        body.appendChild(iframe);
+      } else {
+        const a = document.createElement('a'); a.href = url; a.target='_blank'; a.rel='noopener noreferrer'; a.textContent = 'Open video'; body.appendChild(a);
+      }
+    }
+
+    const r = reactMap.get(p.id) || { like:0, aroha:0, mine: new Set() };
+    const actions = document.createElement('div'); actions.className='actions';
+    const btnLike = document.createElement('button'); btnLike.type='button'; btnLike.className='btn outline';
+    const btnAroha = document.createElement('button'); btnAroha.type='button'; btnAroha.className='btn outline';
+    const markMine = () => {
+      const mineLike = r.mine.has(currentUserId+':like');
+      const mineAroha = r.mine.has(currentUserId+':aroha');
+      btnLike.classList.toggle('active', !!mineLike);
+      btnAroha.classList.toggle('active', !!mineAroha);
+    };
+    btnLike.textContent = `👍 ${r.like||0}`;
+    btnAroha.textContent = `💛 ${r.aroha||0}`;
+    btnLike.addEventListener('click', async () => { try { await backend.toggleReaction(p.id, 'like'); await refresh(); } catch (e){ if (String(e&&e.message).includes('login-required')) alert('Takiuru kia urupare. / Sign in to react.'); } });
+    btnAroha.addEventListener('click', async () => { try { await backend.toggleReaction(p.id, 'aroha'); await refresh(); } catch (e){ if (String(e&&e.message).includes('login-required')) alert('Takiuru kia urupare. / Sign in to react.'); } });
+    actions.appendChild(btnLike); actions.appendChild(btnAroha);
+
+    const isOwner = p.authorId && currentUserId && p.authorId === currentUserId;
+    if (isOwner){
+      const gap = document.createElement('span'); gap.style.flex='1'; actions.appendChild(gap);
+      const btnEdit = document.createElement('button'); btnEdit.type='button'; btnEdit.className='btn'; btnEdit.textContent='Whakatika / Edit';
+      btnEdit.addEventListener('click', async () => {
+        try {
+          if (p.type === 'story'){
+            const val = prompt('Whakatika kōrero / Edit story', p.text || '');
+            if (val == null) return;
+            const text = String(val).trim();
+            if (!text) return alert('Koa, kaua e waiho kia koretake. / Text cannot be empty.');
+            await backend.updatePost(p.id, { text });
+          } else if (p.type === 'vlog'){
+            const val = prompt('Whakatika hono vlog / Edit vlog URL', p.mediaUrl || '');
+            if (val == null) return;
+            const mediaUrl = String(val).trim();
+            if (!mediaUrl) return alert('Whakaurua he hono tika. / URL cannot be empty.');
+            await backend.updatePost(p.id, { mediaUrl });
+          }
+          await refresh();
+        } catch (e){
+          alert('Hapa whakatika / Edit error'); console.error(e);
+        }
+      });
+      const btnDel = document.createElement('button'); btnDel.type='button'; btnDel.className='btn danger outline'; btnDel.textContent='Muku / Delete';
+      btnDel.addEventListener('click', async () => {
+        if (!confirm('Muku tēnei tāurunga? / Delete this post?')) return;
+        try { await backend.removePost(p.id); await refresh(); } catch(e){ alert('Hapa muku / Delete error'); console.error(e); }
+      });
+      actions.appendChild(btnEdit); actions.appendChild(btnDel);
+    }
+
+    body.appendChild(actions);
+    markMine();
+    card.appendChild(body);
+    return card;
+  }
+
   async function refresh(){
     setBusy(true);
     try {
@@ -182,100 +274,56 @@
   }
 
   function render(){
-    listEl.innerHTML = '';
-    const items = cache.slice().sort((a,b)=>b.createdAt-a.createdAt);
-    if (!items.length){ emptyEl && (emptyEl.style.display='block'); } else { emptyEl && (emptyEl.style.display='none'); }
-    const frag = document.createDocumentFragment();
+    try {
+      if (featuredEl) featuredEl.innerHTML='';
+      listEl.innerHTML = '';
+      const items = cache.slice();
+      if (!items.length){ emptyEl && (emptyEl.style.display='block'); } else { emptyEl && (emptyEl.style.display='none'); }
 
-    // Add button as first card (left)
-    const addCard = document.createElement('article'); addCard.className='card add-card';
-    const addBody = document.createElement('div'); addBody.className='card-body';
-    const addBtn = document.createElement('button'); addBtn.type='button'; addBtn.className='image-btn'; addBtn.setAttribute('aria-label','Add a story or vlog');
-    addBtn.innerHTML = `<img class=\"image-btn-img\" loading=\"lazy\" decoding=\"async\" alt=\"Video camera next to an open diary with a pen on a wooden desk\" src=\"assets/korero-button.jpg\" />`;
-    addBtn.addEventListener('click', () => showCreate());
-    addBody.appendChild(addBtn); addCard.appendChild(addBody); frag.appendChild(addCard);
+      // Featured row: add button + most reacted story
+      const ffrag = document.createDocumentFragment();
+      const addCard = document.createElement('article'); addCard.className='card add-card';
+      const addBody = document.createElement('div'); addBody.className='card-body';
+      const addBtn = document.createElement('button'); addBtn.type='button'; addBtn.className='image-btn'; addBtn.setAttribute('aria-label','Add a story or vlog');
+      addBtn.innerHTML = `<img class=\"image-btn-img\" loading=\"lazy\" decoding=\"async\" alt=\"Video camera next to an open diary with a pen on a wooden desk\" src=\"assets/korero-button.jpg\" />`;
+      addBtn.addEventListener('click', () => showCreate());
+      addBody.appendChild(addBtn); addCard.appendChild(addBody); ffrag.appendChild(addCard);
 
-    for (const p of items){
-      const card = document.createElement('article'); card.className='card';
-      const body = document.createElement('div'); body.className='card-body';
-      const tag = p.type === 'vlog' ? 'Vlog' : 'Story';
-      body.innerHTML = `<div><span class=\"tag\">${tag}</span></div>` +
-        `<div class=\"small muted\">${fmtTS(p.createdAt)}</div>`;
-
-      if (p.type === 'story' && p.text){
-        const pre = document.createElement('p'); pre.textContent = p.text; pre.style.whiteSpace='pre-wrap'; pre.style.margin='.5rem 0 0'; body.appendChild(pre);
+      // pick most reacted story
+      let featured = null; let bestScore = -1;
+      for (const p of items){
+        if (p.type !== 'story') continue;
+        const r = reactMap.get(p.id) || { like:0, aroha:0 };
+        const score = (r.like||0) + (r.aroha||0);
+        if (score > bestScore || (score === bestScore && featured && p.createdAt > featured.createdAt)){
+          featured = p; bestScore = score;
+        } else if (featured === null) { featured = p; bestScore = score; }
       }
-      if (p.type === 'vlog' && p.mediaUrl){
-        const url = p.mediaUrl.trim();
-        // Try YouTube embed
-        const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/i);
-        if (yt){
-          const iframe = document.createElement('iframe');
-          iframe.width = '560'; iframe.height = '315'; iframe.loading = 'lazy';
-          iframe.src = `https://www.youtube.com/embed/${yt[1]}`; iframe.title='YouTube video'; iframe.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'; iframe.allowFullscreen = true;
-          iframe.style.width='100%'; iframe.style.aspectRatio='16/9'; iframe.style.border='0';
-          body.appendChild(iframe);
-        } else {
-          const a = document.createElement('a'); a.href = url; a.target='_blank'; a.rel='noopener noreferrer'; a.textContent = 'Open video'; body.appendChild(a);
-        }
+      if (featuredEl){
+        if (featured) ffrag.appendChild(buildPostCard(featured));
+        featuredEl.appendChild(ffrag);
       }
 
-      // Reactions
-      const r = reactMap.get(p.id) || { like:0, aroha:0, mine: new Set() };
-      const actions = document.createElement('div'); actions.className='actions';
-      const btnLike = document.createElement('button'); btnLike.type='button'; btnLike.className='btn outline';
-      const btnAroha = document.createElement('button'); btnAroha.type='button'; btnAroha.className='btn outline';
-      const markMine = () => {
-        const mineLike = r.mine.has(currentUserId+':like');
-        const mineAroha = r.mine.has(currentUserId+':aroha');
-        btnLike.classList.toggle('active', !!mineLike);
-        btnAroha.classList.toggle('active', !!mineAroha);
-      };
-      btnLike.textContent = `👍 ${r.like||0}`;
-      btnAroha.textContent = `💛 ${r.aroha||0}`;
-      btnLike.addEventListener('click', async () => { try { await backend.toggleReaction(p.id, 'like'); await refresh(); } catch (e){ if (String(e&&e.message).includes('login-required')) alert('Takiuru kia urupare. / Sign in to react.'); } });
-      btnAroha.addEventListener('click', async () => { try { await backend.toggleReaction(p.id, 'aroha'); await refresh(); } catch (e){ if (String(e&&e.message).includes('login-required')) alert('Takiuru kia urupare. / Sign in to react.'); } });
-      actions.appendChild(btnLike); actions.appendChild(btnAroha);
-
-      // Owner actions (edit/delete)
-      const isOwner = p.authorId && currentUserId && p.authorId === currentUserId;
-      if (isOwner){
-        const gap = document.createElement('span'); gap.style.flex='1'; actions.appendChild(gap);
-        const btnEdit = document.createElement('button'); btnEdit.type='button'; btnEdit.className='btn'; btnEdit.textContent='Whakatika / Edit';
-        btnEdit.addEventListener('click', async () => {
-          try {
-            if (p.type === 'story'){
-              const val = prompt('Whakatika kōrero / Edit story', p.text || '');
-              if (val == null) return; // cancelled
-              const text = String(val).trim();
-              if (!text) return alert('Koa, kaua e waiho kia koretake. / Text cannot be empty.');
-              await backend.updatePost(p.id, { text });
-            } else if (p.type === 'vlog'){
-              const val = prompt('Whakatika hono vlog / Edit vlog URL', p.mediaUrl || '');
-              if (val == null) return;
-              const mediaUrl = String(val).trim();
-              if (!mediaUrl) return alert('Whakaurua he hono tika. / URL cannot be empty.');
-              await backend.updatePost(p.id, { mediaUrl });
-            }
-            await refresh();
-          } catch (e){
-            alert('Hapa whakatika / Edit error'); console.error(e);
-          }
-        });
-        const btnDel = document.createElement('button'); btnDel.type='button'; btnDel.className='btn danger outline'; btnDel.textContent='Muku / Delete';
-        btnDel.addEventListener('click', async () => {
-          if (!confirm('Muku tēnei tāurunga? / Delete this post?')) return;
-          try { await backend.removePost(p.id); await refresh(); } catch(e){ alert('Hapa muku / Delete error'); console.error(e); }
-        });
-        actions.appendChild(btnEdit); actions.appendChild(btnDel);
+      // Rest of stories (and vlogs) by most recent, excluding featured
+      const rest = items.sort((a,b)=>b.createdAt-a.createdAt).filter(p => !featured || p.id !== featured.id);
+      const lfrag = document.createDocumentFragment();
+      for (const p of rest){
+        try { lfrag.appendChild(buildPostCard(p)); } catch(e){ console.error('Render card error', e); }
       }
-
-      body.appendChild(actions);
-      markMine();
-
-      card.appendChild(body); frag.appendChild(card);
+      listEl.appendChild(lfrag);
+    } catch (e){
+      console.error('Render error', e);
+      // Minimal fallback: ensure add button shows
+      if (featuredEl) featuredEl.innerHTML='';
+      listEl.innerHTML='';
+      const addCard = document.createElement('article'); addCard.className='card add-card';
+      const addBody = document.createElement('div'); addBody.className='card-body';
+      const addBtn = document.createElement('button'); addBtn.type='button'; addBtn.className='image-btn'; addBtn.setAttribute('aria-label','Add a story or vlog');
+      addBtn.innerHTML = `<img class=\"image-btn-img\" loading=\"lazy\" decoding=\"async\" alt=\"Video camera next to an open diary with a pen on a wooden desk\" src=\"assets/korero-button.jpg\" />`;
+      addBtn.addEventListener('click', () => showCreate());
+      addBody.appendChild(addBtn); addCard.appendChild(addBody);
+      if (featuredEl) featuredEl.appendChild(addCard); else listEl.appendChild(addCard);
     }
-    listEl.appendChild(frag);
   }
 
   // Submit handler
