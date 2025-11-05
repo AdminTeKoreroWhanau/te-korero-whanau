@@ -14,10 +14,17 @@
 .profile-layout{display:grid;grid-template-columns:1fr;gap:1rem;margin:1rem}
 .left-col,.right-col{display:flex;flex-direction:column;gap:1rem}
 @media (min-width:900px){.profile-layout{grid-template-columns:1fr 2fr}}
-.composer .row{display:flex;gap:.5rem;align-items:center}
+.composer .row{display:flex;gap:.5rem;align-items:stretch}
+/* Make New post row buttons equal width/height */
+.composer .row .btn{flex:1 1 0;min-width:0;text-align:center;display:grid;place-items:center}
 .photos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.photos-grid .photo-item{position:relative}
 .photos-grid a{display:block}
 .photos-grid img{width:100%;height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--border)}
+.photos-grid .photo-actions{position:absolute;top:6px;right:6px;display:flex;gap:4px;opacity:0;transition:opacity .15s ease}
+.photos-grid .photo-item:hover .photo-actions,
+.photos-grid .photo-item:focus-within .photo-actions{opacity:1}
+.photos-grid .photo-actions .btn{padding:.25rem .4rem;font-size:.8rem;line-height:1;border-radius:8px}
 @media (min-width:900px){.photos-grid{grid-template-columns:repeat(4,1fr)}.photos-grid img{height:120px}}
 
 :root{--bg:#0b0f10;--fg:#eef2f3;--muted:#a7b1b5;--accent:#00c4b3;--panel:#12181a;--border:#1e2629;--font:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
@@ -80,9 +87,14 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 .btn{background:var(--accent);color:white;border:0;border-radius:10px;padding:0.6rem 0.9rem;cursor:pointer;transition:transform .2s ease,opacity .2s ease}
 .btn:hover{opacity:.9}
 .btn.outline{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+/* Equalize heights in composer while preserving outline on Add photo */
+.composer .row .btn:not(.outline){border:1px solid transparent}
 .btn-link{background:none;border:0;color:var(--accent);cursor:pointer;padding:0.65rem 0.65rem;border-bottom:2px solid transparent;font-size:1.2rem;font-weight:600}
 .btn-link:hover{text-decoration:none}
-/* Lang swap hover for action buttons (Māori default -> English on hover) */
+/* Lang swap hover for action buttons (Māori default -> English on hover)
+   Only one word is rendered; width is stabilized via JS min-width. */
+.btn.lang-swap{display:inline-grid;place-items:center}
+.btn.lang-swap .lang{grid-area:1/1;white-space:nowrap}
 .btn.lang-swap .lang.en{display:none}
 .btn.lang-swap:hover .lang.mi,
 .btn.lang-swap:focus-visible .lang.mi{display:none}

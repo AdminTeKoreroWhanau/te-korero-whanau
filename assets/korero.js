@@ -357,6 +357,32 @@
     } finally { setBusy(false); }
   }
 
+  // Stabilize hover-swap buttons by reserving width for the longest label
+  function stabilizeLangSwapWidths(root){
+    try {
+      const buttons = (root || document).querySelectorAll('.btn.lang-swap');
+      buttons.forEach(btn => {
+        const mi = btn.querySelector('.lang.mi');
+        const en = btn.querySelector('.lang.en');
+        if (!mi || !en) return;
+        const prevMin = btn.style.minWidth;
+        btn.style.minWidth = '0px';
+        const miDisp = mi.style.display;
+        const enDisp = en.style.display;
+        mi.style.display = 'inline-block';
+        en.style.display = 'inline-block';
+        const miW = mi.offsetWidth;
+        const enW = en.offsetWidth;
+        mi.style.display = miDisp || '';
+        en.style.display = enDisp || '';
+        const cs = window.getComputedStyle(btn);
+        const pad = parseFloat(cs.paddingLeft||0) + parseFloat(cs.paddingRight||0) + parseFloat(cs.borderLeftWidth||0) + parseFloat(cs.borderRightWidth||0);
+        const w = Math.ceil(Math.max(miW, enW) + pad);
+        btn.style.minWidth = w + 'px';
+      });
+    } catch {}
+  }
+
   function render(){
     try {
       if (featuredEl) featuredEl.innerHTML='';
@@ -395,6 +421,8 @@
         try { lfrag.appendChild(buildPostCard(p)); } catch(e){ console.error('Render card error', e); }
       }
       listEl.appendChild(lfrag);
+      // After DOM is updated, stabilize widths for hover-swap buttons
+      stabilizeLangSwapWidths(document);
     } catch (e){
       console.error('Render error', e);
       // Minimal fallback: ensure add button shows
@@ -407,6 +435,7 @@
       addBtn.addEventListener('click', () => showCreate());
       addBody.appendChild(addBtn); addCard.appendChild(addBody);
       if (featuredEl) featuredEl.appendChild(addCard); else listEl.appendChild(addCard);
+      stabilizeLangSwapWidths(document);
     }
   }
 

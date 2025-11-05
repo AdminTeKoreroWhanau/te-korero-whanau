@@ -40,7 +40,7 @@
             <h1 id="profile-name">—</h1>
           </div>
           <div class="profile-actions">
-            <button class="btn outline" id="edit-profile" type="button">Whakatika / Edit</button>
+            <button class="btn outline lang-swap" id="edit-profile" type="button"><span class="lang mi">Whakatika</span><span class="lang en">Edit</span></button>
           </div>
         </div>
         <nav class="profile-tabs">
@@ -72,9 +72,9 @@
             <form id="post-form" class="form">
               <textarea name="content" rows="3" placeholder="Tuhia ō kōrero..."></textarea>
               <div class="row">
-                <label class="btn outline" for="composer-file">Tāpiri Whakaahua / Add photo</label>
+                <label class="btn outline lang-swap" for="composer-file"><span class="lang mi">Tāpiri Whakaahua</span><span class="lang en">Add photo</span></label>
                 <input id="composer-file" type="file" name="file" accept="image/*,video/*" style="display:none" />
-                <button class="btn" type="submit">Tukua / Post</button>
+                <button class="btn lang-swap" type="submit"><span class="lang mi">Tukua</span><span class="lang en">Post</span></button>
               </div>
               <p class="muted small" id="post-msg"></p>
             </form>
@@ -106,7 +106,7 @@
             <label>Kupuhipa / Password
               <input type="password" name="password" required minlength="6" />
             </label>
-            <button type="submit" class="btn">Takiuru</button>
+            <button type="submit" class="btn lang-swap"><span class="lang mi">Takiuru</span><span class="lang en">Login</span></button>
             <p class="muted small" id="login-msg"></p>
           </form>
           <form id="register-form" class="form" autocomplete="on" hidden>
@@ -119,7 +119,7 @@
             <label>Kupuhipa / Password
               <input type="password" name="password" required minlength="6" />
             </label>
-            <button type="submit" class="btn">Rēhita</button>
+            <button type="submit" class="btn lang-swap"><span class="lang mi">Rēhita</span><span class="lang en">Register</span></button>
             <p class="muted small" id="register-msg"></p>
           </form>
         </div>
@@ -162,7 +162,7 @@
               <input type="text" id="edit-marae" name="pepeha_marae" />
             </label>
           </fieldset>
-          <button type="submit" class="btn">Tiaki / Save</button>
+          <button type="submit" class="btn lang-swap"><span class="lang mi">Tiaki</span><span class="lang en">Save</span></button>
           <p class="muted small" id="profile-msg"></p>
         </form>
       </div>
@@ -207,6 +207,7 @@
         const editWaka = document.getElementById('edit-waka');
         const editMarae = document.getElementById('edit-marae');
         const profileMsg = document.getElementById('profile-msg');
+        let currentPosts = [];
 
         async function ensureSession(){
           const { data: sess } = await sb.auth.getSession();
@@ -256,7 +257,11 @@
             let mediaHtml = '';
             if (p.type === 'image' && p.media_url){ mediaHtml = `<img src="${p.media_url}" alt="" style="max-width:100%;border-radius:8px;border:1px solid var(--border)"/>`; }
             if (p.type === 'video' && p.media_url){ mediaHtml = `<video src="${p.media_url}" controls style="max-width:100%;border-radius:8px;border:1px solid var(--border)"></video>`; }
-            wrap.innerHTML = `<div class="muted small">${t}</div>${p.content?`<p>${p.content}</p>`:''}${mediaHtml}`;
+            const actions = `<div class="owner-actions" style="margin-top:.5rem;display:flex;gap:.5rem">
+              <button class="btn outline lang-swap post-edit" data-id="${p.id}" type="button"><span class="lang mi">Whakatika</span><span class="lang en">Edit</span></button>
+              <button class="btn outline lang-swap post-delete" data-id="${p.id}" type="button"><span class="lang mi">Muku</span><span class="lang en">Delete</span></button>
+            </div>`;
+            wrap.innerHTML = `<div class="muted small">${t}</div>${p.content?`<p>${p.content}</p>`:''}${mediaHtml}${actions}`;
             postsRoot.appendChild(wrap);
           });
         }
@@ -309,9 +314,16 @@
           if (photosEmpty) photosEmpty.style.display='none';
           const frag = document.createDocumentFragment();
           imgs.forEach(p => {
+            const item = document.createElement('div'); item.className = 'photo-item';
             const a = document.createElement('a'); a.href = p.media_url; a.target='_blank'; a.rel='noopener noreferrer';
             const img = document.createElement('img'); img.src = p.media_url; img.alt = ''; a.appendChild(img);
-            frag.appendChild(a);
+            const act = document.createElement('div'); act.className = 'photo-actions';
+            act.innerHTML = `
+              <button class="btn outline lang-swap photo-edit" data-id="${p.id}" type="button"><span class="lang mi">Whakatika</span><span class="lang en">Edit</span></button>
+              <button class="btn outline lang-swap photo-delete" data-id="${p.id}" type="button"><span class="lang mi">Muku</span><span class="lang en">Delete</span></button>
+            `;
+            item.appendChild(a); item.appendChild(act);
+            frag.appendChild(item);
           });
           photosGrid.appendChild(frag);
         }
@@ -320,8 +332,9 @@
           try{
             const { data, error } = await sb.from('posts').select('*').eq('user_id', user.id).order('created_at', { ascending:false });
             if (error) throw error;
-            renderPosts(data);
-            renderPhotos(data);
+            currentPosts = data || [];
+            renderPosts(currentPosts);
+            renderPhotos(currentPosts);
           }catch(err){
             postsRoot.innerHTML = `<p class=\"muted small\">Unable to load posts. Ensure a 'posts' table exists in Supabase with columns: id uuid, user_id uuid, content text, type text, media_url text, created_at timestamptz default now().</p>`;
           }
@@ -353,6 +366,17 @@
           return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
         }
         function hash(s){ let h=0; for (let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; } return h; }
+        function storagePathFromPublicUrl(url){
+          try{
+            const marker = '/object/public/';
+            const i = url.indexOf(marker);
+            if (i === -1) return null;
+            const rest = url.substring(i + marker.length); // e.g., 'media/userid/filename.jpg'
+            const slash = rest.indexOf('/');
+            if (slash === -1) return null;
+            return rest.substring(slash + 1); // path within bucket
+          }catch(_){ return null; }
+        }
 
         // Edit modal controls
         function showEdit(){ if (!editModal) return; editModal.hidden=false; editModal.setAttribute('aria-hidden','false'); }
@@ -427,6 +451,76 @@
               loadPosts(user);
             }catch(err){
               postMsg.textContent = 'Kāore i taea te tuku / Failed to post. Ensure posts table exists and RLS allows authenticated inserts.';
+            }
+          });
+        }
+
+        // Edit/delete handlers for posts list
+        if (postsRoot){
+          postsRoot.addEventListener('click', async (e) => {
+            const editBtn = e.target.closest && e.target.closest('button.post-edit');
+            const delBtn = e.target.closest && e.target.closest('button.post-delete');
+            if (!editBtn && !delBtn) return;
+            const user = await ensureSession(); if (!user) return;
+            const id = (editBtn||delBtn).getAttribute('data-id');
+            const post = currentPosts.find(p => String(p.id) === String(id));
+            if (!post) return;
+            if (editBtn){
+              const next = window.prompt('Whakatika tuhinga / Edit post content:', post.content || '');
+              if (next == null) return;
+              try{
+                const { error } = await sb.from('posts').update({ content: next }).eq('id', id).eq('user_id', user.id);
+                if (error) throw error;
+                await loadPosts(user);
+              }catch(_){ alert('Kāore i taea te whakatika / Failed to edit.'); }
+            }
+            if (delBtn){
+              if (!window.confirm('Muku tēnei? / Delete this?')) return;
+              try{
+                // delete media if any
+                if (post.media_url && post.type && post.type !== 'text'){
+                  const path = storagePathFromPublicUrl(post.media_url);
+                  if (path){ await sb.storage.from('media').remove([path]); }
+                }
+                const { error } = await sb.from('posts').delete().eq('id', id).eq('user_id', user.id);
+                if (error) throw error;
+                await loadPosts(user);
+              }catch(_){ alert('Kāore i taea te muku / Failed to delete.'); }
+            }
+          });
+        }
+
+        // Edit/delete handlers for photos grid
+        if (photosGrid){
+          photosGrid.addEventListener('click', async (e) => {
+            const editBtn = e.target.closest && e.target.closest('button.photo-edit');
+            const delBtn = e.target.closest && e.target.closest('button.photo-delete');
+            if (!editBtn && !delBtn) return;
+            e.preventDefault();
+            const user = await ensureSession(); if (!user) return;
+            const id = (editBtn||delBtn).getAttribute('data-id');
+            const post = currentPosts.find(p => String(p.id) === String(id));
+            if (!post) return;
+            if (editBtn){
+              const next = window.prompt('Tāpiri/kua whakatika kupu / Add or edit caption:', post.content || '');
+              if (next == null) return;
+              try{
+                const { error } = await sb.from('posts').update({ content: next }).eq('id', id).eq('user_id', user.id);
+                if (error) throw error;
+                await loadPosts(user);
+              }catch(_){ alert('Kāore i taea te whakatika / Failed to edit.'); }
+            }
+            if (delBtn){
+              if (!window.confirm('Muku tēnei whakaahua? / Delete this photo?')) return;
+              try{
+                if (post.media_url){
+                  const path = storagePathFromPublicUrl(post.media_url);
+                  if (path){ await sb.storage.from('media').remove([path]); }
+                }
+                const { error } = await sb.from('posts').delete().eq('id', id).eq('user_id', user.id);
+                if (error) throw error;
+                await loadPosts(user);
+              }catch(_){ alert('Kāore i taea te muku / Failed to delete.'); }
             }
           });
         }
