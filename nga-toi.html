@@ -18,8 +18,7 @@
           <li><a href="whakapapa.html">Whakapapa</a></li>
           <li><a href="korero.html">Kōrero</a></li>
           <li><a href="mahi.html">Mahi</a></li>
-          <li><a href="waiata.html">Waiata</a></li>
-          <li><a href="karakia.html">Karakia</a></li>
+          <li><a href="tauparapara.html">Tauparapara</a></li>
           <li><a href="nga-toi.html">Ngā Toi</a></li>
           <li id="nav-admin-item" style="display:none"><a href="admin.html">Kaiwhakahaere</a></li>
           <li id="nav-login-item"><a id="open-auth" href="#">Takiuru</a></li>
@@ -64,6 +63,116 @@
             <figcaption>Ahi</figcaption>
           </figure>
         </div>
+
+        <section id="ngatoi-upload" class="panel" aria-labelledby="ngatoi-upload-heading" style="margin-top:1rem">
+          <h2 id="ngatoi-upload-heading">Tāpiri whakaahua / Add photos to the gallery</h2>
+          <p class="small muted">Uploads are stored locally by default. If Supabase is configured in <code>assets/config.js</code>, photos are shared with whānau.</p>
+          <form id="form-art" class="form">
+            <label>
+              <span>Title</span>
+              <input type="text" id="art-title" placeholder="He whakaahua..." required />
+            </label>
+            <label>
+              <span>Contributor</span>
+              <input type="text" id="art-author" placeholder="Ko wai?" />
+            </label>
+            <label>
+              <span>Image file (jpg, png, webp)</span>
+              <input type="file" id="art-file" accept="image/*" required />
+            </label>
+            <button type="submit" class="btn">Tuku / Upload</button>
+          </form>
+        </section>
+      </section>
+      
+      <section id="waiata" class="panel">
+        <h1>Waiata</h1>
+        <figure class="hero-figure">
+          <img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Taonga pūoro / Guitar symbolising waiata" src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1200&h=420&q=80" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&h=420&q=80';" />
+          <figcaption class="visually-hidden">Guitar for song</figcaption>
+        </figure>
+        <p>Recordings and lyrics to support learning and whakanui i te reo me ngā tikanga.</p>
+        <details class="fold">
+          <summary>Practice tips</summary>
+          <p>Start slow, learn kupu first, then add melody. Record your progress to share with whānau.</p>
+        </details>
+
+        <section id="waiata-showcase" class="panel" aria-labelledby="waiata-showcase-heading">
+          <h2 id="waiata-showcase-heading">Ngā Tirohanga / Previews</h2>
+          <div class="slideshow" id="waiata-slideshow">
+            <div class="slides" id="waiata-slides">
+              <div class="slide">
+                <article class="card">
+                  <div class="card-body">
+                    <div><span class="tag">Audio</span></div>
+                    <h3>E Rere Rā (example)</h3>
+                    <p class="meta">Whānau Aroha</p>
+                  </div>
+                </article>
+              </div>
+              <div class="slide">
+                <article class="card">
+                  <div class="card-body">
+                    <div><span class="tag">Lyrics</span></div>
+                    <h3>Tūtira Mai Ngā Iwi (example)</h3>
+                    <p class="meta">"Tūtira mai ngā iwi, tātou tātou e..."</p>
+                  </div>
+                </article>
+              </div>
+            </div>
+            <div class="slide-nav">
+              <button type="button" id="waiata-prev" aria-label="Previous">‹</button>
+              <button type="button" id="waiata-next" aria-label="Next">›</button>
+            </div>
+            <div class="slide-dots" id="waiata-dots" aria-hidden="true"></div>
+          </div>
+        </section>
+
+        <section id="waiata-upload" class="panel" aria-labelledby="upload-heading">
+          <h2 id="upload-heading">Tāpiri waiata, kupu hoki / Add songs or lyrics</h2>
+          <p class="small muted">Uploads are stored on your device (no server). Share your device to show whānau.</p>
+          <div class="tabpanes">
+            <form id="form-audio" class="form">
+              <label>
+                <span>Title</span>
+                <input type="text" id="audio-title" placeholder="He waiata..." required />
+              </label>
+              <label>
+                <span>Contributor</span>
+                <input type="text" id="audio-author" placeholder="Ko wai?" />
+              </label>
+              <label>
+                <span>Audio file (mp3, m4a, wav)</span>
+                <input type="file" id="audio-file" accept="audio/*" required />
+              </label>
+              <button type="submit" class="btn">Tuku / Upload</button>
+            </form>
+
+            <form id="form-lyrics" class="form">
+              <label>
+                <span>Title</span>
+                <input type="text" id="lyrics-title" placeholder="He waiata, he karakia..." required />
+              </label>
+              <label>
+                <span>Contributor</span>
+                <input type="text" id="lyrics-author" placeholder="Ko wai?" />
+              </label>
+              <label>
+                <span>Lyrics</span>
+                <textarea id="lyrics-text" rows="6" placeholder="Tāuruhia ngā kupu..." required></textarea>
+              </label>
+              <button type="submit" class="btn">Tuku / Upload</button>
+            </form>
+          </div>
+        </section>
+
+        <section id="waiata-browse" class="panel" aria-labelledby="browse-heading">
+          <h2 id="browse-heading">Tirohia ngā tāpiritanga / Browse uploads</h2>
+          <input id="waiata-search" type="text" placeholder="Rapua te taitara, kaituhi, kupu..." aria-label="Search waiata" />
+          <div id="waiata-list" class="cards" aria-live="polite" aria-busy="false"></div>
+          <p id="waiata-empty" class="muted small">Kāore anō he tāpiritanga. Tāpiri he waiata, he kupu ki runga ake nei.</p>
+        </section>
+
       </section>
     </main>
 
@@ -113,5 +222,7 @@
     <script src="assets/config.js"></script>
     <script src="assets/auth.js"></script>
     <script src="assets/app.js"></script>
+    <script src="assets/backend.js"></script>
+    <script src="assets/waiata.js"></script>
   </body>
 </html>

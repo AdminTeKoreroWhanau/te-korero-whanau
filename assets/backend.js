@@ -8,7 +8,7 @@
   const url = window.SUPABASE_URL;
   const anon = window.SUPABASE_ANON_KEY;
   if (url && anon){
-    window.WAIATA_BACKEND = { type: 'supabase', url, anonKey: anon, bucket: 'waiata' };
+    window.WAIATA_BACKEND = { type: 'supabase', url, anonKey: anon, bucket: 'waiata', artBucket: 'ngatoi' };
     window.KORERO_BACKEND = { type: 'supabase', url, anonKey: anon };
   } else {
     // Fallback to local-only backend if not configured
