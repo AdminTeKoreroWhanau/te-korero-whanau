@@ -6,8 +6,10 @@
   const selType = document.getElementById('post-type');
   const storyWrap = document.getElementById('story-wrap');
   const vlogWrap = document.getElementById('vlog-wrap');
+  const vlogStoryWrap = document.getElementById('vlog-story-wrap');
   const storyText = document.getElementById('story-text');
   const vlogUrl = document.getElementById('vlog-url');
+  const vlogStoryText = document.getElementById('vlog-story-text');
   const postTitle = document.getElementById('post-subject');
   // Modal elements for create
   const createOpenBtn = document.getElementById('open-korero-modal');
@@ -20,8 +22,10 @@
   const editForm = document.getElementById('korero-edit-form');
   const editStoryWrap = document.getElementById('edit-story-wrap');
   const editVlogWrap = document.getElementById('edit-vlog-wrap');
+  const editVlogStoryWrap = document.getElementById('edit-vlog-story-wrap');
   const editStoryText = document.getElementById('edit-story-text');
   const editVlogUrl = document.getElementById('edit-vlog-url');
+  const editVlogStoryText = document.getElementById('edit-vlog-story-text');
   const editTitleHeading = document.getElementById('korero-edit-title');
   const editTitleInput = document.getElementById('edit-subject');
   const editCancelBtn = document.getElementById('korero-edit-cancel');
@@ -241,8 +245,8 @@
     const apply = () => {
       const t = selType.value;
       const isStory = t === 'story';
-      storyWrap.hidden = !isStory; vlogWrap.hidden = isStory;
-      if (isStory) vlogUrl.value = ''; else storyText.value = '';
+      storyWrap.hidden = !isStory; vlogWrap.hidden = isStory; if (vlogStoryWrap) vlogStoryWrap.hidden = isStory;
+      if (isStory) { vlogUrl.value = ''; if (vlogStoryText) vlogStoryText.value = ''; } else storyText.value = '';
     };
     selType.addEventListener('change', apply); apply();
   }
@@ -301,6 +305,23 @@
       } else {
         const a = document.createElement('a'); a.href = url; a.target='_blank'; a.rel='noopener noreferrer'; a.textContent = 'Open video'; body.appendChild(a);
       }
+      // Add vlog story text if it exists
+      if (p.text && p.text.trim()){
+        const T = String(p.text||'');
+        const storyDiv = document.createElement('div'); storyDiv.style.marginTop='1rem'; storyDiv.style.padding='.75rem'; storyDiv.style.background='var(--surface)'; storyDiv.style.borderRadius='var(--radius)';
+        const LIMIT = 280;
+        if (T.length > LIMIT){
+          const preview = document.createElement('p'); preview.style.whiteSpace='pre-wrap'; preview.style.margin='0';
+          preview.textContent = T.slice(0, LIMIT).trim() + '… ';
+          const more = document.createElement('a'); more.href='#'; more.textContent='Read more'; more.style.color='var(--accent)'; more.style.textDecoration='none'; more.style.cursor='pointer';
+          more.addEventListener('click', (e)=>{ e.preventDefault(); if (viewBody) viewBody.textContent = T; if (viewModal){ viewModal.hidden=false; viewModal.setAttribute('aria-hidden','false'); } });
+          preview.appendChild(more);
+          storyDiv.appendChild(preview);
+        } else {
+          const pre = document.createElement('p'); pre.textContent = T; pre.style.whiteSpace='pre-wrap'; pre.style.margin='0'; storyDiv.appendChild(pre);
+        }
+        body.appendChild(storyDiv);
+      }
     }
 
     const r = reactMap.get(p.id) || { like:0, aroha:0, mine: new Set() };
@@ -331,8 +352,15 @@
         managePost = p;
         editTitleHeading && (editTitleHeading.textContent = p.type==='story' ? 'Whakatika Kōrero / Edit Story' : 'Whakatika Vlog URL');
         if (editTitleInput) editTitleInput.value = p.title || '';
-        if (p.type==='story'){ editStoryWrap.hidden = false; editVlogWrap.hidden = true; if (editStoryText) editStoryText.value = p.text || ''; }
-        else { editStoryWrap.hidden = true; editVlogWrap.hidden = false; if (editVlogUrl) editVlogUrl.value = p.mediaUrl || ''; }
+        if (p.type==='story'){ 
+          editStoryWrap.hidden = false; editVlogWrap.hidden = true; if (editVlogStoryWrap) editVlogStoryWrap.hidden = true; 
+          if (editStoryText) editStoryText.value = p.text || ''; 
+        }
+        else { 
+          editStoryWrap.hidden = true; editVlogWrap.hidden = false; if (editVlogStoryWrap) editVlogStoryWrap.hidden = false;
+          if (editVlogUrl) editVlogUrl.value = p.mediaUrl || ''; 
+          if (editVlogStoryText) editVlogStoryText.value = p.text || '';
+        }
         showEdit();
       });
       const btnDel = document.createElement('button'); btnDel.type='button'; btnDel.className='btn danger outline lang-swap'; btnDel.innerHTML='<span class="lang mi">Muku</span><span class="lang en" aria-hidden="true">Delete</span>';
@@ -444,14 +472,14 @@
     e.preventDefault();
     const t = selType ? selType.value : 'story';
     const title = (postTitle?.value||'').trim();
-    const text = (t==='story') ? (storyText.value||'').trim() : '';
+    const text = (t==='story') ? (storyText.value||'').trim() : (t==='vlog') ? (vlogStoryText?.value||'').trim() : '';
     const url = (t==='vlog') ? (vlogUrl.value||'').trim() : '';
     if (t==='story' && !text) return alert('Tāuruhia he kōrero. / Enter a story.');
     if (t==='vlog' && !url) return alert('Whakaurua he hono ataata. / Enter a video URL.');
     listEl.setAttribute('aria-busy','true');
     try {
       await backend.addPost(t, title, text, url);
-      form.reset(); if (selType) selType.value='story'; if (storyWrap && vlogWrap) { storyWrap.hidden=false; vlogWrap.hidden=true; }
+      form.reset(); if (selType) selType.value='story'; if (storyWrap && vlogWrap) { storyWrap.hidden=false; vlogWrap.hidden=true; if (vlogStoryWrap) vlogStoryWrap.hidden=true; }
       hideCreate();
       await refresh();
     } catch (err){
@@ -470,7 +498,8 @@
           await backend.updatePost(managePost.id, { title, text });
         } else {
           const mediaUrl = (editVlogUrl?.value||'').trim(); if (!mediaUrl) return alert('Tāuruhia te URL.');
-          await backend.updatePost(managePost.id, { title, mediaUrl });
+          const text = (editVlogStoryText?.value||'').trim();
+          await backend.updatePost(managePost.id, { title, text, mediaUrl });
         }
         hideEdit(); await refresh();
       } catch(err){ alert('Hapa whakatika'); console.error(err); }

@@ -1,11 +1,12 @@
 /* Profile layout (Facebook-style) */
 .profile-header{margin:0 0 0.5rem}
-.profile-header .cover{height:260px;border-bottom:1px solid var(--border);background:linear-gradient(135deg, rgba(0,196,179,.25), transparent 60%);position:relative;overflow:hidden}
+.profile-header .cover{height:260px;border-bottom:1px solid var(--border);background:linear-gradient(135deg, rgba(0,196,179,.25), transparent 60%);position:relative;overflow:hidden;z-index:0}
 .profile-header .cover img{width:100%;height:100%;object-fit:cover;display:none}
 @media (min-width:900px){.profile-header .cover{height:320px}}
-.profile-bar{display:flex;align-items:center;gap:1rem;margin:-3rem 1rem 0;border-radius:12px;padding:0.75rem 1rem}
-.avatar-wrap{margin-top:-3rem}
-.avatar{width:112px;height:112px;border-radius:50%;border:3px solid var(--bg);background:#222;display:none}
+.profile-bar{display:flex;align-items:center;gap:1rem;margin:-3rem 1rem 0;border-radius:12px;padding:0.75rem 1rem;position:relative;z-index:2;min-height:112px}
+.avatar-wrap{margin-top:-0.5rem;position:relative;z-index:3;flex:0 0 auto}
+.avatar{width:112px;height:112px;border-radius:10px;border:3px solid var(--bg);background:#222;display:none;object-fit:cover}
+.profile-meta{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:112px;margin-left:1.25rem}
 .profile-meta h1{margin:.25rem 0 0}
 .profile-actions{margin-left:auto}
 .profile-tabs{display:flex;gap:.75rem;border-bottom:1px solid var(--border);margin:0.5rem 0 0;padding:0 1rem;position:sticky;top:60px;background:var(--bg);z-index:50}
@@ -14,17 +15,32 @@
 .profile-layout{display:grid;grid-template-columns:1fr;gap:1rem;margin:1rem}
 .left-col,.right-col{display:flex;flex-direction:column;gap:1rem}
 @media (min-width:900px){.profile-layout{grid-template-columns:1fr 2fr}}
+/* Responsive alignment for tablet/mobile */
+@media (max-width:900px){
+  .profile-bar{margin:-2.25rem .75rem 0;padding:0.75rem}
+  .avatar-wrap{margin-top:-0.25rem}
+  .profile-meta{margin-left:.9rem}
+}
+@media (max-width:720px){
+  .profile-bar{flex-wrap:wrap;gap:.75rem;margin:-1.75rem .75rem 0}
+  .avatar-wrap{margin-top:0}
+  .profile-meta{margin-left:.6rem}
+  .profile-actions{width:100%;display:flex;justify-content:flex-end}
+}
 .composer .row{display:flex;gap:.5rem;align-items:stretch}
 /* Make New post row buttons equal width/height */
 .composer .row .btn{flex:1 1 0;min-width:0;text-align:center;display:grid;place-items:center}
 .photos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
 .photos-grid .photo-item{position:relative}
 .photos-grid a{display:block}
-.photos-grid img{width:100%;height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--border)}
+.photos-grid img{width:100%;height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--border);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;cursor:zoom-in}
 .photos-grid .photo-actions{position:absolute;top:6px;right:6px;display:flex;gap:4px;opacity:0;transition:opacity .15s ease}
 .photos-grid .photo-item:hover .photo-actions,
 .photos-grid .photo-item:focus-within .photo-actions{opacity:1}
 .photos-grid .photo-actions .btn{padding:.25rem .4rem;font-size:.8rem;line-height:1;border-radius:8px}
+/* Glow on photo hover */
+.photos-grid .photo-item:hover img,
+.photos-grid .photo-item:focus-within img{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent),0 8px 24px rgba(0,196,179,.25);transform:scale(1.02)}
 @media (min-width:900px){.photos-grid{grid-template-columns:repeat(4,1fr)}.photos-grid img{height:120px}}
 
 :root{--bg:#0b0f10;--fg:#eef2f3;--muted:#a7b1b5;--accent:#00c4b3;--panel:#12181a;--border:#1e2629;--font:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
@@ -91,6 +107,9 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 .composer .row .btn:not(.outline){border:1px solid transparent}
 .btn-link{background:none;border:0;color:var(--accent);cursor:pointer;padding:0.65rem 0.65rem;border-bottom:2px solid transparent;font-size:1.2rem;font-weight:600}
 .btn-link:hover{text-decoration:none}
+/* Inline Read more in posts */
+#posts .btn-link.read-more{padding:0;border:0;border-bottom:0;display:inline;font-size:inherit;font-weight:inherit;line-height:inherit;vertical-align:baseline}
+#posts .btn-link.read-more:hover{text-decoration:underline}
 /* Lang swap hover for action buttons (Māori default -> English on hover)
    Only one word is rendered; width is stabilized via JS min-width. */
 .btn.lang-swap{display:inline-grid;place-items:center}
@@ -155,13 +174,23 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}
 /* Korero page: remove extra spacing and prevent overlap on hover */
 #korero .cards{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+/* Mobile: single column layout */
+@media (max-width: 680px) {
+  .cards{grid-template-columns:1fr}
+  #korero .cards{grid-template-columns:1fr}
+}
+/* Tablet: allow up to 2 columns */
+@media (min-width: 681px) and (max-width: 1024px) {
+  .cards{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  #korero .cards{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
 .card>img,.card>a.card-link>img{width:100%;height:140px;object-fit:cover;border-bottom:1px solid var(--border)}
 .card-body{padding:.75rem 1rem;display:flex;flex-direction:column;gap:.5rem;position:relative}
 /* Align owner actions with reactions (right-aligned in same row) */
 .card .actions{display:flex;gap:.5rem;align-items:center}
 .owner-actions{margin-left:auto;display:flex;gap:.5rem}
-.owner-actions .btn{padding:.45rem .65rem}
+.owner-actions .btn{padding:.45rem .65rem;min-width:90px}
 .card h3{margin:.25rem 0;display:flex;align-items:center;gap:.5rem}
 .card h3 .title-text{flex:0 1 auto}
 .card h3 .tag{margin-left:auto}
@@ -180,7 +209,9 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 /* Korero-specific overrides to avoid overlap and increase spacing */
 #korero .cards{gap:2rem}
 #korero .cards .card:hover,
-#korero .cards .card:focus-within{transform:none;box-shadow:0 4px 12px rgba(0,196,179,.18);} 
+#korero .cards .card:focus-within{transform:none;box-shadow:0 4px 12px rgba(0,196,179,.18);}
+/* Add consistent spacing between featured and list sections */
+#korero-list{margin-top:2rem}
 
 /* Admin: place delete/actions at bottom-left of cards */
 #admin-korero .card .actions,

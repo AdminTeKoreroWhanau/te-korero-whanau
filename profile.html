@@ -43,11 +43,6 @@
             <button class="btn outline lang-swap" id="edit-profile" type="button"><span class="lang mi">Whakatika</span><span class="lang en">Edit</span></button>
           </div>
         </div>
-        <nav class="profile-tabs">
-          <a href="#posts-section">Posts</a>
-          <a href="#about-section">About</a>
-          <a href="#photos-section">Photos</a>
-        </nav>
       </section>
 
       <p class="muted" id="profile-status">Loading...</p>
@@ -137,9 +132,15 @@
           </label>
           <label>Whakaahua Kōtaha / Avatar
             <input type="file" id="edit-avatar" name="avatar" accept="image/*" />
+            <div id="avatar-preview" style="display:none;margin-top:.5rem">
+              <img id="avatar-preview-img" alt="Avatar preview" style="width:112px;height:112px;border-radius:10px;border:2px solid var(--border);object-fit:cover" />
+            </div>
           </label>
           <label>Whakaahua Uhi / Cover photo
             <input type="file" id="edit-cover" name="cover" accept="image/*" />
+            <div id="cover-preview" style="display:none;margin-top:.5rem">
+              <img id="cover-preview-img" alt="Cover preview" style="width:100%;max-width:400px;height:120px;border-radius:8px;border:2px solid var(--border);object-fit:cover" />
+            </div>
           </label>
           <fieldset>
             <legend>Pepeha</legend>
@@ -166,48 +167,90 @@
           <p class="muted small" id="profile-msg"></p>
         </form>
       </div>
-    </div>
+      </div>
 
-    <footer>
-      <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
-    </footer>
+      <!-- Photo lightbox modal -->
+      <div id="photo-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="photo-title">
+        <div class="modal-content">
+          <button class="modal-close" aria-label="Katia te matapihi / Close" id="photo-close">×</button>
+          <h2 id="photo-title" class="visually-hidden">Whakaahua</h2>
+          <figure style="margin:0">
+            <img id="photo-modal-img" alt="" style="width:100%;max-height:70vh;object-fit:contain;border-radius:8px;border:1px solid var(--border)" />
+            <figcaption id="photo-modal-caption" class="muted small" style="margin-top:.5rem"></figcaption>
+          </figure>
+          <div class="owner-actions" style="margin-top:.75rem;display:flex;gap:.5rem">
+            <button class="btn outline lang-swap" id="photo-modal-edit" type="button"><span class="lang mi">Whakatika</span><span class="lang en">Edit</span></button>
+            <button class="btn outline lang-swap" id="photo-modal-delete" type="button"><span class="lang mi">Muku</span><span class="lang en">Delete</span></button>
+          </div>
+      </div>
+      </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="assets/config.js"></script>
-    <script src="assets/ui-auth-fallback.js"></script>
-    <script src="assets/auth.js"></script>
-    <script>
-      (function(){
-        const statusEl = document.getElementById('profile-status');
-        const pepehaView = document.getElementById('pepeha-view');
-        const pepehaEmpty = document.getElementById('pepeha-empty');
-        const postsRoot = document.getElementById('posts');
-        const uploadForm = document.getElementById('upload-form');
-        const uploadMsg = document.getElementById('upload-msg');
-        const postForm = document.getElementById('post-form');
-        const postMsg = document.getElementById('post-msg');
-        const composerFile = document.getElementById('composer-file');
-        const photosGrid = document.getElementById('photos-grid');
-        const photosEmpty = document.getElementById('photos-empty');
-        const profileName = document.getElementById('profile-name');
-        const avatarImg = document.getElementById('avatar-img');
-        const coverImg = document.getElementById('cover-img');
-        const coverWrap = document.querySelector('.profile-header .cover');
-        const editBtn = document.getElementById('edit-profile');
-        const editModal = document.getElementById('profile-modal');
-        const editClose = document.getElementById('profile-close');
-        const editForm = document.getElementById('profile-form');
-        const editFullName = document.getElementById('edit-full-name');
-        const editAvatar = document.getElementById('edit-avatar');
-        const editCover = document.getElementById('edit-cover');
-        const editMaunga = document.getElementById('edit-maunga');
-        const editAwa = document.getElementById('edit-awa');
-        const editIwi = document.getElementById('edit-iwi');
-        const editHapu = document.getElementById('edit-hapu');
-        const editWaka = document.getElementById('edit-waka');
-        const editMarae = document.getElementById('edit-marae');
-        const profileMsg = document.getElementById('profile-msg');
-        let currentPosts = [];
+      <!-- Post view modal -->
+      <div id="post-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="post-title">
+        <div class="modal-content">
+          <button class="modal-close" aria-label="Katia te matapihi / Close" id="post-close">×</button>
+          <h2 id="post-title" class="visually-hidden">Tirohia te tuhinga / View post</h2>
+          <div class="muted small" id="post-modal-time" style="margin-bottom:.5rem"></div>
+          <div id="post-modal-content" style="white-space:pre-wrap"></div>
+          <div id="post-modal-media" style="margin-top:.5rem"></div>
+        </div>
+      </div>
+
+      <footer>
+        <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
+      </footer>
+
+      <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <script src="assets/config.js"></script>
+      <script src="assets/ui-auth-fallback.js"></script>
+      <script src="assets/auth.js"></script>
+      <script>
+        (function(){
+          const statusEl = document.getElementById('profile-status');
+          const pepehaView = document.getElementById('pepeha-view');
+          const pepehaEmpty = document.getElementById('pepeha-empty');
+          const postsRoot = document.getElementById('posts');
+          const uploadForm = document.getElementById('upload-form');
+          const uploadMsg = document.getElementById('upload-msg');
+          const postForm = document.getElementById('post-form');
+          const postMsg = document.getElementById('post-msg');
+          const composerFile = document.getElementById('composer-file');
+          const photosGrid = document.getElementById('photos-grid');
+          const photosEmpty = document.getElementById('photos-empty');
+          const profileName = document.getElementById('profile-name');
+          const avatarImg = document.getElementById('avatar-img');
+          const coverImg = document.getElementById('cover-img');
+          const coverWrap = document.querySelector('.profile-header .cover');
+          const editBtn = document.getElementById('edit-profile');
+          const editModal = document.getElementById('profile-modal');
+          const editClose = document.getElementById('profile-close');
+          const editForm = document.getElementById('profile-form');
+          const editFullName = document.getElementById('edit-full-name');
+          const editAvatar = document.getElementById('edit-avatar');
+          const editCover = document.getElementById('edit-cover');
+          const editMaunga = document.getElementById('edit-maunga');
+          const editAwa = document.getElementById('edit-awa');
+          const editIwi = document.getElementById('edit-iwi');
+          const editHapu = document.getElementById('edit-hapu');
+          const editWaka = document.getElementById('edit-waka');
+          const editMarae = document.getElementById('edit-marae');
+          const profileMsg = document.getElementById('profile-msg');
+          // Photo modal elements
+          const photoModal = document.getElementById('photo-modal');
+          const photoClose = document.getElementById('photo-close');
+          const photoImg = document.getElementById('photo-modal-img');
+          const photoCaption = document.getElementById('photo-modal-caption');
+          const photoEditBtn = document.getElementById('photo-modal-edit');
+          const photoDeleteBtn = document.getElementById('photo-modal-delete');
+          // Post modal elements
+          const postModal = document.getElementById('post-modal');
+          const postClose = document.getElementById('post-close');
+          const postTime = document.getElementById('post-modal-time');
+          const postBody = document.getElementById('post-modal-content');
+          const postMedia = document.getElementById('post-modal-media');
+          let currentPosts = [];
+          let currentPhotoId = null;
+          let currentPostId = null;
 
         async function ensureSession(){
           const { data: sess } = await sb.auth.getSession();
@@ -253,15 +296,27 @@
           list.forEach(p => {
             const wrap = document.createElement('article');
             wrap.className = 'panel';
+            wrap.setAttribute('data-id', p.id);
             const t = new Date(p.created_at || Date.now()).toLocaleString();
             let mediaHtml = '';
-            if (p.type === 'image' && p.media_url){ mediaHtml = `<img src="${p.media_url}" alt="" style="max-width:100%;border-radius:8px;border:1px solid var(--border)"/>`; }
-            if (p.type === 'video' && p.media_url){ mediaHtml = `<video src="${p.media_url}" controls style="max-width:100%;border-radius:8px;border:1px solid var(--border)"></video>`; }
-            const actions = `<div class="owner-actions" style="margin-top:.5rem;display:flex;gap:.5rem">
-              <button class="btn outline lang-swap post-edit" data-id="${p.id}" type="button"><span class="lang mi">Whakatika</span><span class="lang en">Edit</span></button>
-              <button class="btn outline lang-swap post-delete" data-id="${p.id}" type="button"><span class="lang mi">Muku</span><span class="lang en">Delete</span></button>
-            </div>`;
-            wrap.innerHTML = `<div class="muted small">${t}</div>${p.content?`<p>${p.content}</p>`:''}${mediaHtml}${actions}`;
+            if (p.type === 'image' && p.media_url){ mediaHtml = `<img src=\"${p.media_url}\" alt=\"\" style=\"max-width:100%;border-radius:8px;border:1px solid var(--border)\"/>`; }
+            if (p.type === 'video' && p.media_url){ mediaHtml = `<video src=\"${p.media_url}\" controls style=\"max-width:100%;border-radius:8px;border:1px solid var(--border)\"></video>`; }
+            // Truncate long text and add Read more link
+            let contentHtml = '';
+            if (p.content){
+              const text = String(p.content);
+              const limit = 220;
+              if (text.length > limit){
+                const cut = text.slice(0, limit);
+                const end = Math.max(cut.lastIndexOf(' '), limit - 20);
+                const short = cut.slice(0, end > 0 ? end : limit) + '…';
+                contentHtml = `<p>${short} <button class=\"btn-link read-more\" data-id=\"${p.id}\" type=\"button\" aria-label=\"Read full post\">Read more</button></p>`;
+              } else {
+                contentHtml = `<p>${text}</p>`;
+              }
+            }
+            const actions = `<div class=\"owner-actions\" style=\"margin-top:.5rem;display:flex;gap:.5rem;justify-content:flex-end\">\n              <button class=\"btn outline lang-swap post-edit\" data-id=\"${p.id}\" type=\"button\"><span class=\"lang mi\">Whakatika</span><span class=\"lang en\">Edit</span></button>\n              <button class=\"btn outline lang-swap post-delete\" data-id=\"${p.id}\" type=\"button\"><span class=\"lang mi\">Muku</span><span class=\"lang en\">Delete</span></button>\n            </div>`;
+            wrap.innerHTML = `<div class=\\\"muted small\\\">${t}</div>${contentHtml}${mediaHtml}${actions}`;
             postsRoot.appendChild(wrap);
           });
         }
@@ -314,15 +369,10 @@
           if (photosEmpty) photosEmpty.style.display='none';
           const frag = document.createDocumentFragment();
           imgs.forEach(p => {
-            const item = document.createElement('div'); item.className = 'photo-item';
+            const item = document.createElement('div'); item.className = 'photo-item'; item.setAttribute('data-id', p.id);
             const a = document.createElement('a'); a.href = p.media_url; a.target='_blank'; a.rel='noopener noreferrer';
             const img = document.createElement('img'); img.src = p.media_url; img.alt = ''; a.appendChild(img);
-            const act = document.createElement('div'); act.className = 'photo-actions';
-            act.innerHTML = `
-              <button class="btn outline lang-swap photo-edit" data-id="${p.id}" type="button"><span class="lang mi">Whakatika</span><span class="lang en">Edit</span></button>
-              <button class="btn outline lang-swap photo-delete" data-id="${p.id}" type="button"><span class="lang mi">Muku</span><span class="lang en">Delete</span></button>
-            `;
-            item.appendChild(a); item.appendChild(act);
+            item.appendChild(a);
             frag.appendChild(item);
           });
           photosGrid.appendChild(frag);
@@ -378,9 +428,61 @@
           }catch(_){ return null; }
         }
 
+        // Image preview elements
+        const avatarPreview = document.getElementById('avatar-preview');
+        const avatarPreviewImg = document.getElementById('avatar-preview-img');
+        const coverPreview = document.getElementById('cover-preview');
+        const coverPreviewImg = document.getElementById('cover-preview-img');
+
+        // Preview avatar on file selection
+        if (editAvatar && avatarPreview && avatarPreviewImg) {
+          editAvatar.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+              const reader = new FileReader();
+              reader.onload = (ev) => {
+                avatarPreviewImg.src = ev.target.result;
+                avatarPreview.style.display = 'block';
+              };
+              reader.readAsDataURL(file);
+            } else {
+              avatarPreview.style.display = 'none';
+              avatarPreviewImg.src = '';
+            }
+          });
+        }
+
+        // Preview cover on file selection
+        if (editCover && coverPreview && coverPreviewImg) {
+          editCover.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+              const reader = new FileReader();
+              reader.onload = (ev) => {
+                coverPreviewImg.src = ev.target.result;
+                coverPreview.style.display = 'block';
+              };
+              reader.readAsDataURL(file);
+            } else {
+              coverPreview.style.display = 'none';
+              coverPreviewImg.src = '';
+            }
+          });
+        }
+
         // Edit modal controls
         function showEdit(){ if (!editModal) return; editModal.hidden=false; editModal.setAttribute('aria-hidden','false'); }
-        function hideEdit(){ if (!editModal) return; editModal.hidden=true; editModal.setAttribute('aria-hidden','true'); profileMsg.textContent=''; }
+        function hideEdit(){ 
+          if (!editModal) return; 
+          editModal.hidden=true; 
+          editModal.setAttribute('aria-hidden','true'); 
+          profileMsg.textContent=''; 
+          // Clear previews when modal closes
+          if (avatarPreview) avatarPreview.style.display = 'none';
+          if (avatarPreviewImg) avatarPreviewImg.src = '';
+          if (coverPreview) coverPreview.style.display = 'none';
+          if (coverPreviewImg) coverPreviewImg.src = '';
+        }
         editBtn && editBtn.addEventListener('click', showEdit);
         editClose && editClose.addEventListener('click', hideEdit);
         document.addEventListener('keydown', (e) => { if (e.key==='Escape' && editModal && !editModal.hidden) hideEdit(); });
@@ -455,75 +557,167 @@
           });
         }
 
-        // Edit/delete handlers for posts list
+        // View/Edit/Delete handlers for posts list (open modal on article click)
         if (postsRoot){
           postsRoot.addEventListener('click', async (e) => {
+            const moreBtn = e.target.closest && e.target.closest('button.read-more');
+            if (moreBtn){
+              const id = moreBtn.getAttribute('data-id');
+              const post = currentPosts.find(p => String(p.id) === String(id));
+              if (post) showPost(post);
+              return;
+            }
             const editBtn = e.target.closest && e.target.closest('button.post-edit');
             const delBtn = e.target.closest && e.target.closest('button.post-delete');
-            if (!editBtn && !delBtn) return;
-            const user = await ensureSession(); if (!user) return;
-            const id = (editBtn||delBtn).getAttribute('data-id');
+            // Edit/Delete buttons behavior
+            if (editBtn || delBtn){
+              const user = await ensureSession(); if (!user) return;
+              const id = (editBtn||delBtn).getAttribute('data-id');
+              const post = currentPosts.find(p => String(p.id) === String(id));
+              if (!post) return;
+              if (editBtn){
+                const next = window.prompt('Whakatika tuhinga / Edit post content:', post.content || '');
+                if (next == null) return;
+                try{
+                  const { error } = await sb.from('posts').update({ content: next }).eq('id', id).eq('user_id', user.id);
+                  if (error) throw error;
+                  await loadPosts(user);
+                  // if modal open for this post, update content
+                  if (currentPostId && String(currentPostId) === String(id) && postBody){ postBody.textContent = next; }
+                }catch(_){ alert('Kāore i taea te whakatika / Failed to edit.'); }
+              }
+              if (delBtn){
+                if (!window.confirm('Muku tēnei? / Delete this?')) return;
+                try{
+                  // delete media if any
+                  if (post.media_url && post.type && post.type !== 'text'){
+                    const path = storagePathFromPublicUrl(post.media_url);
+                    if (path){ await sb.storage.from('media').remove([path]); }
+                  }
+                  const { error } = await sb.from('posts').delete().eq('id', id).eq('user_id', user.id);
+                  if (error) throw error;
+                  await loadPosts(user);
+                  if (currentPostId && String(currentPostId) === String(id)) hidePost();
+                }catch(_){ alert('Kāore i taea te muku / Failed to delete.'); }
+              }
+              return;
+            }
+            // Open modal when clicking anywhere on a post (except buttons)
+            const art = e.target.closest && e.target.closest('article.panel');
+            if (!art) return;
+            const id = art.getAttribute('data-id');
             const post = currentPosts.find(p => String(p.id) === String(id));
             if (!post) return;
-            if (editBtn){
-              const next = window.prompt('Whakatika tuhinga / Edit post content:', post.content || '');
-              if (next == null) return;
-              try{
-                const { error } = await sb.from('posts').update({ content: next }).eq('id', id).eq('user_id', user.id);
-                if (error) throw error;
-                await loadPosts(user);
-              }catch(_){ alert('Kāore i taea te whakatika / Failed to edit.'); }
-            }
-            if (delBtn){
-              if (!window.confirm('Muku tēnei? / Delete this?')) return;
-              try{
-                // delete media if any
-                if (post.media_url && post.type && post.type !== 'text'){
-                  const path = storagePathFromPublicUrl(post.media_url);
-                  if (path){ await sb.storage.from('media').remove([path]); }
-                }
-                const { error } = await sb.from('posts').delete().eq('id', id).eq('user_id', user.id);
-                if (error) throw error;
-                await loadPosts(user);
-              }catch(_){ alert('Kāore i taea te muku / Failed to delete.'); }
-            }
+            // Only open on card click if the post has an image; otherwise require Read more
+            if (!(post.type === 'image' && post.media_url)) return;
+            showPost(post);
           });
         }
 
-        // Edit/delete handlers for photos grid
+        // Photo modal helpers
+        function showPhoto(post){
+          if (!photoModal || !photoImg) return;
+          currentPhotoId = post.id;
+          const withV = post.media_url ? post.media_url + (post.media_url.includes('?') ? '&' : '?') + 'v=' + Date.now() : '';
+          photoImg.src = withV || post.media_url;
+          photoCaption.textContent = post.content || '';
+          photoModal.hidden = false;
+          photoModal.setAttribute('aria-hidden','false');
+        }
+        function hidePhoto(){
+          if (!photoModal) return;
+          photoModal.hidden = true;
+          photoModal.setAttribute('aria-hidden','true');
+          if (photoImg) photoImg.src = '';
+          currentPhotoId = null;
+        }
+        photoClose && photoClose.addEventListener('click', hidePhoto);
+        photoModal && photoModal.addEventListener('click', (e) => { if (e.target === photoModal) hidePhoto(); });
+        document.addEventListener('keydown', (e) => { if (e.key==='Escape' && photoModal && !photoModal.hidden) hidePhoto(); });
+
+        // Post modal helpers
+        function showPost(post){
+          if (!postModal) return;
+          currentPostId = post.id;
+          if (postTime) postTime.textContent = new Date(post.created_at || Date.now()).toLocaleString();
+          if (postBody) postBody.textContent = post.content || '';
+          if (postMedia){
+            postMedia.innerHTML = '';
+            if (post.type === 'image' && post.media_url){
+              const img = document.createElement('img');
+              img.src = post.media_url;
+              img.alt='';
+              img.style.maxWidth = '100%';
+              img.style.maxHeight = '70vh';
+              img.style.borderRadius = '8px';
+              img.style.border = '1px solid var(--border)';
+              postMedia.appendChild(img);
+            } else if (post.type === 'video' && post.media_url){
+              const vid = document.createElement('video');
+              vid.src = post.media_url; vid.controls = true;
+              vid.style.maxWidth = '100%';
+              vid.style.borderRadius = '8px';
+              vid.style.border = '1px solid var(--border)';
+              postMedia.appendChild(vid);
+            }
+          }
+          postModal.hidden = false;
+          postModal.setAttribute('aria-hidden','false');
+        }
+        function hidePost(){
+          if (!postModal) return;
+          postModal.hidden = true;
+          postModal.setAttribute('aria-hidden','true');
+          if (postMedia) postMedia.innerHTML = '';
+          currentPostId = null;
+        }
+        postClose && postClose.addEventListener('click', hidePost);
+        postModal && postModal.addEventListener('click', (e) => { if (e.target === postModal) hidePost(); });
+        document.addEventListener('keydown', (e) => { if (e.key==='Escape' && postModal && !postModal.hidden) hidePost(); });
+
+        // Photos grid interactions: open modal, edit, delete
         if (photosGrid){
-          photosGrid.addEventListener('click', async (e) => {
-            const editBtn = e.target.closest && e.target.closest('button.photo-edit');
-            const delBtn = e.target.closest && e.target.closest('button.photo-delete');
-            if (!editBtn && !delBtn) return;
+          photosGrid.addEventListener('click', (e) => {
+            const imgLink = e.target.closest && e.target.closest('.photo-item a');
+            if (!imgLink) return;
             e.preventDefault();
-            const user = await ensureSession(); if (!user) return;
-            const id = (editBtn||delBtn).getAttribute('data-id');
+            const item = imgLink.closest('.photo-item');
+            const id = item && item.getAttribute('data-id');
             const post = currentPosts.find(p => String(p.id) === String(id));
-            if (!post) return;
-            if (editBtn){
-              const next = window.prompt('Tāpiri/kua whakatika kupu / Add or edit caption:', post.content || '');
-              if (next == null) return;
-              try{
-                const { error } = await sb.from('posts').update({ content: next }).eq('id', id).eq('user_id', user.id);
-                if (error) throw error;
-                await loadPosts(user);
-              }catch(_){ alert('Kāore i taea te whakatika / Failed to edit.'); }
-            }
-            if (delBtn){
-              if (!window.confirm('Muku tēnei whakaahua? / Delete this photo?')) return;
-              try{
-                if (post.media_url){
-                  const path = storagePathFromPublicUrl(post.media_url);
-                  if (path){ await sb.storage.from('media').remove([path]); }
-                }
-                const { error } = await sb.from('posts').delete().eq('id', id).eq('user_id', user.id);
-                if (error) throw error;
-                await loadPosts(user);
-              }catch(_){ alert('Kāore i taea te muku / Failed to delete.'); }
-            }
+            if (post) showPhoto(post);
           });
         }
+
+        // Modal action buttons reuse same logic
+        photoEditBtn && photoEditBtn.addEventListener('click', async () => {
+          if (!currentPhotoId) return;
+          const user = await ensureSession(); if (!user) return;
+          const post = currentPosts.find(p => String(p.id) === String(currentPhotoId)); if (!post) return;
+          const next = window.prompt('Tāpiri/kua whakatika kupu / Add or edit caption:', post.content || '');
+          if (next == null) return;
+          try{
+            const { error } = await sb.from('posts').update({ content: next }).eq('id', post.id).eq('user_id', user.id);
+            if (error) throw error;
+            await loadPosts(user);
+            if (photoCaption) photoCaption.textContent = next;
+          }catch(_){ alert('Kāore i taea te whakatika / Failed to edit.'); }
+        });
+        photoDeleteBtn && photoDeleteBtn.addEventListener('click', async () => {
+          if (!currentPhotoId) return;
+          const user = await ensureSession(); if (!user) return;
+          const post = currentPosts.find(p => String(p.id) === String(currentPhotoId)); if (!post) return;
+          if (!window.confirm('Muku tēnei whakaahua? / Delete this photo?')) return;
+          try{
+            if (post.media_url){
+              const path = storagePathFromPublicUrl(post.media_url);
+              if (path){ await sb.storage.from('media').remove([path]); }
+            }
+            const { error } = await sb.from('posts').delete().eq('id', post.id).eq('user_id', user.id);
+            if (error) throw error;
+            await loadPosts(user);
+            hidePhoto();
+          }catch(_){ alert('Kāore i taea te muku / Failed to delete.'); }
+        });
 
         // Save profile changes
         if (editForm){
