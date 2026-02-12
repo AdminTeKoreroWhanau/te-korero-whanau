@@ -57,6 +57,7 @@ header.papa{position:sticky;top:0;z-index:100;display:flex;align-items:center;ju
 .nav-list a,.nav-list button{padding:0.65rem 0.65rem;border-bottom:2px solid transparent;font-size:1.2rem;font-weight:600;background:none;border-left:0;border-right:0;border-top:0;color:var(--accent);cursor:pointer}
 .nav-list a:hover,.nav-list button:hover{text-decoration:none}
 .nav-list a.active{border-color:var(--accent)}
+@media (min-width:721px){.nav-list{display:flex !important}}
 @media (max-width:720px){.nav-toggle,.theme-toggle{display:inline-block}.nav-list{display:none;flex-direction:column;gap:0.5rem}}
 
 /* Responsive tweaks */

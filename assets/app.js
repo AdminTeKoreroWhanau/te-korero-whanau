@@ -76,7 +76,12 @@ const themeBtn = document.getElementById('theme-toggle');
 const applyTheme = (t) => document.documentElement.setAttribute('data-theme', t);
 try {
   const saved = localStorage.getItem('theme');
-  if (saved) applyTheme(saved);
+  if (saved) {
+    applyTheme(saved);
+    if (themeBtn) {
+      themeBtn.textContent = saved === 'light' ? '☾' : '☀︎';
+    }
+  }
   if (themeBtn) {
     themeBtn.setAttribute('aria-pressed', String((localStorage.getItem('theme') || 'dark') === 'light'));
     themeBtn.addEventListener('click', () => {
