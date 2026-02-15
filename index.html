@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Te Kōrero Whānau</title>
-    <meta name="description" content="Preserving whānau legacy through stories, waiata, and whakapapa." />
+    <title>Dashboard — Te Kōrero Whānau</title>
+    <meta name="description" content="Your whānau dashboard - stories, whakapapa, and more." />
     <link rel="stylesheet" href="assets/styles.css" />
   </head>
   <body>
@@ -17,6 +17,7 @@
           <li><a href="index.html">Kāinga</a></li>
           <li><a href="whakapapa.html">Whakapapa</a></li>
           <li><a href="korero.html">Kōrero</a></li>
+          <li><a href="hui.html">Hui</a></li>
           <li><a href="mahi.html">Mahi</a></li>
           <li><a href="tauparapara.html">Tauparapara</a></li>
           <li><a href="nga-toi.html">Ngā Toi</a></li>
@@ -29,65 +30,193 @@
     </header>
 
     <main>
-      <section id="kainga" class="hero">
-        <h1>Te Kōrero Whānau</h1>
-        <p class="lead">He kaupapa hei tiaki i ngā kōrero tuku iho — a living archive of our whānau.</p>
-        <figure class="hero-figure">
-          <img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Wharenui Māori — te whānau gathering place" src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Tamaki_Maori_Village_Wharenui.jpg/1200px-Tamaki_Maori_Village_Wharenui.jpg" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&h=420&q=80';" />
-          <figcaption class="visually-hidden">Wharenui Māori</figcaption>
-        </figure>
-      </section>
-
-      <section class="panel previews">
-        <h2>Tīpako / Highlights</h2>
-        <div class="cards">
-          <article class="card">
-            <a class="card-link" href="whakapapa.html" aria-label="Whakapapa">
-              <img loading="lazy" alt="Whakapapa" src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&h=360&q=80" />
-              <div class="card-body">
-                <h3>Whakapapa</h3>
-                <p>Build our family tree and pepeha. Connect iwi/hapū/waka affiliations.</p>
-              </div>
-            </a>
-          </article>
-          <article class="card">
-            <a class="card-link" href="korero.html" aria-label="Kōrero">
-              <img loading="lazy" alt="Kōrero" src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&h=360&q=80" />
-              <div class="card-body">
-                <h3><span class="title-text">Kōrero</span></h3>
-                <p>Post stories or vlog links and see timestamps; whānau can react with Like/Aroha.</p>
-              </div>
-            </a>
-          </article>
-          <article class="card">
-            <a class="card-link" href="mahi.html" aria-label="Mahi">
-              <img loading="lazy" alt="Mahi" src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=600&h=360&q=80" />
-              <div class="card-body">
-                <h3>Mahi</h3>
-                <p>Projects and kaupapa we’re working on together.</p>
-              </div>
-            </a>
-          </article>
-          <article class="card">
-            <a class="card-link" href="tauparapara.html" aria-label="Tauparapara">
-              <img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Tauparapara — Wharenui me te Hāhi" src="assets/karakia-card.jpg" onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Latin_cross.svg/600px-Latin_cross.svg.png';" />
-              <div class="card-body">
-                <h3>Tauparapara</h3>
-                <p>Upload and share tauparapara documents with whānau.</p>
-              </div>
-            </a>
-          </article>
-          <article class="card">
-            <a class="card-link" href="nga-toi.html" aria-label="Ngā Toi">
-              <img loading="lazy" alt="Ngā Toi" src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&h=360&q=80" />
-              <div class="card-body">
-                <h3>Ngā Toi</h3>
-                <p>Photos and videos from kāinga, awa, maunga, and homesteads.</p>
-              </div>
-            </a>
-          </article>
+      <!-- Welcome Section -->
+      <section class="dashboard-welcome panel">
+        <div class="welcome-content">
+          <h1>Nāu mai, haere mai! 🌿</h1>
+          <p class="welcome-user">Kia ora, <span id="user-name">Whānau</span></p>
+          <p class="muted">Welcome to your whānau dashboard</p>
+        </div>
+        <div class="welcome-date">
+          <span class="date-day" id="current-day"></span>
+          <span class="date-full" id="current-date"></span>
         </div>
       </section>
+
+      <!-- Dashboard Grid -->
+      <div class="dashboard-grid">
+        <!-- Left Column -->
+        <div class="dashboard-col">
+          <!-- Quick Stats -->
+          <section class="panel dashboard-stats">
+            <h2>📊 Whānau Stats</h2>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <span class="stat-icon">🌲</span>
+                <span class="stat-value" id="stat-members">--</span>
+                <span class="stat-label">Whānau Members</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-icon">📖</span>
+                <span class="stat-value" id="stat-stories">--</span>
+                <span class="stat-label">Stories Shared</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-icon">🖼️</span>
+                <span class="stat-value" id="stat-photos">--</span>
+                <span class="stat-label">Photos</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-icon">🎵</span>
+                <span class="stat-value" id="stat-waiata">--</span>
+                <span class="stat-label">Waiata</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Quick Access -->
+          <section class="panel">
+            <h2>⚡ Quick Access</h2>
+            <div class="quick-access-grid">
+              <a href="whakapapa.html" class="quick-tile">
+                <span class="tile-icon">🌲</span>
+                <span class="tile-label">Whakapapa</span>
+              </a>
+              <a href="korero.html" class="quick-tile">
+                <span class="tile-icon">📖</span>
+                <span class="tile-label">Kōrero</span>
+              </a>
+              <a href="nga-toi.html" class="quick-tile">
+                <span class="tile-icon">🎨</span>
+                <span class="tile-label">Ngā Toi</span>
+              </a>
+              <a href="tauparapara.html" class="quick-tile">
+                <span class="tile-icon">🙏</span>
+                <span class="tile-label">Tauparapara</span>
+              </a>
+              <a href="mahi.html" class="quick-tile">
+                <span class="tile-icon">🛠️</span>
+                <span class="tile-label">Mahi</span>
+              </a>
+              <a href="hui.html" class="quick-tile">
+                <span class="tile-icon">📅</span>
+                <span class="tile-label">Hui</span>
+              </a>
+              <a href="profile.html" class="quick-tile">
+                <span class="tile-icon">👤</span>
+                <span class="tile-label">Profile</span>
+              </a>
+            </div>
+          </section>
+
+          <!-- Upcoming Events -->
+          <section class="panel">
+            <h2>📅 Upcoming Events</h2>
+            <p class="muted small"><a href="hui.html">View all events →</a></p>
+            <div class="dashboard-events" id="dashboard-events">
+              <div class="event-item">
+                <div class="event-date-small">
+                  <span class="day">22</span>
+                  <span class="month">Feb</span>
+                </div>
+                <div class="event-info">
+                  <strong>Whānau Reunion 2026</strong>
+                  <span class="muted">Rotorua · 10:00 AM</span>
+                </div>
+              </div>
+              <div class="event-item">
+                <div class="event-date-small">
+                  <span class="day">06</span>
+                  <span class="month">Mar</span>
+                </div>
+                <div class="event-info">
+                  <strong>Whakapapa Workshop</strong>
+                  <span class="muted">Online · 7:00 PM</span>
+                </div>
+              </div>
+              <div class="event-item">
+                <div class="event-date-small">
+                  <span class="day">15</span>
+                  <span class="month">Mar</span>
+                </div>
+                <div class="event-info">
+                  <strong>Kapa Haka Practice</strong>
+                  <span class="muted">Auckland · 6:00 PM</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Column -->
+        <div class="dashboard-col">
+          <!-- Recent Activity -->
+          <section class="panel">
+            <h2>🔔 Recent Activity</h2>
+            <div class="activity-feed" id="activity-feed">
+              <div class="activity-item">
+                <div class="activity-icon">📖</div>
+                <div class="activity-content">
+                  <p><strong>New story added</strong> by Aroha W.</p>
+                  <span class="muted small">"Koro's Journey to Aotearoa"</span>
+                  <span class="activity-time">2 hours ago</span>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon">🌲</div>
+                <div class="activity-content">
+                  <p><strong>Whakapapa updated</strong> by Hemi K.</p>
+                  <span class="muted small">Added 3 new members to Te Arawa tree</span>
+                  <span class="activity-time">5 hours ago</span>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon">🖼️</div>
+                <div class="activity-content">
+                  <p><strong>Photos uploaded</strong> by Mereana R.</p>
+                  <span class="muted small">12 photos from Whānau Day 2025</span>
+                  <span class="activity-time">Yesterday</span>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon">🎵</div>
+                <div class="activity-content">
+                  <p><strong>Waiata shared</strong> by Tama M.</p>
+                  <span class="muted small">"E Rērē Rā" - audio recording</span>
+                  <span class="activity-time">2 days ago</span>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon">👥</div>
+                <div class="activity-content">
+                  <p><strong>New member joined</strong></p>
+                  <span class="muted small">Wikitoria P. joined the whānau</span>
+                  <span class="activity-time">3 days ago</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Whakataukī of the Day -->
+          <section class="panel whakatauki-panel">
+            <h2>💬 Whakataukī o te Rā</h2>
+            <blockquote class="whakatauki-quote">
+              <p>"He aha te mea nui o te ao? He tangata, he tangata, he tangata."</p>
+              <cite>What is the greatest thing in the world? It is people, it is people, it is people.</cite>
+            </blockquote>
+          </section>
+
+          <!-- Quick Actions -->
+          <section class="panel">
+            <h2>➕ Quick Actions</h2>
+            <div class="quick-actions">
+              <a href="korero.html" class="btn outline">Add a Story</a>
+              <a href="whakapapa.html" class="btn outline">Update Whakapapa</a>
+              <a href="nga-toi.html" class="btn outline">Upload Photos</a>
+            </div>
+          </section>
+        </div>
+      </div>
     </main>
 
     <footer>

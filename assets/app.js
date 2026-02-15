@@ -211,5 +211,209 @@ if (searchInput) {
     .catch(() => { /* ignore if missing */ });
 })();
 
+// Landing page - separate login and signup modals
+(function landingAuth(){
+  const authModal = document.getElementById('auth-modal');
+  const signupModal = document.getElementById('signup-modal');
+  
+  // Open login modal
+  const openLogin = document.getElementById('open-auth');
+  const authClose = document.getElementById('auth-close');
+  
+  // Open signup modal
+  const openSignup = document.getElementById('open-signup');
+  const signupClose = document.getElementById('signup-close');
+  const ctaSignup = document.getElementById('cta-signup');
+  const ctaEventsSignup = document.getElementById('cta-events-signup');
+  const sidebarSignup = document.getElementById('sidebar-signup');
+  
+  // Switch links
+  const switchToSignup = document.getElementById('switch-to-signup');
+  const switchToLogin = document.getElementById('switch-to-login');
+  
+  const showAuthModal = () => {
+    if (!authModal) return;
+    authModal.hidden = false;
+    authModal.setAttribute('aria-hidden', 'false');
+    if (signupModal) {
+      signupModal.hidden = true;
+      signupModal.setAttribute('aria-hidden', 'true');
+    }
+  };
+  
+  const hideAuthModal = () => {
+    if (!authModal) return;
+    authModal.hidden = true;
+    authModal.setAttribute('aria-hidden', 'true');
+  };
+  
+  const showSignupModal = () => {
+    if (!signupModal) return;
+    signupModal.hidden = false;
+    signupModal.setAttribute('aria-hidden', 'false');
+    if (authModal) {
+      authModal.hidden = true;
+      authModal.setAttribute('aria-hidden', 'true');
+    }
+  };
+  
+  const hideSignupModal = () => {
+    if (!signupModal) return;
+    signupModal.hidden = true;
+    signupModal.setAttribute('aria-hidden', 'true');
+  };
+  
+  // Event listeners
+  if (openLogin) openLogin.addEventListener('click', (e) => { e.preventDefault(); showAuthModal(); });
+  if (authClose) authClose.addEventListener('click', hideAuthModal);
+  
+  if (openSignup) openSignup.addEventListener('click', (e) => { e.preventDefault(); showSignupModal(); });
+  if (signupClose) signupClose.addEventListener('click', hideSignupModal);
+  if (ctaSignup) ctaSignup.addEventListener('click', showSignupModal);
+  if (ctaEventsSignup) ctaEventsSignup.addEventListener('click', showSignupModal);
+  if (sidebarSignup) sidebarSignup.addEventListener('click', showSignupModal);
+  
+  // Switch between modals
+  if (switchToSignup) switchToSignup.addEventListener('click', (e) => { e.preventDefault(); showSignupModal(); });
+  if (switchToLogin) switchToLogin.addEventListener('click', (e) => { e.preventDefault(); showAuthModal(); });
+})();
+
+// Landing page search
+(function landingSearch(){
+  const form = document.getElementById('landing-search-form');
+  const input = document.getElementById('landing-search-input');
+  if (!form || !input) return;
+  
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const q = input.value.trim();
+    if (!q) return;
+    // Redirect to whakapapa or korero page with search query
+    // For now, we'll search across visible sections on the page
+    const sections = document.querySelectorAll('main section.panel');
+    let found = false;
+    sections.forEach(s => {
+      const text = s.textContent.toLowerCase();
+      if (text.includes(q.toLowerCase())) {
+        s.style.display = '';
+        if (!found) {
+          s.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          found = true;
+        }
+      }
+    });
+    // If nothing found on page, redirect to whakapapa with query hint
+    if (!found) {
+      window.location.href = 'whakapapa.html';
+    }
+  });
+})();
+
 // Future: load content JSON for profiles, waiata, and whakapapa
 // fetch('content/whanau.json').then(r => r.json()).then(data => {/* render */});
+
+// Hui page - show/hide event form based on auth
+(function initHuiPage(){
+  const eventFormSection = document.getElementById('event-form-section');
+  const eventLoginPrompt = document.getElementById('event-login-prompt');
+  const eventForm = document.getElementById('event-form');
+  
+  if (!eventFormSection && !eventLoginPrompt) return; // Not on hui page
+  
+  // Update UI based on user state
+  const updateUI = (user) => {
+    if (user) {
+      // Logged in - show form, hide prompt
+      if (eventFormSection) eventFormSection.style.display = '';
+      if (eventLoginPrompt) eventLoginPrompt.style.display = 'none';
+    } else {
+      // Not logged in - hide form, show prompt
+      if (eventFormSection) eventFormSection.style.display = 'none';
+      if (eventLoginPrompt) eventLoginPrompt.style.display = '';
+    }
+  };
+  
+  // Check auth state using Supabase
+  const checkAuth = async () => {
+    try {
+      if (window.sb) {
+        const { data } = await window.sb.auth.getSession();
+        updateUI(data.session?.user || null);
+      } else {
+        // Fallback if Supabase not available
+        updateUI(null);
+      }
+    } catch {
+      updateUI(null);
+    }
+  };
+  
+  // Initial check (with small delay to ensure sb is initialized)
+  setTimeout(checkAuth, 100);
+  
+  // Listen for auth state changes
+  const setupAuthListener = () => {
+    if (window.sb) {
+      window.sb.auth.onAuthStateChange((_event, session) => {
+        updateUI(session?.user || null);
+      });
+    }
+  };
+  setTimeout(setupAuthListener, 100);
+  
+  // Handle form submission (demo - just shows success message)
+  if (eventForm) {
+    eventForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('event-form-msg');
+      if (msg) {
+        msg.textContent = 'Event added successfully! (Demo mode - connect to backend for persistence)';
+        msg.style.color = 'var(--accent)';
+      }
+      eventForm.reset();
+    });
+  }
+})();
+
+// Dashboard initialization
+(function initDashboard(){
+  const userNameEl = document.getElementById('user-name');
+  const currentDayEl = document.getElementById('current-day');
+  const currentDateEl = document.getElementById('current-date');
+  
+  // Only run on dashboard page
+  if (!userNameEl && !currentDayEl && !currentDateEl) return;
+  
+  // Set user's surname (whānau name) from Supabase session
+  const setUserName = async () => {
+    if (!userNameEl) return;
+    try {
+      if (window.sb) {
+        const { data } = await window.sb.auth.getSession();
+        const user = data.session?.user;
+        if (user) {
+          const fullName = user.user_metadata?.full_name || '';
+          const nameParts = fullName.trim().split(' ');
+          // Get surname (last part of name) to represent whānau
+          const surname = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+          userNameEl.textContent = surname ? `${surname} Whānau` : 'Whānau';
+        }
+      }
+    } catch {}
+  };
+  
+  // Run after small delay to ensure sb is initialized
+  setTimeout(setUserName, 100);
+  
+  // Set current date
+  const now = new Date();
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  
+  if (currentDayEl) {
+    currentDayEl.textContent = now.getDate();
+  }
+  if (currentDateEl) {
+    currentDateEl.textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getFullYear()}`;
+  }
+})();

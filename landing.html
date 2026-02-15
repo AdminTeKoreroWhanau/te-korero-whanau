@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="mi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Te Kōrero Whānau — Nau Mai, Haere Mai</title>
+    <meta name="description" content="Discover your roots. Connect with whānau. Preserve your legacy through stories, waiata, and whakapapa." />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="papa">
+      <div class="logo">Te Kōrero Whānau</div>
+      <nav>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="whanau-nav" title="Whakatuwhera tahua / Open menu">≡</button>
+        <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Kōwhiri āhua / Toggle theme">☀︎</button>
+        <ul id="whanau-nav" class="nav-list">
+          <li class="nav-auth-only" style="display:none"><a href="index.html">Kāinga</a></li>
+          <li class="nav-auth-only" style="display:none"><a href="whakapapa.html">Whakapapa</a></li>
+          <li class="nav-auth-only" style="display:none"><a href="korero.html">Kōrero</a></li>
+          <li class="nav-auth-only" style="display:none"><a href="hui.html">Hui</a></li>
+          <li class="nav-auth-only" style="display:none"><a href="mahi.html">Mahi</a></li>
+          <li class="nav-auth-only" style="display:none"><a href="tauparapara.html">Tauparapara</a></li>
+          <li class="nav-auth-only" style="display:none"><a href="nga-toi.html">Ngā Toi</a></li>
+          <li id="nav-admin-item" style="display:none"><a href="admin.html">Kaiwhakahaere</a></li>
+          <li id="nav-login-item"><a id="open-auth" href="#">Takiuru / Login</a></li>
+          <li id="nav-signup-item"><a id="open-signup" href="#">Rēhita / Sign Up</a></li>
+          <li id="nav-profile-item" style="display:none"><a href="profile.html">Kōtaha</a></li>
+          <li id="nav-signout-item" style="display:none"><a id="signout" href="#">Takiputa</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="landing-main-full">
+      <!-- Animated Koru Background -->
+      <div class="koru-bg" aria-hidden="true">
+        <svg class="koru-pattern" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <pattern id="koru" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+              <path class="koru-spiral" d="M50,50 Q30,30 50,20 Q70,10 80,30 Q90,50 70,60 Q50,70 40,50 Q35,35 50,35 Q60,35 60,50" fill="none" stroke="currentColor" stroke-width="2" opacity="0.15"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#koru)"/>
+        </svg>
+      </div>
+
+      <section id="kainga" class="hero landing-hero">
+        <!-- Decorative Kowhaiwhai Border -->
+        <div class="kowhaiwhai-border top" aria-hidden="true"></div>
+        
+        <div class="hero-content fade-in">
+          <h1 class="hero-title">
+            <span class="title-line">Te Kōrero</span>
+            <span class="title-line accent">Whānau</span>
+          </h1>
+          <p class="hero-whakatauki">"Ehara taku toa i te toa takitahi, engari he toa takitini"</p>
+          <p class="whakatauki-translation">My strength is not that of an individual, but that of the collective</p>
+        </div>
+        
+        <!-- Prominent Search Bar -->
+        <div class="landing-search fade-in delay-1">
+          <form id="landing-search-form" class="search-form" role="search">
+            <div class="search-wrapper">
+              <span class="search-icon">🔍</span>
+              <input type="search" id="landing-search-input" placeholder="Rapua ō tūpuna, kōrero, whakapapa..." aria-label="Search" />
+            </div>
+            <button type="submit" class="btn search-btn glow-btn">Rapu</button>
+          </form>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="cta-buttons fade-in delay-2">
+          <button id="cta-signup" class="btn cta-primary pulse-glow">
+            <span class="btn-icon">🌿</span>
+            Rēhita / Join the Whānau
+          </button>
+          <a href="whakapapa.html" class="btn cta-secondary">
+            <span class="btn-icon">🌲</span>
+            Explore Whakapapa
+          </a>
+        </div>
+
+        <!-- Stats Banner -->
+        <div class="stats-banner fade-in delay-3">
+          <div class="stat">
+            <span class="stat-number" data-count="500">500+</span>
+            <span class="stat-label">Whānau Members</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number" data-count="50">50+</span>
+            <span class="stat-label">Family Trees</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number" data-count="1000">1000+</span>
+            <span class="stat-label">Stories Shared</span>
+          </div>
+        </div>
+
+        <!-- Decorative Kowhaiwhai Border -->
+        <div class="kowhaiwhai-border bottom" aria-hidden="true"></div>
+      </section>
+
+      <!-- Main Content with Sidebars -->
+      <div class="landing-layout">
+        <!-- Left Sidebar -->
+        <aside class="sidebar sidebar-left">
+          <div class="sidebar-section">
+            <h3>📍 Quick Navigation</h3>
+            <ul class="sidebar-nav">
+              <li><a href="whakapapa.html">🌲 Whakapapa</a></li>
+              <li><a href="korero.html">📖 Kōrero</a></li>
+              <li><a href="hui.html">📅 Hui</a></li>
+              <li><a href="mahi.html">🛠️ Mahi</a></li>
+              <li><a href="tauparapara.html">🙏 Tauparapara</a></li>
+              <li><a href="nga-toi.html">🎨 Ngā Toi</a></li>
+            </ul>
+          </div>
+          <div class="sidebar-section">
+            <h3>🔥 Trending</h3>
+            <ul class="sidebar-list">
+              <li><a href="whakapapa.html">Ngāti Kahungunu Tree</a><span class="badge">+12 new</span></li>
+              <li><a href="korero.html">Koro's WWII Story</a><span class="badge">Popular</span></li>
+              <li><a href="whakapapa.html">Te Arawa Connections</a></li>
+            </ul>
+          </div>
+          <div class="sidebar-section">
+            <h3>📅 This Week</h3>
+            <div class="mini-event">
+              <span class="mini-date">Feb 22</span>
+              <span>Whānau Reunion</span>
+            </div>
+            <div class="mini-event">
+              <span class="mini-date">Mar 06</span>
+              <span>Whakapapa Workshop</span>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Center Content -->
+        <div class="landing-center">
+          <!-- Value Proposition -->
+          <section class="panel value-section">
+            <div class="section-header">
+              <span class="section-icon">✨</span>
+              <h2>He aha Te Kōrero Whānau?</h2>
+              <p class="section-subtitle">Why Join Our Whānau?</p>
+            </div>
+            <div class="value-grid">
+          <div class="value-item hover-lift">
+            <div class="value-icon-wrap">
+              <span class="value-icon">🌿</span>
+            </div>
+            <h3>Whakapapa</h3>
+            <p class="maori-text">Hanga i tō rākau whakapapa</p>
+            <p>Create and explore family trees. Connect generations past, present, and future.</p>
+            <a href="whakapapa.html" class="value-link">Tīmata →</a>
+          </div>
+          <div class="value-item hover-lift">
+            <div class="value-icon-wrap">
+              <span class="value-icon">📖</span>
+            </div>
+            <h3>Kōrero</h3>
+            <p class="maori-text">Tiakina ngā kōrero tuku iho</p>
+            <p>Preserve stories, memories, and wisdom. Keep our narratives alive for mokopuna.</p>
+            <a href="korero.html" class="value-link">Tīmata →</a>
+          </div>
+          <div class="value-item hover-lift">
+            <div class="value-icon-wrap">
+              <span class="value-icon">🔗</span>
+            </div>
+            <h3>Whanaungatanga</h3>
+            <p class="maori-text">Kimihia ō whanaunga</p>
+            <p>Discover relatives you never knew. Strengthen whānau bonds across the world.</p>
+            <a href="whakapapa.html" class="value-link">Tīmata →</a>
+          </div>
+          <div class="value-item hover-lift">
+            <div class="value-icon-wrap">
+              <span class="value-icon">🎵</span>
+            </div>
+            <h3>Taonga</h3>
+            <p class="maori-text">Tiakina ngā taonga tuku iho</p>
+            <p>Archive waiata, karakia, and tauparapara. Protect our cultural treasures.</p>
+            <a href="tauparapara.html" class="value-link">Tīmata →</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Featured Public Trees -->
+      <section class="panel featured-trees">
+        <div class="section-header">
+          <span class="section-icon">🌲</span>
+          <h2>Rākau Whakapapa Rongonui</h2>
+          <p class="section-subtitle">Featured Family Trees</p>
+        </div>
+        <p class="section-intro">Explore public whakapapa shared by our community.</p>
+        <div class="cards tree-cards" id="featured-trees-grid">
+          <article class="card tree-card">
+            <img loading="lazy" alt="Whakapapa tree" src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&h=360&q=80" />
+            <div class="card-body">
+              <h3>Ngāti Kahungunu</h3>
+              <p class="muted">42 members · Last updated 3 days ago</p>
+              <a href="whakapapa.html" class="btn outline">View Tree</a>
+            </div>
+          </article>
+          <article class="card tree-card">
+            <img loading="lazy" alt="Whakapapa tree" src="https://images.unsplash.com/photo-1523978591478-c753949ff840?auto=format&fit=crop&w=600&h=360&q=80" />
+            <div class="card-body">
+              <h3>Te Arawa</h3>
+              <p class="muted">78 members · Last updated 1 week ago</p>
+              <a href="whakapapa.html" class="btn outline">View Tree</a>
+            </div>
+          </article>
+          <article class="card tree-card">
+            <img loading="lazy" alt="Whakapapa tree" src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=600&h=360&q=80" />
+            <div class="card-body">
+              <h3>Ngāi Tahu</h3>
+              <p class="muted">156 members · Last updated 2 weeks ago</p>
+              <a href="whakapapa.html" class="btn outline">View Tree</a>
+            </div>
+          </article>
+        </div>
+        <div class="section-cta">
+          <a href="whakapapa.html" class="btn">Browse All Trees</a>
+        </div>
+      </section>
+
+      <!-- Upcoming Events -->
+      <section class="panel events-section">
+        <div class="section-header">
+          <span class="section-icon">📅</span>
+          <h2>Ngā Kaupapa Kei Te Haere Mai</h2>
+          <p class="section-subtitle">Upcoming Whānau Events</p>
+        </div>
+        <p class="section-intro">Join whānau gatherings, hui, and celebrations.</p>
+        <div class="events-list" id="events-list">
+          <article class="event-card">
+            <div class="event-date">
+              <span class="day">22</span>
+              <span class="month">Feb</span>
+            </div>
+            <div class="event-details">
+              <h3>Whānau Reunion 2026</h3>
+              <p class="muted">Rotorua · 10:00 AM</p>
+              <p>Annual gathering at the marae. All whānau welcome!</p>
+            </div>
+          </article>
+          <article class="event-card">
+            <div class="event-date">
+              <span class="day">06</span>
+              <span class="month">Mar</span>
+            </div>
+            <div class="event-details">
+              <h3>Whakapapa Workshop</h3>
+              <p class="muted">Online via Zoom · 7:00 PM</p>
+              <p>Learn how to research and document your family history.</p>
+            </div>
+          </article>
+          <article class="event-card">
+            <div class="event-date">
+              <span class="day">15</span>
+              <span class="month">Mar</span>
+            </div>
+            <div class="event-details">
+              <h3>Kapa Haka Practice</h3>
+              <p class="muted">Auckland Community Hall · 6:00 PM</p>
+              <p>Weekly practice sessions — all skill levels welcome.</p>
+            </div>
+          </article>
+          </div>
+          <div class="section-cta">
+            <a href="hui.html" class="btn">View All Events</a>
+            <button id="cta-events-signup" class="btn outline">Sign up to add events</button>
+          </div>
+        </section>
+        </div>
+
+        <!-- Right Sidebar -->
+        <aside class="sidebar sidebar-right">
+          <div class="sidebar-section highlight-box">
+            <h3>🌟 New Here?</h3>
+            <p>Join 500+ whānau members preserving their legacy.</p>
+            <button id="sidebar-signup" class="btn sidebar-cta">Rēhita Free</button>
+          </div>
+          <div class="sidebar-section">
+            <h3>👥 Recently Joined</h3>
+            <div class="member-list">
+              <div class="member-item">
+                <div class="member-avatar">TM</div>
+                <span>Tama M.</span>
+              </div>
+              <div class="member-item">
+                <div class="member-avatar">AW</div>
+                <span>Aroha W.</span>
+              </div>
+              <div class="member-item">
+                <div class="member-avatar">HK</div>
+                <span>Hemi K.</span>
+              </div>
+              <div class="member-item">
+                <div class="member-avatar">MR</div>
+                <span>Mereana R.</span>
+              </div>
+            </div>
+          </div>
+          <div class="sidebar-section">
+            <h3>🎯 Featured Iwi</h3>
+            <div class="iwi-tags">
+              <a href="whakapapa.html" class="iwi-tag">Ngāti Kahungunu</a>
+              <a href="whakapapa.html" class="iwi-tag">Te Arawa</a>
+              <a href="whakapapa.html" class="iwi-tag">Ngāi Tahu</a>
+              <a href="whakapapa.html" class="iwi-tag">Tūhoe</a>
+              <a href="whakapapa.html" class="iwi-tag">Ngāti Porou</a>
+              <a href="whakapapa.html" class="iwi-tag">Waikato</a>
+            </div>
+          </div>
+          <div class="sidebar-section">
+            <h3>💬 Whakataukī o te Rā</h3>
+            <blockquote class="daily-quote">
+              "He aha te mea nui o te ao? He tangata, he tangata, he tangata."
+              <cite>— What is the greatest thing? It is people.</cite>
+            </blockquote>
+          </div>
+          <div class="sidebar-section">
+            <h3>❓ Need Help?</h3>
+            <ul class="help-links">
+              <li><a href="#">How to build whakapapa</a></li>
+              <li><a href="#">Uploading stories</a></li>
+              <li><a href="#">Privacy settings</a></li>
+              <li><a href="#">Contact support</a></li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+
+    </main>
+
+    <footer>
+      <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
+    </footer>
+
+    <!-- Auth modal -->
+    <div id="auth-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="auth-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="auth-close">×</button>
+        <h2 id="auth-title">Takiuru / Login</h2>
+        <div class="tabpanes">
+          <form id="login-form" class="form" autocomplete="on">
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Takiuru / Login</button>
+            <p class="muted small" id="login-msg"></p>
+            <p class="muted small">Kāore anō he pūkete? <a href="#" id="switch-to-signup">Rēhita / Sign Up</a></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signup modal (separate) -->
+    <div id="signup-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="signup-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="signup-close">×</button>
+        <h2 id="signup-title">Rēhita / Sign Up</h2>
+        <div class="tabpanes">
+          <form id="register-form" class="form" autocomplete="on">
+            <label>Ingoa / Full name (optional)
+              <input type="text" name="full_name" />
+            </label>
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Rēhita / Sign Up</button>
+            <p class="muted small" id="register-msg"></p>
+            <p class="muted small">Kei a koe he pūkete? <a href="#" id="switch-to-login">Takiuru / Login</a></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supabase JS and auth logic -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/config.js"></script>
+    <script src="assets/ui-auth-fallback.js"></script>
+    <script src="assets/auth.js"></script>
+    <script src="assets/app.js"></script>
+  </body>
+</html>

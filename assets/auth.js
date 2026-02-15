@@ -67,29 +67,77 @@
     return false;
   }
 
+  // Pages that don't require authentication
+  const publicPages = ['landing.html', ''];
+  
+  function getCurrentPage() {
+    const path = location.pathname.split('/').pop() || '';
+    return path.toLowerCase();
+  }
+  
+  function isPublicPage() {
+    const page = getCurrentPage();
+    return publicPages.includes(page) || page === 'landing.html';
+  }
+
   async function setNavBySession(){
     const { data } = await sb.auth.getSession();
     const user = data.session?.user || null;
+    const currentPage = getCurrentPage();
 
-  // Show login link only when signed out
-  if (navLogin) {
-    const loginLink = navLogin.querySelector('a#open-auth');
-    if (user){
-      navLogin.style.display = 'none';
-      if (loginLink){ loginLink.textContent = 'Takiuru'; loginLink.setAttribute('href', '#'); loginLink.dataset.state = 'out'; }
-    } else {
-      navLogin.style.display = '';
-      if (loginLink){ loginLink.textContent = 'Takiuru'; loginLink.setAttribute('href', '#'); loginLink.dataset.state = 'out'; }
+    // Protect pages - redirect to landing if not logged in
+    if (!user && !isPublicPage()) {
+      location.href = 'landing.html';
+      return;
     }
-  }
+
+    // Update logo to show greeting when logged in
+    const logo = qs('.logo');
+    if (logo) {
+      if (user) {
+        const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Whānau';
+        const firstName = fullName.split(' ')[0];
+        logo.textContent = `Kia ora, ${firstName}`;
+      } else {
+        logo.textContent = 'Te Kōrero Whānau';
+      }
+    }
+
+    // Show login link only when signed out
+    if (navLogin) {
+      const loginLink = navLogin.querySelector('a#open-auth');
+      if (user){
+        navLogin.style.display = 'none';
+        if (loginLink){ loginLink.textContent = 'Takiuru'; loginLink.setAttribute('href', '#'); loginLink.dataset.state = 'out'; }
+      } else {
+        navLogin.style.display = '';
+        if (loginLink){ loginLink.textContent = 'Takiuru'; loginLink.setAttribute('href', '#'); loginLink.dataset.state = 'out'; }
+      }
+    }
 
     // Toggle profile and sign-out buttons
     if (navProfile) navProfile.style.display = user ? '' : 'none';
     if (navSignout) navSignout.style.display = user ? '' : 'none';
     if (navAdmin) navAdmin.style.display = (user && await isAdmin(user)) ? '' : 'none';
+    
+  // Show/hide auth-only nav items (for landing page)
+    const authOnlyItems = document.querySelectorAll('.nav-auth-only');
+    authOnlyItems.forEach(item => {
+      item.style.display = user ? '' : 'none';
+    });
+    
+    // Hide signup option when logged in
+    const navSignup = document.getElementById('nav-signup-item');
+    if (navSignup) navSignup.style.display = user ? 'none' : '';
+    
+    // Hide CTA signup buttons when logged in
+    const ctaSignupBtns = document.querySelectorAll('#cta-signup, #cta-events-signup, #sidebar-signup');
+    ctaSignupBtns.forEach(btn => {
+      if (btn) btn.style.display = user ? 'none' : '';
+    });
 
     // Protect admin page
-    const onAdmin = (location.pathname.split('/').pop()||'').toLowerCase() === 'admin.html';
+    const onAdmin = currentPage === 'admin.html';
     if (onAdmin){
       const ok = !!user && await isAdmin(user);
       if (!ok) location.href = 'index.html';
@@ -98,14 +146,16 @@
 
   // Initial nav state and on changes
   setNavBySession();
-  // Update UI on auth changes and redirect only if the auth modal is open (i.e., an interactive login just occurred)
+  // Update UI on auth changes and redirect to index after login
   sb.auth.onAuthStateChange((_event, session) => {
     setNavBySession();
     try {
       const modal = document.getElementById('auth-modal');
       const modalActive = !!(modal && modal.hidden === false);
-      if (session && modalActive) {
-        location.href = 'profile.html';
+      const currentPage = getCurrentPage();
+      // Redirect to index after successful login from landing page or modal
+      if (session && (modalActive || currentPage === 'landing.html')) {
+        location.href = 'index.html';
       }
     } catch(_){}
   });
@@ -135,8 +185,8 @@
         return;
       }
       hideModal();
-      // Go to profile
-      location.href = 'profile.html';
+      // Go to index (home) after login
+      location.href = 'index.html';
     });
   }
 
@@ -163,7 +213,8 @@
       registerMsg.textContent = data.user?.confirmed_at ? 'Kua oti! Kua takiuru.' : 'Kua tonoa he īmēra whakapūmau. Tirohia tō pouaka īmēra.';
       if (data.session){
         hideModal();
-        location.href = 'profile.html';
+        // Go to index (home) after registration
+        location.href = 'index.html';
       }
     });
   }

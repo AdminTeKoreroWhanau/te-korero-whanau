@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="mi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hui — Te Kōrero Whānau</title>
+    <meta name="description" content="Upcoming whānau events, reunions, and gatherings." />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="papa">
+      <div class="logo">Te Kōrero Whānau</div>
+      <nav>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="whanau-nav" title="Whakatuwhera tahua / Open menu">≡</button>
+        <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Kōwhiri āhua / Toggle theme">☀︎</button>
+        <ul id="whanau-nav" class="nav-list">
+          <li><a href="index.html">Kāinga</a></li>
+          <li><a href="whakapapa.html">Whakapapa</a></li>
+          <li><a href="korero.html">Kōrero</a></li>
+          <li><a href="hui.html">Hui</a></li>
+          <li><a href="mahi.html">Mahi</a></li>
+          <li><a href="tauparapara.html">Tauparapara</a></li>
+          <li><a href="nga-toi.html">Ngā Toi</a></li>
+          <li id="nav-admin-item" style="display:none"><a href="admin.html">Kaiwhakahaere</a></li>
+          <li id="nav-login-item"><a id="open-auth" href="#">Takiuru</a></li>
+          <li id="nav-profile-item" style="display:none"><a href="profile.html">Kōtaha</a></li>
+          <li id="nav-signout-item" style="display:none"><a id="signout" href="#">Takiputa</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <!-- Page Header -->
+      <section class="hero panel">
+        <h1>📅 Hui</h1>
+        <p class="lead">Ngā kaupapa me ngā huihuinga o te whānau</p>
+        <p class="muted">Whānau events, reunions, and gatherings</p>
+      </section>
+
+      <!-- Add Event Form (visible when logged in) -->
+      <section class="panel event-form-section" id="event-form-section" style="display:none">
+        <h2>➕ Tāpiri Hui Hou / Add New Event</h2>
+        <form id="event-form" class="form event-form">
+          <div class="form-grid">
+            <label>
+              Ingoa Hui / Event Name *
+              <input type="text" name="event_name" required placeholder="e.g., Whānau Reunion 2026" />
+            </label>
+            <label>
+              Rā / Date *
+              <input type="date" name="event_date" required />
+            </label>
+            <label>
+              Wā / Time
+              <input type="time" name="event_time" />
+            </label>
+            <label>
+              Wāhi / Location *
+              <input type="text" name="event_location" required placeholder="e.g., Rotorua Marae" />
+            </label>
+          </div>
+          <label>
+            Whakamārama / Description
+            <textarea name="event_description" rows="3" placeholder="Tell whānau what this event is about..."></textarea>
+          </label>
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" name="is_public" checked />
+              <span>Public event (visible on landing page)</span>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn">Tāpiri Hui / Add Event</button>
+            <button type="reset" class="btn outline">Whakakore / Clear</button>
+          </div>
+          <p class="muted small" id="event-form-msg"></p>
+        </form>
+      </section>
+
+      <!-- Login prompt for non-authenticated users -->
+      <section class="panel event-login-prompt" id="event-login-prompt">
+        <div class="login-prompt-content">
+          <span class="prompt-icon">🔐</span>
+          <h3>Takiuru ki te tāpiri hui</h3>
+          <p class="muted">Log in to add events for the whānau</p>
+          <a href="landing.html" class="btn">Takiuru / Login</a>
+        </div>
+      </section>
+
+      <!-- Upcoming Events -->
+      <section class="panel">
+        <h2>🗓️ Ngā Hui Kei Te Haere Mai / Upcoming Events</h2>
+        <div class="events-grid" id="events-grid">
+          <!-- Example Event 1 -->
+          <article class="hui-card">
+            <div class="hui-date">
+              <span class="hui-day">22</span>
+              <span class="hui-month">Feb</span>
+              <span class="hui-year">2026</span>
+            </div>
+            <div class="hui-details">
+              <h3>Whānau Reunion 2026</h3>
+              <div class="hui-meta">
+                <span class="hui-location">📍 Rotorua Marae</span>
+                <span class="hui-time">🕙 10:00 AM</span>
+              </div>
+              <p>Annual gathering at the marae. All whānau welcome! Bring a plate and your best stories. This year we'll be celebrating our kaumātua and welcoming new pēpi into the whānau.</p>
+              <div class="hui-tags">
+                <span class="tag">Public</span>
+                <span class="tag">Reunion</span>
+              </div>
+              <div class="hui-actions">
+                <button class="btn outline small">I'm Attending</button>
+                <span class="muted small">12 attending</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Example Event 2 -->
+          <article class="hui-card">
+            <div class="hui-date">
+              <span class="hui-day">06</span>
+              <span class="hui-month">Mar</span>
+              <span class="hui-year">2026</span>
+            </div>
+            <div class="hui-details">
+              <h3>Whakapapa Workshop</h3>
+              <div class="hui-meta">
+                <span class="hui-location">📍 Online via Zoom</span>
+                <span class="hui-time">🕖 7:00 PM</span>
+              </div>
+              <p>Learn how to research and document your family history. We'll cover using archives, interviewing kaumātua, and building your tree on Te Kōrero Whānau.</p>
+              <div class="hui-tags">
+                <span class="tag">Public</span>
+                <span class="tag">Workshop</span>
+                <span class="tag">Online</span>
+              </div>
+              <div class="hui-actions">
+                <button class="btn outline small">I'm Attending</button>
+                <span class="muted small">28 attending</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Example Event 3 -->
+          <article class="hui-card">
+            <div class="hui-date">
+              <span class="hui-day">15</span>
+              <span class="hui-month">Mar</span>
+              <span class="hui-year">2026</span>
+            </div>
+            <div class="hui-details">
+              <h3>Kapa Haka Practice</h3>
+              <div class="hui-meta">
+                <span class="hui-location">📍 Auckland Community Hall</span>
+                <span class="hui-time">🕕 6:00 PM</span>
+              </div>
+              <p>Weekly practice sessions — all skill levels welcome. Come learn waiata, haka, and poi. Tamariki welcome!</p>
+              <div class="hui-tags">
+                <span class="tag">Public</span>
+                <span class="tag">Kapa Haka</span>
+                <span class="tag">Weekly</span>
+              </div>
+              <div class="hui-actions">
+                <button class="btn outline small">I'm Attending</button>
+                <span class="muted small">8 attending</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Example Event 4 -->
+          <article class="hui-card">
+            <div class="hui-date">
+              <span class="hui-day">05</span>
+              <span class="hui-month">Apr</span>
+              <span class="hui-year">2026</span>
+            </div>
+            <div class="hui-details">
+              <h3>Tangihanga Memorial</h3>
+              <div class="hui-meta">
+                <span class="hui-location">📍 Ngāti Kahungunu Marae, Hastings</span>
+                <span class="hui-time">🕙 9:00 AM</span>
+              </div>
+              <p>Memorial service for our beloved Koro Wiremu who passed last year. A time to gather, remember, and celebrate his life and contributions to our whānau.</p>
+              <div class="hui-tags">
+                <span class="tag">Public</span>
+                <span class="tag">Memorial</span>
+              </div>
+              <div class="hui-actions">
+                <button class="btn outline small">I'm Attending</button>
+                <span class="muted small">34 attending</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Example Event 5 -->
+          <article class="hui-card">
+            <div class="hui-date">
+              <span class="hui-day">20</span>
+              <span class="hui-month">Apr</span>
+              <span class="hui-year">2026</span>
+            </div>
+            <div class="hui-details">
+              <h3>Te Reo Māori Classes</h3>
+              <div class="hui-meta">
+                <span class="hui-location">📍 Wellington Library</span>
+                <span class="hui-time">🕕 6:30 PM</span>
+              </div>
+              <p>Beginner te reo classes for whānau wanting to reconnect with te reo Māori. No experience needed — just bring enthusiasm!</p>
+              <div class="hui-tags">
+                <span class="tag">Public</span>
+                <span class="tag">Te Reo</span>
+                <span class="tag">Classes</span>
+              </div>
+              <div class="hui-actions">
+                <button class="btn outline small">I'm Attending</button>
+                <span class="muted small">15 attending</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Past Events -->
+      <section class="panel">
+        <h2>📜 Ngā Hui Kua Pahure / Past Events</h2>
+        <div class="events-grid past-events" id="past-events-grid">
+          <article class="hui-card past">
+            <div class="hui-date">
+              <span class="hui-day">25</span>
+              <span class="hui-month">Dec</span>
+              <span class="hui-year">2025</span>
+            </div>
+            <div class="hui-details">
+              <h3>Christmas Kai Together</h3>
+              <div class="hui-meta">
+                <span class="hui-location">📍 Tauranga Beach</span>
+                <span class="hui-time">🕛 12:00 PM</span>
+              </div>
+              <p>Beach BBQ and games. Great turnout despite the weather!</p>
+              <div class="hui-tags">
+                <span class="tag">Completed</span>
+              </div>
+              <div class="hui-actions">
+                <span class="muted small">45 attended</span>
+                <a href="nga-toi.html" class="btn outline small">View Photos</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="hui-card past">
+            <div class="hui-date">
+              <span class="hui-day">06</span>
+              <span class="hui-month">Feb</span>
+              <span class="hui-year">2025</span>
+            </div>
+            <div class="hui-details">
+              <h3>Waitangi Day Celebration</h3>
+              <div class="hui-meta">
+                <span class="hui-location">📍 Waitangi Treaty Grounds</span>
+                <span class="hui-time">🕗 8:00 AM</span>
+              </div>
+              <p>Annual celebration at the Treaty Grounds. Beautiful day of whanaungatanga.</p>
+              <div class="hui-tags">
+                <span class="tag">Completed</span>
+              </div>
+              <div class="hui-actions">
+                <span class="muted small">67 attended</span>
+                <a href="nga-toi.html" class="btn outline small">View Photos</a>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
+    </footer>
+
+    <!-- Auth modal -->
+    <div id="auth-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="auth-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="auth-close">×</button>
+        <h2 id="auth-title">Takiuru / Rēhita</h2>
+        <div class="tabpanes">
+          <form id="login-form" class="form" autocomplete="on">
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Takiuru</button>
+            <p class="muted small" id="login-msg"></p>
+          </form>
+          <form id="register-form" class="form" autocomplete="on" hidden>
+            <label>Ingoa / Full name (optional)
+              <input type="text" name="full_name" />
+            </label>
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Rēhita</button>
+            <p class="muted small" id="register-msg"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supabase JS and auth logic -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/config.js"></script>
+    <script src="assets/ui-auth-fallback.js"></script>
+    <script src="assets/auth.js"></script>
+    <script src="assets/app.js"></script>
+  </body>
+</html>
