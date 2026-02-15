@@ -278,14 +278,10 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 @media (max-width:599px){.landing-layout{grid-template-columns:1fr;gap:1rem;padding:0.75rem}.sidebar{display:none}.landing-center{gap:1rem}}
 
 /* Sidebars */
-.sidebar{display:flex;flex-direction:column;gap:1.25rem;position:sticky;top:80px;height:fit-content;max-height:calc(100vh - 100px);overflow-y:auto;padding-bottom:1rem;min-width:0;box-sizing:border-box}
+.sidebar{display:flex;flex-direction:column;gap:1.25rem;position:sticky;top:80px;height:fit-content;padding-bottom:1rem;min-width:0;box-sizing:border-box;overflow:hidden}
 .sidebar-left{grid-column:1}
-.landing-center{grid-column:2}
+.landing-center{grid-column:2;scroll-behavior:smooth}
 .sidebar-right{grid-column:3}
-.sidebar::-webkit-scrollbar{width:5px}
-.sidebar::-webkit-scrollbar-track{background:transparent}
-.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-.sidebar::-webkit-scrollbar-thumb:hover{background:var(--accent)}
 .sidebar-section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:1.25rem;transition:all .2s ease;box-sizing:border-box}
 .sidebar-section:hover{border-color:var(--accent);box-shadow:0 4px 15px rgba(0,196,179,0.1)}
 .sidebar-section h3{font-size:1rem;margin:0 0 1rem;display:flex;align-items:center;gap:0.5rem;color:var(--fg)}
