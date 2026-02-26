@@ -1,90 +1,103 @@
-// Whakapapa (family tree) builder with per-user persistence (Supabase) and local fallback
+// Whakapapa (family tree) drag-and-drop builder
+// Admin arranges nodes via drag-and-drop; positions persist to Supabase.
+// All users can view the shared tree. Clicking a node opens that member's profile.
 (function(){
   const hasVis = !!window.vis;
   const container = document.getElementById('whakapapa-tree');
   const msg = document.getElementById('whakapapa-msg');
   if (!container || !hasVis) { if (msg) msg.textContent = 'Network library failed to load.'; return; }
 
-  const sel = document.getElementById('root-select');
-  const onlyConnected = document.getElementById('only-connected');
-  const depthInput = document.getElementById('depth');
-  const depthVal = document.getElementById('depth-val');
   const fitBtn = document.getElementById('fit');
+  const saveBtn = document.getElementById('save-layout');
+  const saveMsg = document.getElementById('save-msg');
+  const adminHint = document.getElementById('whakapapa-admin-hint');
+  const adminForms = document.getElementById('whakapapa-admin-forms');
 
   const personForm = document.getElementById('person-form');
   const personMsg = document.getElementById('person-msg');
-
   const relForm = document.getElementById('rel-form');
   const relMsg = document.getElementById('rel-msg');
-  const relFit = document.getElementById('rel-fit');
 
-  // Supabase client (optional)
-  const SUPABASE_URL = window.SUPABASE_URL;
-  const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
-  const sb = (window.sb || (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null));
+  // Supabase client (set by auth.js)
+  const sb = window.sb || null;
 
-  const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+  let isAdminUser = false;
+  let positions = {};
+  let profiles = [];
+  let profileMap = new Map();
+  let peopleIds = [];
+  let relations = [];
 
-  async function currentUserId(){
-    if (!sb) return null;
-    try { const { data } = await sb.auth.getSession(); return data.session?.user?.id || null; } catch { return null; }
-  }
-
-  function storageKey(base, userId){ return `${base}.v1:${userId||'anon'}`; }
-
+  // --- Helpers ---
   function avatarOf(p){ return p.avatar_url || p.photo_url || p.image_url || p.avatar || null; }
   function displayName(p){ return p.full_name || p.name || p.email || '—'; }
   function avatarPlaceholder(name){
     const seed = encodeURIComponent(String(name||'—'));
-    // DiceBear initials - lightweight fallback when no avatar provided
     return `https://api.dicebear.com/7.x/initials/svg?seed=${seed}&backgroundType=gradientLinear`;
   }
+
   function toNode(p){
     const name = displayName(p);
     const img = avatarOf(p) || avatarPlaceholder(name);
-    return {
+    const node = {
       id: p.id,
       label: name,
-      title: name,
+      title: name + '\nPāwhiria ki te tiro kōtaha / Click to view profile',
       shape: 'circularImage',
       image: img,
-      borderWidth: 1,
-      size: 36
+      borderWidth: 2,
+      size: 40
     };
-  }
-  function toEdge(r){
-    if (r.type === 'parent' || r.type === 'mother' || r.type === 'father'){
-      return { from: r.from_id, to: r.to_id, arrows: 'to', label: 'parent', color: { color: '#6ec5be' } };
+    if (positions[p.id]) {
+      node.x = positions[p.id].x;
+      node.y = positions[p.id].y;
+      node.fixed = { x: true, y: true };
     }
-    if (r.type === 'spouse' || r.type === 'partner'){
-      return { from: r.from_id, to: r.to_id, dashes: true, label: 'spouse', color: { color: '#c58f6e' } };
-    }
-    return { from: r.from_id, to: r.to_id, color: { color: '#9aa3a7' } };
+    return node;
   }
 
+  function toEdge(r){
+    if (r.type === 'parent' || r.type === 'mother' || r.type === 'father'){
+      return { from: r.from_id, to: r.to_id, arrows: 'to', label: r.type, color: { color: '#6ec5be' }, width: 2 };
+    }
+    if (r.type === 'spouse' || r.type === 'partner'){
+      return { from: r.from_id, to: r.to_id, dashes: true, label: r.type, color: { color: '#c58f6e' }, width: 2 };
+    }
+    return { from: r.from_id, to: r.to_id, label: r.type || '', color: { color: '#9aa3a7' }, width: 2 };
+  }
+
+  // --- Network setup (free-form layout) ---
   const opts = {
-    layout: { hierarchical: { enabled: true, direction: 'UD', sortMethod: 'directed', nodeSpacing: 150, levelSeparation: 120 } },
-    physics: false,
-    nodes: { 
+    layout: { randomSeed: 42 },
+    physics: {
+      enabled: true,
+      stabilization: { iterations: 200 },
+      barnesHut: { gravitationalConstant: -3000, springLength: 200, springConstant: 0.04 }
+    },
+    interaction: {
+      dragNodes: false,
+      dragView: true,
+      zoomView: true,
+      hover: true,
+      tooltipDelay: 200
+    },
+    nodes: {
       color: { background: '#12181a', border: '#1e2629' },
       font: { color: '#eef2f3', size: 14, face: 'arial', strokeWidth: 1, strokeColor: '#000000' },
       borderWidth: 2,
       shapeProperties: { useBorderWithImage: true }
     },
-    edges: { smooth: { type: 'cubicBezier' }, font: { color: '#a7b1b5' } }
+    edges: {
+      smooth: { type: 'cubicBezier' },
+      font: { color: '#a7b1b5', size: 12 }
+    }
   };
 
-  // All available profiles (from Supabase)
-  let profiles = [];
-  let profileMap = new Map();
-  // People in this user's tree (array of profile IDs)
-  let peopleIds = [];
-  let relations = [];
   let allNodes = new vis.DataSet([]);
   let allEdges = new vis.DataSet([]);
   let network = new vis.Network(container, { nodes: allNodes, edges: allEdges }, opts);
 
-  // Adapt node/edge colors to current theme (dark/light)
+  // --- Theme adaptation ---
   function getCSSVar(name, fallback=''){
     const v = getComputedStyle(document.documentElement).getPropertyValue(name);
     return (v && v.trim()) || fallback;
@@ -107,196 +120,76 @@
       edges: { font: { color: muted } }
     });
   }
-  // Observe theme changes and apply immediately
   const themeObserver = new MutationObserver(() => applyThemeToNetwork());
   themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-  function neighborsWithin(rootId, maxDepth){
-    const adj = new Map();
-    allEdges.forEach(e => {
-      if (!adj.has(e.from)) adj.set(e.from, []);
-      if (!adj.has(e.to)) adj.set(e.to, []);
-      adj.get(e.from).push(e.to);
-      adj.get(e.to).push(e.from);
-    });
-    const seen = new Set([rootId]);
-    const q = [[rootId,0]];
-    while (q.length){
-      const [u,d] = q.shift();
-      if (d >= maxDepth) continue;
-      const ns = adj.get(u) || [];
-      for (const v of ns){ if (!seen.has(v)) { seen.add(v); q.push([v,d+1]); } }
-    }
-    return seen;
+  // --- Auth helpers ---
+  async function currentUserId(){
+    if (!sb) return null;
+    try { const { data } = await sb.auth.getSession(); return data.session?.user?.id || null; } catch { return null; }
   }
 
-  function applyFilter(){
-    const rootId = sel.value || (allNodes.getIds()[0] || null);
-    const d = parseInt(depthInput.value || '3', 10);
-    depthVal.textContent = String(d);
-    if (!onlyConnected.checked || !rootId){
-      network.setData({ nodes: allNodes, edges: allEdges });
-      if (rootId) network.focus(rootId, { animation: true, scale: 1 });
+  async function checkIsAdmin(){
+    if (!sb) return false;
+    try {
+      const { data } = await sb.auth.getSession();
+      const user = data.session?.user;
+      if (!user) return false;
+      const emails = (window.ADMIN_EMAILS || []).map(e => String(e||'').toLowerCase());
+      if (user.email && emails.includes(String(user.email).toLowerCase())) return true;
+      const { data: row } = await sb.from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle();
+      return !!(row && row.user_id);
+    } catch { return false; }
+  }
+
+  // --- Position persistence ---
+  async function loadPositions(){
+    if (!sb){
+      try { return JSON.parse(localStorage.getItem('whakapapa.positions.v1') || '{}'); } catch { return {}; }
+    }
+    try {
+      const { data, error } = await sb.from('whakapapa_positions').select('profile_id, pos_x, pos_y');
+      if (error){ console.warn('Positions table not available, using defaults.', error); return {}; }
+      const map = {};
+      (data || []).forEach(p => { map[p.profile_id] = { x: p.pos_x, y: p.pos_y }; });
+      return map;
+    } catch { return {}; }
+  }
+
+  async function saveAllPositions(){
+    const nodePositions = network.getPositions();
+    if (!sb){
+      try { localStorage.setItem('whakapapa.positions.v1', JSON.stringify(nodePositions)); } catch {}
+      if (saveMsg) saveMsg.textContent = 'Kua tiakina (local) / Saved locally.';
+      setTimeout(() => { if (saveMsg) saveMsg.textContent = ''; }, 3000);
       return;
     }
-    const keep = neighborsWithin(rootId, d);
-    const nodes = new vis.DataSet(allNodes.get({ filter: n => keep.has(n.id) }));
-    const edges = new vis.DataSet(allEdges.get({ filter: e => keep.has(e.from) && keep.has(e.to) }));
-    network.setData({ nodes, edges });
-    network.focus(rootId, { animation: true, scale: 1 });
-  }
-
-  function selectedPeople(){
-    return peopleIds.map(id => profileMap.get(id)).filter(Boolean);
-  }
-  function populateRootSelect(){
-    sel.innerHTML = '';
-    selectedPeople().forEach(p => { const opt = document.createElement('option'); opt.value = p.id; opt.textContent = displayName(p); sel.appendChild(opt); });
-  }
-  function populateRelSelects(){
-    const a = document.getElementById('rel-a');
-    const b = document.getElementById('rel-b');
-    if (!a || !b) return;
-    const add = (el) => {
-      el.innerHTML = '';
-      selectedPeople().forEach(p => { const opt = document.createElement('option'); opt.value = p.id; opt.textContent = displayName(p); el.appendChild(opt); });
-    };
-    add(a); add(b);
-  }
-
-  function createBackend(){
-    // Local fallback (per-user by auth uid; otherwise per-browser)
-    const local = {
-      async listPeopleIds(userId){
-        try { return JSON.parse(localStorage.getItem(storageKey('whakapapa.people.ids', userId)) || '[]'); } catch { return []; }
-      },
-      async listRelations(userId){
-        try { return JSON.parse(localStorage.getItem(storageKey('whakapapa.relations', userId)) || '[]'); } catch { return []; }
-      },
-      async addPersonId(userId, profile_id){
-        const cur = await this.listPeopleIds(userId);
-        if (!cur.includes(profile_id)) cur.push(profile_id);
-        try { localStorage.setItem(storageKey('whakapapa.people.ids', userId), JSON.stringify(cur)); } catch {}
-      },
-      async addRelation(userId, rel){
-        const cur = await this.listRelations(userId); cur.push(rel);
-        try { localStorage.setItem(storageKey('whakapapa.relations', userId), JSON.stringify(cur)); } catch {}
-      }
-    };
-
-    if (!sb) return { type: 'local', ...local };
-
-    const peopleTable = 'whakapapa_people'; // columns: user_id uuid, profile_id uuid
-    const relTable = 'whakapapa_relations';
-    return {
-      type: 'supabase',
-      async listPeopleIds(userId){
-        if (!userId) return [];
-        const { data, error } = await sb.from(peopleTable).select('profile_id').eq('user_id', userId);
-        if (error) { console.error(error); return []; }
-        return (data||[]).map(r => r.profile_id).filter(Boolean);
-      },
-      async listRelations(userId){
-        if (!userId) return [];
-        const { data, error } = await sb.from(relTable).select('from_id, to_id, type').eq('user_id', userId);
-        if (error) { console.error(error); return []; }
-        return data || [];
-      },
-      async addPersonId(userId, profile_id){
-        const payload = { user_id: userId, profile_id };
-        const { error } = await sb.from(peopleTable).insert([payload]).select().single();
-        if (error) throw error;
-      },
-      async addRelation(userId, rel){
-        const payload = { from_id: rel.from_id, to_id: rel.to_id, type: rel.type, user_id: userId };
-        const { error } = await sb.from(relTable).insert([payload]);
+    try {
+      const records = Object.entries(nodePositions).map(([id, pos]) => ({
+        profile_id: id,
+        pos_x: Math.round(pos.x),
+        pos_y: Math.round(pos.y),
+        updated_at: new Date().toISOString()
+      }));
+      for (const rec of records){
+        const { error } = await sb.from('whakapapa_positions').upsert(rec, { onConflict: 'profile_id' });
         if (error) throw error;
       }
-    };
+      if (saveMsg) saveMsg.textContent = 'Kua tiakina / Layout saved!';
+      setTimeout(() => { if (saveMsg) saveMsg.textContent = ''; }, 3000);
+    } catch (err){
+      console.error('Failed to save positions:', err);
+      if (saveMsg) saveMsg.textContent = 'Hapa tiaki / Failed to save layout.';
+    }
   }
 
-  const backend = createBackend();
-
-  async function bootstrap(){
-    container.setAttribute('aria-busy','true');
-    try{
-      const uidNow = await currentUserId();
-
-      // Load profiles (Supabase only)
-      if (sb){
-        const { data: profs, error } = await sb.from('profiles').select('id, full_name, avatar_url');
-        if (error) {
-          profiles = [];
-          if (msg) msg.textContent = 'Kāore e taea te tiki kōtaha. Tukua te here RLS kia pānui ngā kaiwhakamahi takiuru i te profiles. / Cannot load profiles. Add a SELECT policy on profiles for authenticated users.';
-        } else if (Array.isArray(profs)) {
-          profiles = profs;
-        } else {
-          profiles = [];
-        }
-        // Fallback: include the current user as a selectable profile if table is empty
-        if (!profiles.length){
-          try {
-            const { data: sess } = await sb.auth.getSession();
-            const u = sess?.session?.user;
-            if (u){
-              const full_name = (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name)) || u.email || '—';
-              const avatar_url = (u.user_metadata && (u.user_metadata.avatar_url || u.user_metadata.picture)) || null;
-              profiles = [{ id: u.id, full_name, avatar_url }];
-            }
-          } catch {}
-        }
-      } else {
-        profiles = [];
-      }
-      profileMap = new Map(profiles.map(p => [p.id, p]));
-
-      // Load this user's selected people (IDs) and relations
-      peopleIds = await backend.listPeopleIds(uidNow);
-      relations = await backend.listRelations(uidNow);
-
-      // Build graph datasets
-      const nodes = peopleIds.map(id => profileMap.get(id)).filter(Boolean).map(toNode);
-      allNodes = new vis.DataSet(nodes);
-      allEdges = new vis.DataSet(relations.map(toEdge));
-      network.setData({ nodes: allNodes, edges: allEdges });
-      // Ensure colors match current theme after initial data load
-      applyThemeToNetwork();
-
-      populateRootSelect();
-      populateRelSelects();
-      populatePersonSelect();
-
-      if (!peopleIds.length){
-        if (msg) msg.textContent = sb ? 'Kōwhiria ngā kōtaha ki te tāpiri ki te rākau. / Select profiles to add to your tree.' : 'Local mode (no Supabase): unable to list profiles.';
-      } else { if (msg) msg.textContent = ''; }
-
-      // Default root: current user if in selection
-      if (sb){
-        const { data } = await sb.auth.getSession();
-        const myId = data?.session?.user?.id;
-        if (myId && peopleIds.includes(myId)) sel.value = myId;
-      }
-
-      applyFilter();
-    } catch (e){ if (msg) msg.textContent = 'Kāore i taea te uta te rākau whakapapa / Unable to load family tree.'; }
-    finally { container.setAttribute('aria-busy','false'); }
-  }
-
-  // Events
-  sel && sel.addEventListener('change', applyFilter);
-  onlyConnected && onlyConnected.addEventListener('change', applyFilter);
-  depthInput && depthInput.addEventListener('input', applyFilter);
-  fitBtn && fitBtn.addEventListener('click', () => network.fit({ animation: true }));
-  relFit && relFit.addEventListener('click', () => network.fit({ animation: true }));
-
-  // Populate and handle Add person (from existing profiles)
+  // --- Populate form selects (admin only) ---
   function populatePersonSelect(){
     const selP = document.getElementById('person-select');
     const btn = document.getElementById('person-add-btn');
-    if (!selP){ return; }
+    if (!selP) return;
     selP.innerHTML = '';
     if (!sb){ selP.disabled = true; if (btn) btn.disabled = true; return; }
-    // Show profiles not yet included
     const notAdded = profiles.filter(p => !peopleIds.includes(p.id));
     if (!profiles.length){
       const opt = document.createElement('option'); opt.value=''; opt.textContent='No profiles available'; selP.appendChild(opt);
@@ -314,47 +207,212 @@
     selP.disabled = !has; if (btn) btn.disabled = !has;
   }
 
+  function populateRelSelects(){
+    const a = document.getElementById('rel-a');
+    const b = document.getElementById('rel-b');
+    if (!a || !b) return;
+    const people = peopleIds.map(id => profileMap.get(id)).filter(Boolean);
+    const add = (el) => {
+      el.innerHTML = '';
+      people.forEach(p => { const opt = document.createElement('option'); opt.value = p.id; opt.textContent = displayName(p); el.appendChild(opt); });
+    };
+    add(a); add(b);
+  }
+
+  // --- Interaction events ---
+
+  // Click node → open profile
+  network.on('click', function(params){
+    if (params.nodes.length > 0){
+      const nodeId = params.nodes[0];
+      window.location.href = 'profile.html?id=' + encodeURIComponent(nodeId);
+    }
+  });
+
+  // Cursor styling
+  network.on('hoverNode', function(){ container.style.cursor = 'pointer'; });
+  network.on('blurNode', function(){ container.style.cursor = isAdminUser ? 'grab' : 'default'; });
+  network.on('dragStart', function(){ if (isAdminUser) container.style.cursor = 'grabbing'; });
+  network.on('dragEnd', function(){ if (isAdminUser) container.style.cursor = 'grab'; });
+
+  // Buttons
+  fitBtn && fitBtn.addEventListener('click', () => network.fit({ animation: true }));
+  saveBtn && saveBtn.addEventListener('click', saveAllPositions);
+
+  // Default position for newly added nodes
+  function getNewNodePosition(){
+    const viewPos = network.getViewPosition();
+    const offset = 80 + Math.random() * 120;
+    const angle = Math.random() * 2 * Math.PI;
+    return { x: viewPos.x + Math.cos(angle) * offset, y: viewPos.y + Math.sin(angle) * offset };
+  }
+
+  // --- Bootstrap ---
+  async function bootstrap(){
+    container.setAttribute('aria-busy','true');
+    try {
+      isAdminUser = await checkIsAdmin();
+      positions = await loadPositions();
+
+      // Load all profiles
+      if (sb){
+        const { data: profs, error } = await sb.from('profiles').select('id, full_name, avatar_url');
+        if (error){
+          profiles = [];
+          if (msg) msg.textContent = 'Kāore e taea te tiki kōtaha / Cannot load profiles.';
+        } else {
+          profiles = Array.isArray(profs) ? profs : [];
+        }
+        // Fallback: include current user if table is empty
+        if (!profiles.length){
+          try {
+            const { data: sess } = await sb.auth.getSession();
+            const u = sess?.session?.user;
+            if (u){
+              const full_name = (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name)) || u.email || '—';
+              const avatar_url = (u.user_metadata && (u.user_metadata.avatar_url || u.user_metadata.picture)) || null;
+              profiles = [{ id: u.id, full_name, avatar_url }];
+            }
+          } catch {}
+        }
+      } else {
+        profiles = [];
+      }
+      profileMap = new Map(profiles.map(p => [p.id, p]));
+
+      // Load people and relations (shared tree — all entries, deduplicated)
+      if (sb){
+        const { data: people } = await sb.from('whakapapa_people').select('profile_id');
+        peopleIds = [...new Set((people || []).map(r => r.profile_id).filter(Boolean))];
+
+        const { data: rels } = await sb.from('whakapapa_relations').select('from_id, to_id, type');
+        const relSet = new Set();
+        relations = (rels || []).filter(r => {
+          const key = r.from_id + '-' + r.to_id + '-' + r.type;
+          if (relSet.has(key)) return false;
+          relSet.add(key);
+          return true;
+        });
+      } else {
+        peopleIds = [];
+        relations = [];
+      }
+
+      // Build graph
+      const nodes = peopleIds.map(id => profileMap.get(id)).filter(Boolean).map(p => toNode(p));
+      allNodes = new vis.DataSet(nodes);
+      allEdges = new vis.DataSet(relations.map(toEdge));
+      network.setData({ nodes: allNodes, edges: allEdges });
+      applyThemeToNetwork();
+
+      // If all nodes have saved positions, skip physics entirely
+      const allHavePositions = nodes.length > 0 && nodes.every(n => positions[n.id]);
+      if (allHavePositions){
+        network.setOptions({ physics: { enabled: false } });
+      }
+
+      // After physics stabilizes, freeze and allow admin dragging
+      network.once('stabilized', function(){
+        network.setOptions({ physics: { enabled: false } });
+        if (isAdminUser){
+          allNodes.forEach(n => { allNodes.update({ id: n.id, fixed: false }); });
+        }
+      });
+
+      // Enable admin mode UI
+      if (isAdminUser){
+        network.setOptions({ interaction: { dragNodes: true } });
+        if (saveBtn) saveBtn.style.display = '';
+        if (adminHint) adminHint.style.display = '';
+        if (adminForms) adminForms.style.display = '';
+        container.style.cursor = 'grab';
+        container.classList.add('admin-mode');
+
+        // Unfix nodes immediately if all positions loaded (physics already off)
+        if (allHavePositions){
+          allNodes.forEach(n => { allNodes.update({ id: n.id, fixed: false }); });
+        }
+
+        populatePersonSelect();
+        populateRelSelects();
+      }
+
+      // Status messages
+      if (!peopleIds.length){
+        if (msg) msg.textContent = isAdminUser
+          ? 'Tāpirihia ngā kōtaha ki te rākau. / Add profiles to the tree below.'
+          : 'Kāore anō he tāngata i te rākau. / No members in the tree yet.';
+      } else {
+        if (msg) msg.textContent = '';
+      }
+
+      network.fit({ animation: true });
+    } catch (e){
+      console.error(e);
+      if (msg) msg.textContent = 'Kāore i taea te uta te rākau whakapapa / Unable to load family tree.';
+    } finally {
+      container.setAttribute('aria-busy','false');
+    }
+  }
+
+  // --- Add person (admin only) ---
   personForm && personForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (personMsg) personMsg.textContent = '';
+    if (!isAdminUser) return;
     try {
       const userId = await currentUserId();
-      if (backend.type === 'supabase' && !userId) { if (personMsg) personMsg.textContent = 'Takiuru hei tiaki / Login to save.'; return; }
+      if (!userId){ if (personMsg) personMsg.textContent = 'Takiuru hei tiaki / Login to save.'; return; }
       const profile_id = String(document.getElementById('person-select').value||'').trim();
       if (!profile_id){ if (personMsg) personMsg.textContent = 'Kōwhiria tētahi kōtaha / Select a profile.'; return; }
       if (peopleIds.includes(profile_id)){ if (personMsg) personMsg.textContent = 'Kua tāpirihia kē / Already added.'; return; }
-      await backend.addPersonId(userId, profile_id);
+
+      if (sb){
+        const { error } = await sb.from('whakapapa_people').insert([{ user_id: userId, profile_id }]);
+        if (error) throw error;
+      }
       peopleIds.push(profile_id);
       const prof = profileMap.get(profile_id);
-      if (prof) allNodes.add(toNode(prof));
-      populateRootSelect();
-      populateRelSelects();
+      if (prof){
+        const pos = getNewNodePosition();
+        const node = toNode(prof);
+        node.x = pos.x;
+        node.y = pos.y;
+        allNodes.add(node);
+      }
       populatePersonSelect();
-      if (!sel.value) sel.value = profile_id;
-      applyFilter();
-      if (personMsg) personMsg.textContent = 'Kua tāpirihia / Added.';
-    } catch (err){ if (personMsg) personMsg.textContent = 'Hapa tāpiri / Failed to add person.'; }
+      populateRelSelects();
+      if (personMsg) personMsg.textContent = 'Kua tāpirihia / Added. Drag them into position then save.';
+      if (msg) msg.textContent = '';
+    } catch (err){
+      if (personMsg) personMsg.textContent = 'Hapa tāpiri / Failed to add person.';
+    }
   });
 
-  // Add relation (between selected people) 
+  // --- Add relation (admin only) ---
   relForm && relForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (relMsg) relMsg.textContent = '';
+    if (!isAdminUser) return;
     const from_id = document.getElementById('rel-a').value;
     const to_id = document.getElementById('rel-b').value;
     const type = document.getElementById('rel-type').value;
     if (!from_id || !to_id || !type){ if (relMsg) relMsg.textContent = 'Kōwhiria te tāngata me te momo hononga / Select people and relation type.'; return; }
-    if (from_id === to_id){ if (relMsg) relMsg.textContent = 'Kāore e tika te hono ki a ia anō / Cannot relate a person to themselves.'; return; }
-    try{
+    if (from_id === to_id){ if (relMsg) relMsg.textContent = 'Kāore e tika / Cannot relate a person to themselves.'; return; }
+    try {
       const userId = await currentUserId();
-      if (backend.type === 'supabase' && !userId) { if (relMsg) relMsg.textContent = 'Takiuru hei tiaki / Login to save.'; return; }
+      if (!userId){ if (relMsg) relMsg.textContent = 'Takiuru hei tiaki / Login to save.'; return; }
       const rel = { from_id, to_id, type };
-      await backend.addRelation(userId, rel);
+      if (sb){
+        const { error } = await sb.from('whakapapa_relations').insert([{ ...rel, user_id: userId }]);
+        if (error) throw error;
+      }
       relations.push(rel);
       allEdges.add(toEdge(rel));
-      applyFilter();
-      if (relMsg) relMsg.textContent = 'Kua tāpirihia / Added.';
-    }catch(err){ if (relMsg) relMsg.textContent = 'Hapa tāpiri / Failed to add relation.'; }
+      if (relMsg) relMsg.textContent = 'Kua tāpirihia / Relationship added.';
+    } catch (err){
+      if (relMsg) relMsg.textContent = 'Hapa tāpiri / Failed to add relation.';
+    }
   });
 
   bootstrap();

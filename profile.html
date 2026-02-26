@@ -760,6 +760,14 @@
               if (Object.keys(updates).length){
                 const { data: upd, error } = await sb.auth.updateUser({ data: updates });
                 if (error) throw error;
+                // Sync public fields to profiles table so other users can see them
+                const profileSync = {};
+                if (updates.full_name) profileSync.full_name = updates.full_name;
+                if (updates.avatar_url) profileSync.avatar_url = updates.avatar_url;
+                if (updates.cover_url) profileSync.cover_url = updates.cover_url;
+                if (Object.keys(profileSync).length){
+                  await sb.from('profiles').update(profileSync).eq('id', user.id);
+                }
                 // Update UI
                 const newUser = upd.user || user;
                 if (profileName) profileName.textContent = (updates.full_name || newUser.user_metadata?.full_name || '—');
@@ -776,10 +784,72 @@
           });
         }
 
+        // Load another user's profile (read-only view from whakapapa tree)
+        async function loadOtherProfile(profileId) {
+          // Hide edit/compose controls — this is someone else's profile
+          if (editBtn) editBtn.style.display = 'none';
+          const composerEl = document.querySelector('.composer');
+          if (composerEl) composerEl.style.display = 'none';
+
+          // Load from profiles table
+          try {
+            const { data: profile, error } = await sb.from('profiles').select('*').eq('id', profileId).single();
+            if (error || !profile) {
+              statusEl.textContent = 'Kāore i kitea te kōtaha / Profile not found.';
+              statusEl.style.display = '';
+              return;
+            }
+            const name = profile.full_name || '—';
+            if (profileName) profileName.textContent = name;
+            const fakeUser = { id: profileId, user_metadata: { full_name: name }, email: '' };
+            if (avatarImg) {
+              avatarImg.src = profile.avatar_url || placeholderAvatar(fakeUser);
+              avatarImg.style.display = 'block';
+            }
+            // Use the user's actual uploaded cover, fall back to placeholder
+            applyCover(profile.cover_url || placeholderCover(fakeUser));
+          } catch {
+            statusEl.textContent = 'Kāore i kitea te kōtaha / Profile not found.';
+            statusEl.style.display = '';
+            return;
+          }
+
+          // Pepeha is stored in user_metadata (not accessible for other users)
+          if (pepehaView) pepehaView.style.display = 'none';
+          if (pepehaEmpty) pepehaEmpty.style.display = 'none';
+
+          // Try loading their posts (depends on RLS — will be empty if select-own policy)
+          try {
+            const { data, error } = await sb.from('posts').select('*').eq('user_id', profileId).order('created_at', { ascending: false });
+            if (!error && data && data.length) {
+              currentPosts = data;
+              renderPosts(currentPosts);
+              renderPhotos(currentPosts);
+              // Hide owner actions on someone else's posts
+              postsRoot.querySelectorAll('.owner-actions').forEach(el => el.style.display = 'none');
+            } else {
+              if (postsRoot) postsRoot.innerHTML = '<p class="muted">Kāore anō he tuhinga / No visible posts.</p>';
+              if (photosEmpty) photosEmpty.style.display = 'block';
+            }
+          } catch {
+            if (postsRoot) postsRoot.innerHTML = '<p class="muted">Kāore anō he tuhinga / No visible posts.</p>';
+          }
+        }
+
         // Bootstrap
         (async function init(){
           const user = await ensureSession();
-          if (user) loadPosts(user);
+          if (!user) return;
+
+          const params = new URLSearchParams(window.location.search);
+          const viewId = params.get('id');
+          const isOwnProfile = !viewId || viewId === user.id;
+
+          if (isOwnProfile) {
+            loadPosts(user);
+          } else {
+            await loadOtherProfile(viewId);
+          }
         })();
       })();
     </script>

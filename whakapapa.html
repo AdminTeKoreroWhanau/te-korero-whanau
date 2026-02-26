@@ -32,7 +32,7 @@
     <main>
       <section id="whakapapa" class="panel">
         <h1>Whakapapa</h1>
-        <p>Build a family tree and pepeha. Connect iwi/hapū/waka affiliations. Learn and teach across generations.</p>
+        <p>He rākau whānau, he hononga tāngata. Pāwhiria tētahi uri ki te tiro i tōna kōtaha. / Family tree and connections. Click any member to view their profile.</p>
         <details class="fold">
           <summary>What info is helpful for whakapapa?</summary>
           <p>Full names, birth years, marae, iwi/hapū, and known relationships. Photos are a bonus.</p>
@@ -40,62 +40,63 @@
 
         <p id="whakapapa-msg" class="muted"></p>
 
+        <!-- Toolbar -->
         <div class="toolbar" role="group" aria-label="Whakapapa controls" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin:.5rem 0 1rem;">
-          <label>Root
-            <select id="root-select" title="Choose a root person"></select>
-          </label>
-          <label><input type="checkbox" id="only-connected" checked /> Only connected</label>
-          <label>Depth <span id="depth-val">3</span>
-            <input type="range" id="depth" min="1" max="6" step="1" value="3" />
-          </label>
           <button id="fit" class="btn outline" type="button">Fit</button>
+          <button id="save-layout" class="btn" type="button" style="display:none">💾 Tiaki Tāhanga / Save Layout</button>
+          <span id="save-msg" class="small muted"></span>
         </div>
+
+        <!-- Admin hint -->
+        <p id="whakapapa-admin-hint" class="small muted" style="display:none; margin:0 0 .5rem;">
+          Kumea ngā nōta ki te whakarite i te rākau, kātahi ka tiaki. / Drag nodes to arrange the tree, then save.
+        </p>
 
         <div id="whakapapa-tree" style="height: 520px; border: 1px solid var(--border); border-radius: .5rem;" aria-busy="false"></div>
 
-        <div class="grid" style="margin-top:1rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
-          <article class="card">
-            <div class="card-body">
-              <h3>Tāpirihia he tangata / Add person</h3>
-              <form id="person-form" class="form">
-                <label>Kōwhiria te kōtaha / Select profile
-                  <select id="person-select"></select>
-                </label>
-                <button id="person-add-btn" type="submit" class="btn">Tāpiri / Add</button>
-                <p class="small muted">Avatars and names come from user profiles.</p>
-                <p id="person-msg" class="small muted"></p>
-              </form>
-            </div>
-          </article>
-
-          <article class="card">
-            <div class="card-body">
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:.5rem;">
-                <h3>Tāpirihia he hononga / Add relationship</h3>
-                <button id="rel-fit" class="btn outline" type="button" title="Fit to view">Fit</button>
+        <!-- Admin forms (hidden by default, shown for admin users) -->
+        <div id="whakapapa-admin-forms" style="display:none;">
+          <div class="grid" style="margin-top:1rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+            <article class="card">
+              <div class="card-body">
+                <h3>Tāpirihia he tangata / Add person</h3>
+                <form id="person-form" class="form">
+                  <label>Kōwhiria te kōtaha / Select profile
+                    <select id="person-select"></select>
+                  </label>
+                  <button id="person-add-btn" type="submit" class="btn">Tāpiri / Add</button>
+                  <p class="small muted">Avatars and names come from user profiles.</p>
+                  <p id="person-msg" class="small muted"></p>
+                </form>
               </div>
-              <form id="rel-form" class="form">
-                <label>Tangata A
-                  <select id="rel-a"></select>
-                </label>
-                <label>Momo / Type
-                  <select id="rel-type">
-                    <option value="parent">Mātua / Parent → Child</option>
-                    <option value="mother">Whaea / Mother → Child</option>
-                    <option value="father">Matua / Father → Child</option>
-                    <option value="spouse">Hoa rangatira / Spouse</option>
-                    <option value="partner">Hoa / Partner</option>
-                    <option value="sibling">Tuakana/Teina / Sibling</option>
-                  </select>
-                </label>
-                <label>Tangata B
-                  <select id="rel-b"></select>
-                </label>
-                <button type="submit" class="btn">Tāpiri / Add</button>
-                <p id="rel-msg" class="small muted"></p>
-              </form>
-            </div>
-          </article>
+            </article>
+
+            <article class="card">
+              <div class="card-body">
+                <h3>Tāpirihia he hononga / Add relationship</h3>
+                <form id="rel-form" class="form">
+                  <label>Tangata A
+                    <select id="rel-a"></select>
+                  </label>
+                  <label>Momo / Type
+                    <select id="rel-type">
+                      <option value="parent">Mātua / Parent → Child</option>
+                      <option value="mother">Whaea / Mother → Child</option>
+                      <option value="father">Matua / Father → Child</option>
+                      <option value="spouse">Hoa rangatira / Spouse</option>
+                      <option value="partner">Hoa / Partner</option>
+                      <option value="sibling">Tuakana/Teina / Sibling</option>
+                    </select>
+                  </label>
+                  <label>Tangata B
+                    <select id="rel-b"></select>
+                  </label>
+                  <button type="submit" class="btn">Tāpiri / Add</button>
+                  <p id="rel-msg" class="small muted"></p>
+                </form>
+              </div>
+            </article>
+          </div>
         </div>
       </section>
 

@@ -630,7 +630,11 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 /* Whakapapa tree */
 .tree-controls{display:flex;flex-wrap:wrap;gap:1rem 1.5rem;align-items:center;margin:0.5rem 0 1rem}
 .tree-controls label{display:flex;align-items:center;gap:.5rem}
-#whakapapa-tree{width:100%;height:700px;border:1px solid var(--border);border-radius:16px;background:var(--panel)}
+#whakapapa-tree{width:100%;height:700px;border:1px solid var(--border);border-radius:16px;background:var(--panel);transition:border-color .2s ease}
+#whakapapa-tree.admin-mode{border-color:var(--accent);border-width:2px}
 @media (min-width:1600px){#whakapapa-tree{height:800px}}
 @media (max-width:900px){#whakapapa-tree{height:550px}}
 @media (max-width:600px){#whakapapa-tree{height:450px}}
+#whakapapa-admin-hint{color:var(--accent);font-style:italic}
+#save-layout{background:linear-gradient(135deg,var(--accent),#00a89a);font-weight:600;box-shadow:0 2px 8px rgba(0,196,179,.3)}
+#save-layout:hover{opacity:.9;transform:translateY(-1px)}
