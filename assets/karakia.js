@@ -53,7 +53,8 @@
         if (up.error) throw up.error;
         const { data: pub } = sb.storage.from(bucket).getPublicUrl(path);
         const file_url = pub.publicUrl;
-        const ins = await sb.from('waiata_items').insert([{ id, type: 'doc', title, author, file_url, filename: file.name, storage_path: path }]);
+        const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
+        const ins = await sb.from('waiata_items').insert([{ id, type: 'doc', title, author, file_url, filename: file.name, storage_path: path, whanau_id }]);
         if (ins.error) { await sb.storage.from(bucket).remove([path]); throw ins.error; }
       },
       async remove(item){

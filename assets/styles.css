@@ -502,9 +502,16 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 @media (max-width:600px){.dashboard-welcome{text-align:center}.welcome-date{text-align:center;width:100%}}
 
 /* Dashboard Grid */
-.dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:1rem}
+.dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:1rem;align-items:stretch}
 .dashboard-col{display:flex;flex-direction:column;gap:1.5rem}
+.dashboard-col>.panel{flex:1}
 @media (max-width:1000px){.dashboard-grid{grid-template-columns:1fr;gap:1.5rem}}
+
+/* Dashboard 3-column grid */
+.dashboard-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:1.5rem}
+.dashboard-grid-3>.panel{margin:0}
+@media (max-width:1100px){.dashboard-grid-3{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:700px){.dashboard-grid-3{grid-template-columns:1fr;gap:1rem}}
 
 /* Stats Grid */
 .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-top:1rem}
@@ -552,6 +559,71 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 /* Quick Actions */
 .quick-actions{display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:1rem}
 .quick-actions .btn{flex:1;min-width:120px;text-align:center}
+
+/* Quick Actions Bar (full-width below grid) */
+.quick-actions-bar{margin-top:0}
+.quick-actions-full{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-top:1rem}
+@media (max-width:900px){.quick-actions-full{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:500px){.quick-actions-full{grid-template-columns:repeat(2,1fr)}}
+.qa-btn{display:flex;flex-direction:column;align-items:center;gap:0.6rem;padding:1.25rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:14px;color:var(--fg);text-decoration:none;font-weight:600;font-size:0.95rem;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background .2s ease;position:relative;overflow:hidden}
+.qa-btn:hover{text-decoration:none;transform:translateY(-4px);border-color:var(--accent);box-shadow:0 8px 24px rgba(0,196,179,.2)}
+.qa-btn:active{transform:scale(0.95);transition:transform .1s ease}
+.qa-icon{font-size:1.75rem;transition:transform .3s ease}
+.qa-btn:hover .qa-icon{transform:scale(1.25)}
+/* Themed colours per action */
+.qa-story:hover{border-color:#e08a3a;box-shadow:0 8px 24px rgba(224,138,58,.25);background:rgba(224,138,58,.08)}
+.qa-whakapapa:hover{border-color:#2ecc71;box-shadow:0 8px 24px rgba(46,204,113,.25);background:rgba(46,204,113,.08)}
+.qa-photos:hover{border-color:#9b59b6;box-shadow:0 8px 24px rgba(155,89,182,.25);background:rgba(155,89,182,.08)}
+.qa-hui:hover{border-color:#3498db;box-shadow:0 8px 24px rgba(52,152,219,.25);background:rgba(52,152,219,.08)}
+.qa-tauparapara:hover{border-color:#c9a227;box-shadow:0 8px 24px rgba(201,162,39,.25);background:rgba(201,162,39,.08)}
+
+/* Birthday items */
+.birthday-item{display:flex;align-items:center;gap:1rem;padding:0.6rem 0;border-bottom:1px solid var(--border)}
+.birthday-item:last-child{border-bottom:none}
+.birthday-date{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:50px;padding:0.4rem 0.6rem;background:linear-gradient(135deg,var(--accent),#00a89a);border-radius:10px;color:#fff;text-align:center}
+.birthday-date .day{font-size:1.25rem;font-weight:900;line-height:1}
+.birthday-date .month{font-size:0.7rem;text-transform:uppercase;opacity:0.9}
+.birthday-info{flex:1;font-size:0.95rem}
+
+/* Recently joined members */
+.recent-member{display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid var(--border)}
+.recent-member:last-child{border-bottom:none}
+.rm-avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0}
+.rm-avatar-placeholder{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#c9a227);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#fff;flex-shrink:0}
+
+/* Latest kōrero previews */
+.korero-preview{display:flex;align-items:center;gap:1rem;padding:0.65rem 0;border-bottom:1px solid var(--border);color:var(--fg);text-decoration:none;transition:background .2s ease}
+.korero-preview:last-child{border-bottom:none}
+.korero-preview:hover{background:rgba(0,196,179,.05);text-decoration:none}
+.kp-thumb{width:60px;height:60px;border-radius:10px;object-fit:cover;border:1px solid var(--border);flex-shrink:0}
+.kp-text{flex:1;overflow:hidden}
+.kp-text p{margin:0.25rem 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Dashboard photos grid */
+.dash-photos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:0.75rem}
+.dash-photos-grid a{display:block;border-radius:10px;overflow:hidden;border:1px solid var(--border);transition:transform .15s ease,box-shadow .15s ease}
+.dash-photos-grid a:hover{transform:scale(1.03);box-shadow:0 4px 12px rgba(0,196,179,.2)}
+.dash-photos-grid img{width:100%;height:90px;object-fit:cover;display:block}
+@media (min-width:1200px){.dash-photos-grid img{height:110px}}
+
+/* Maramataka panel */
+.maramataka-panel{background:linear-gradient(135deg,var(--panel) 0%,rgba(0,196,179,.08) 100%)}
+.maramataka-display{display:flex;align-items:center;gap:1.25rem;margin-top:0.75rem}
+.mara-moon{font-size:4rem;line-height:1}
+.mara-info{flex:1}
+.mara-night{font-size:1.5rem;font-weight:900;color:var(--accent)}
+.mara-meaning{margin:0.25rem 0 0.5rem;color:var(--fg);font-size:0.95rem}
+.mara-energy{display:inline-block;padding:0.25rem 0.75rem;border-radius:20px;color:#fff;font-size:0.8rem;font-weight:600}
+
+/* Kupu o te Rā */
+.kupu-panel{background:linear-gradient(135deg,var(--panel) 0%,rgba(201,162,39,.08) 100%)}
+.kupu-display{margin-top:0.5rem}
+.kupu-word{font-size:2rem;font-weight:900;color:var(--accent);line-height:1.2}
+.kupu-meaning{font-size:1.1rem;color:var(--fg);margin-top:0.25rem}
+
+/* Stats grid 3 cols on larger screens */
+.stats-grid{grid-template-columns:repeat(3,1fr)}
+@media (max-width:700px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
 
 /* ========================================
    HUI (EVENTS) PAGE STYLES

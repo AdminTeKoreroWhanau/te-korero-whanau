@@ -68,7 +68,7 @@
   }
 
   // Pages that don't require authentication
-  const publicPages = ['landing.html', ''];
+  const publicPages = ['landing.html', 'korero-public.html', 'whanau-join.html', 'signup.html', ''];
   
   function getCurrentPage() {
     const path = location.pathname.split('/').pop() || '';
@@ -91,7 +91,7 @@
       return;
     }
 
-    // Update logo to show greeting when logged in
+    // Update logo to show greeting when logged in (with whānau name)
     const logo = qs('.logo');
     if (logo) {
       if (user) {
@@ -155,7 +155,13 @@
       const currentPage = getCurrentPage();
       // Redirect to index after successful login from landing page or modal
       if (session && (modalActive || currentPage === 'landing.html')) {
-        location.href = 'index.html';
+        // Check whānau membership before redirecting
+        (async () => {
+          try {
+            const { data } = await sb.from('whanau_members').select('whanau_id').eq('user_id', session.user.id).limit(1).maybeSingle();
+            location.href = (data && data.whanau_id) ? 'index.html' : 'whanau-join.html';
+          } catch(_){ location.href = 'index.html'; }
+        })();
       }
     } catch(_){}
   });
@@ -185,37 +191,28 @@
         return;
       }
       hideModal();
-      // Go to index (home) after login
-      location.href = 'index.html';
+      // Check if user has a whānau; if not, go to join page
+      await redirectAfterAuth();
     });
   }
 
+  // Helper: redirect to index or whanau-join based on membership
+  async function redirectAfterAuth(){
+    try {
+      const { data: sess } = await sb.auth.getSession();
+      const user = sess.session?.user;
+      if (!user) { location.href = 'landing.html'; return; }
+      const { data } = await sb.from('whanau_members').select('whanau_id').eq('user_id', user.id).limit(1).maybeSingle();
+      if (data && data.whanau_id) { location.href = 'index.html'; }
+      else { location.href = 'whanau-join.html'; }
+    } catch(_){ location.href = 'index.html'; }
+  }
+
+  // Register form — redirect to dedicated signup page instead of inline registration
   if (registerForm){
-    registerForm.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); requestSubmit(registerForm); }
-    });
-    registerForm.addEventListener('submit', async (e) => {
+    registerForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      registerMsg.textContent = '';
-      const fd = new FormData(registerForm);
-      const email = String(fd.get('email')||'').trim();
-      const password = String(fd.get('password')||'');
-      const full_name = String(fd.get('full_name')||'').trim();
-      const { data, error } = await sb.auth.signUp({
-        email,
-        password,
-        options: { data: full_name ? { full_name } : {} }
-      });
-      if (error){
-        registerMsg.textContent = 'Hapa rēhita: ' + (error.message || 'Tē mōhiotia');
-        return;
-      }
-      registerMsg.textContent = data.user?.confirmed_at ? 'Kua oti! Kua takiuru.' : 'Kua tonoa he īmēra whakapūmau. Tirohia tō pouaka īmēra.';
-      if (data.session){
-        hideModal();
-        // Go to index (home) after registration
-        location.href = 'index.html';
-      }
+      location.href = 'signup.html';
     });
   }
 })();

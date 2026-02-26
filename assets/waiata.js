@@ -206,13 +206,15 @@
         const { data: pub } = sb.storage.from(bucketW).getPublicUrl(path);
 ;
         const audio_url = pub.publicUrl;
-        const ins = await sb.from('waiata_items').insert([{ id, type: 'audio', title, author, audio_url, storage_path: path }]);
+        const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
+        const ins = await sb.from('waiata_items').insert([{ id, type: 'audio', title, author, audio_url, storage_path: path, whanau_id }]);
         if (ins.error) { await sb.storage.from(bucketW).remove([path]); throw ins.error; }
 
       },
       async addLyrics(title, author, text){
         const id = uid();
-        const ins = await sb.from('waiata_items').insert([{ id, type: 'lyrics', title, author, lyrics: text }]);
+        const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
+        const ins = await sb.from('waiata_items').insert([{ id, type: 'lyrics', title, author, lyrics: text, whanau_id }]);
         if (ins.error) throw ins.error;
       },
       async listDocs(){
@@ -261,7 +263,8 @@
         if (up.error) throw up.error;
         const { data: pub } = sb.storage.from(bucketArt).getPublicUrl(path);
         const image_url = pub.publicUrl;
-        const ins = await sb.from('ngatoi_items').insert([{ id, title, author, image_url, storage_path: path }]);
+        const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
+        const ins = await sb.from('ngatoi_items').insert([{ id, title, author, image_url, storage_path: path, whanau_id }]);
         if (ins.error) { await sb.storage.from(bucketArt).remove([path]); throw ins.error; }
       },
       // Reactions/comments for art via Supabase

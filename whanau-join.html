@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="mi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Join a Whānau — Te Kōrero Whānau</title>
+    <meta name="description" content="Join or create a whānau group to connect with your family." />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="papa">
+      <div class="logo">Te Kōrero Whānau</div>
+      <nav>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="whanau-nav" title="Whakatuwhera tahua / Open menu">≡</button>
+        <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Kōwhiri āhua / Toggle theme">☀︎</button>
+        <ul id="whanau-nav" class="nav-list">
+          <li id="nav-login-item"><a id="open-auth" href="#">Takiuru</a></li>
+          <li id="nav-profile-item" style="display:none"><a href="profile.html">Kōtaha</a></li>
+          <li id="nav-signout-item" style="display:none"><a id="signout" href="#">Takiputa</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section class="panel" style="max-width:640px; margin:2rem auto;">
+        <h1>Kōwhiria tō Whānau / Choose Your Whānau</h1>
+        <p>Join an existing whānau or create a new one. This connects you with your family's whakapapa, kōrero, hui, and more.</p>
+
+        <!-- Create new whānau -->
+        <article class="card" style="margin-top:1.5rem;">
+          <div class="card-body">
+            <h2>Waihanga Whānau Hou / Create New Whānau</h2>
+            <form id="create-whanau-form" class="form">
+              <label>
+                <span>Whānau Name</span>
+                <input type="text" id="whanau-name" placeholder="e.g. Whānau Aroha" required />
+              </label>
+              <label>
+                <span>Description (optional)</span>
+                <input type="text" id="whanau-desc" placeholder="He kōrero poto mō tō whānau..." />
+              </label>
+              <button type="submit" class="btn">Waihanga / Create</button>
+              <p id="create-msg" class="small muted"></p>
+            </form>
+          </div>
+        </article>
+
+        <!-- Existing whānau list -->
+        <article class="card" style="margin-top:1.5rem;">
+          <div class="card-body">
+            <h2>Hono ki tētahi Whānau / Join Existing Whānau</h2>
+            <input type="text" id="whanau-search" placeholder="Rapua he whānau..." aria-label="Search whānau" style="margin-bottom:.75rem;" />
+            <div id="whanau-list" aria-live="polite">
+              <p class="muted small">Loading whānau…</p>
+            </div>
+            <p id="join-msg" class="small muted"></p>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer>
+      <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
+    </footer>
+
+    <!-- Auth modal -->
+    <div id="auth-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="auth-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="auth-close">×</button>
+        <h2 id="auth-title">Takiuru / Rēhita</h2>
+        <div class="tabpanes">
+          <form id="login-form" class="form" autocomplete="on">
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Takiuru</button>
+            <p class="muted small" id="login-msg"></p>
+          </form>
+          <form id="register-form" class="form" autocomplete="on" hidden>
+            <label>Ingoa / Full name (optional)
+              <input type="text" name="full_name" />
+            </label>
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Rēhita</button>
+            <p class="muted small" id="register-msg"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/config.js"></script>
+    <script src="assets/auth.js"></script>
+    <script src="assets/app.js"></script>
+    <script src="assets/whanau.js"></script>
+  </body>
+</html>

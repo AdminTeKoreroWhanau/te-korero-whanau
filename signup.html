@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="mi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rēhita / Sign Up — Te Kōrero Whānau</title>
+    <meta name="description" content="Create your account and join your whānau." />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="papa">
+      <div class="logo">Te Kōrero Whānau</div>
+      <nav>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="whanau-nav" title="Whakatuwhera tahua / Open menu">≡</button>
+        <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Kōwhiri āhua / Toggle theme">☀︎</button>
+        <ul id="whanau-nav" class="nav-list">
+          <li><a href="landing.html">Kāinga</a></li>
+          <li id="nav-login-item"><a id="open-auth" href="#">Takiuru / Login</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section class="panel" style="max-width:640px; margin:2rem auto;">
+        <h1>Rēhita / Sign Up</h1>
+        <p>Create your account, fill in your profile details, and join your whānau.</p>
+
+        <form id="signup-form" class="form" autocomplete="on">
+          <!-- Account Details -->
+          <fieldset>
+            <legend>Account Details</legend>
+            <label>
+              <span>Ingoa Katoa / Full Name *</span>
+              <input type="text" id="signup-name" name="full_name" placeholder="e.g., Rangi Tāmati" required />
+            </label>
+            <label>
+              <span>Email *</span>
+              <input type="email" id="signup-email" name="email" placeholder="you@example.com" required />
+            </label>
+            <label>
+              <span>Kupuhipa / Password *</span>
+              <input type="password" id="signup-password" name="password" placeholder="At least 6 characters" required minlength="6" />
+            </label>
+            <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem;">
+              <label>
+                <span>Rā Whānau / Date of Birth</span>
+                <input type="date" id="signup-dob" name="date_of_birth" />
+              </label>
+              <label>
+                <span>Tūnga Mārenatanga / Marital Status</span>
+                <select id="signup-marital" name="marital_status">
+                  <option value="">— Select —</option>
+                  <option value="single">Single</option>
+                  <option value="married">Married</option>
+                  <option value="de_facto">De Facto</option>
+                  <option value="divorced">Divorced</option>
+                  <option value="widowed">Widowed</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              <span>Wahi Noho / Location</span>
+              <input type="text" id="signup-location" name="location" placeholder="e.g., Rotorua, Aotearoa" />
+            </label>
+          </fieldset>
+
+          <!-- Pepeha (optional profile details) -->
+          <fieldset>
+            <legend>Pepeha (optional — you can add these later too)</legend>
+            <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:.75rem;">
+              <label>
+                <span>Maunga</span>
+                <input type="text" id="signup-maunga" name="pepeha_maunga" placeholder="Your mountain" />
+              </label>
+              <label>
+                <span>Awa</span>
+                <input type="text" id="signup-awa" name="pepeha_awa" placeholder="Your river" />
+              </label>
+              <label>
+                <span>Iwi</span>
+                <input type="text" id="signup-iwi" name="pepeha_iwi" placeholder="Your iwi" />
+              </label>
+              <label>
+                <span>Hapū</span>
+                <input type="text" id="signup-hapu" name="pepeha_hapu" placeholder="Your hapū" />
+              </label>
+              <label>
+                <span>Waka</span>
+                <input type="text" id="signup-waka" name="pepeha_waka" placeholder="Your waka" />
+              </label>
+              <label>
+                <span>Marae</span>
+                <input type="text" id="signup-marae" name="pepeha_marae" placeholder="Your marae" />
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Whānau Selection -->
+          <fieldset>
+            <legend>Kōwhiria tō Whānau / Choose Your Whānau *</legend>
+            <p class="small muted">Join an existing whānau or create a new one.</p>
+
+            <div style="margin:.75rem 0;">
+              <label class="checkbox-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer;">
+                <input type="radio" name="whanau_choice" value="join" checked />
+                <span>Join an existing whānau</span>
+              </label>
+              <label class="checkbox-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer;margin-top:.25rem;">
+                <input type="radio" name="whanau_choice" value="create" />
+                <span>Create a new whānau</span>
+              </label>
+            </div>
+
+            <!-- Join existing -->
+            <div id="join-section">
+              <input type="text" id="whanau-search" placeholder="Rapua he whānau..." aria-label="Search whānau" style="margin-bottom:.5rem;" />
+              <div id="whanau-list" style="max-height:200px; overflow-y:auto; border:1px solid var(--border); border-radius:.5rem; padding:.5rem;">
+                <p class="muted small">Loading whānau…</p>
+              </div>
+              <input type="hidden" id="selected-whanau-id" name="whanau_id" />
+              <p id="selected-whanau-name" class="small" style="margin-top:.25rem;"></p>
+            </div>
+
+            <!-- Create new -->
+            <div id="create-section" style="display:none;">
+              <label>
+                <span>Whānau Name</span>
+                <input type="text" id="new-whanau-name" placeholder="e.g., Whānau Aroha" />
+              </label>
+              <label>
+                <span>Description (optional)</span>
+                <input type="text" id="new-whanau-desc" placeholder="He kōrero poto mō tō whānau..." />
+              </label>
+            </div>
+          </fieldset>
+
+          <button type="submit" class="btn" style="width:100%; margin-top:1rem;">Rēhita / Create Account</button>
+          <p id="signup-msg" class="small muted" style="margin-top:.5rem;"></p>
+          <p class="muted small" style="margin-top:.5rem;">Kei a koe he pūkete? <a href="landing.html">Takiuru / Login</a></p>
+        </form>
+      </section>
+    </main>
+
+    <footer>
+      <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
+    </footer>
+
+    <!-- Auth modal (login only, for the nav link) -->
+    <div id="auth-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="auth-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="auth-close">×</button>
+        <h2 id="auth-title">Takiuru / Login</h2>
+        <div class="tabpanes">
+          <form id="login-form" class="form" autocomplete="on">
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Takiuru</button>
+            <p class="muted small" id="login-msg"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/config.js"></script>
+    <script src="assets/auth.js"></script>
+    <script src="assets/app.js"></script>
+    <script src="assets/signup.js"></script>
+  </body>
+</html>

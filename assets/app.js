@@ -211,34 +211,18 @@ if (searchInput) {
     .catch(() => { /* ignore if missing */ });
 })();
 
-// Landing page - separate login and signup modals
+// Landing page - login modal + signup page redirect
 (function landingAuth(){
   const authModal = document.getElementById('auth-modal');
-  const signupModal = document.getElementById('signup-modal');
   
   // Open login modal
   const openLogin = document.getElementById('open-auth');
   const authClose = document.getElementById('auth-close');
   
-  // Open signup modal
-  const openSignup = document.getElementById('open-signup');
-  const signupClose = document.getElementById('signup-close');
-  const ctaSignup = document.getElementById('cta-signup');
-  const ctaEventsSignup = document.getElementById('cta-events-signup');
-  const sidebarSignup = document.getElementById('sidebar-signup');
-  
-  // Switch links
-  const switchToSignup = document.getElementById('switch-to-signup');
-  const switchToLogin = document.getElementById('switch-to-login');
-  
   const showAuthModal = () => {
     if (!authModal) return;
     authModal.hidden = false;
     authModal.setAttribute('aria-hidden', 'false');
-    if (signupModal) {
-      signupModal.hidden = true;
-      signupModal.setAttribute('aria-hidden', 'true');
-    }
   };
   
   const hideAuthModal = () => {
@@ -247,35 +231,9 @@ if (searchInput) {
     authModal.setAttribute('aria-hidden', 'true');
   };
   
-  const showSignupModal = () => {
-    if (!signupModal) return;
-    signupModal.hidden = false;
-    signupModal.setAttribute('aria-hidden', 'false');
-    if (authModal) {
-      authModal.hidden = true;
-      authModal.setAttribute('aria-hidden', 'true');
-    }
-  };
-  
-  const hideSignupModal = () => {
-    if (!signupModal) return;
-    signupModal.hidden = true;
-    signupModal.setAttribute('aria-hidden', 'true');
-  };
-  
   // Event listeners
   if (openLogin) openLogin.addEventListener('click', (e) => { e.preventDefault(); showAuthModal(); });
   if (authClose) authClose.addEventListener('click', hideAuthModal);
-  
-  if (openSignup) openSignup.addEventListener('click', (e) => { e.preventDefault(); showSignupModal(); });
-  if (signupClose) signupClose.addEventListener('click', hideSignupModal);
-  if (ctaSignup) ctaSignup.addEventListener('click', showSignupModal);
-  if (ctaEventsSignup) ctaEventsSignup.addEventListener('click', showSignupModal);
-  if (sidebarSignup) sidebarSignup.addEventListener('click', showSignupModal);
-  
-  // Switch between modals
-  if (switchToSignup) switchToSignup.addEventListener('click', (e) => { e.preventDefault(); showSignupModal(); });
-  if (switchToLogin) switchToLogin.addEventListener('click', (e) => { e.preventDefault(); showAuthModal(); });
 })();
 
 // Landing page search
@@ -361,18 +319,7 @@ if (searchInput) {
   };
   setTimeout(setupAuthListener, 100);
   
-  // Handle form submission (demo - just shows success message)
-  if (eventForm) {
-    eventForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const msg = document.getElementById('event-form-msg');
-      if (msg) {
-        msg.textContent = 'Event added successfully! (Demo mode - connect to backend for persistence)';
-        msg.style.color = 'var(--accent)';
-      }
-      eventForm.reset();
-    });
-  }
+  // Event form submission is handled by hui.js (saves to Supabase)
 })();
 
 // Dashboard initialization

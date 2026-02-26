@@ -39,6 +39,8 @@
           </div>
           <div class="profile-meta">
             <h1 id="profile-name">—</h1>
+            <p class="muted small" id="profile-whanau" style="margin:0"></p>
+            <p class="muted small" id="profile-details" style="margin:0"></p>
           </div>
           <div class="profile-actions">
             <button class="btn outline lang-swap" id="edit-profile" type="button"><span class="lang mi">Whakatika</span><span class="lang en">Edit</span></button>
@@ -144,6 +146,37 @@
             </div>
           </label>
           <fieldset>
+            <legend>Personal Details</legend>
+            <label>Rā Whānau / Date of Birth
+              <input type="date" id="edit-dob" name="date_of_birth" />
+            </label>
+            <label>Tūnga Mārenatanga / Marital Status
+              <select id="edit-marital" name="marital_status" style="width:100%;padding:.75rem 1rem;border:1px solid var(--border);border-radius:12px;background:var(--panel);color:var(--fg);font-size:1rem">
+                <option value="">— Select —</option>
+                <option value="single">Single</option>
+                <option value="married">Married</option>
+                <option value="de_facto">De Facto</option>
+                <option value="divorced">Divorced</option>
+                <option value="widowed">Widowed</option>
+              </select>
+            </label>
+            <label>Wahi Noho / Location
+              <input type="text" id="edit-location" name="location" placeholder="e.g., Rotorua, Aotearoa" />
+            </label>
+            <label class="checkbox-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer;margin-top:.5rem">
+              <input type="checkbox" id="edit-hide-dob" name="hide_dob" style="width:18px;height:18px;accent-color:var(--accent)" />
+              <span class="small">Hide date of birth on my profile</span>
+            </label>
+            <label class="checkbox-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+              <input type="checkbox" id="edit-hide-marital" name="hide_marital_status" style="width:18px;height:18px;accent-color:var(--accent)" />
+              <span class="small">Hide marital status on my profile</span>
+            </label>
+            <label class="checkbox-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+              <input type="checkbox" id="edit-hide-location" name="hide_location" style="width:18px;height:18px;accent-color:var(--accent)" />
+              <span class="small">Hide location on my profile</span>
+            </label>
+          </fieldset>
+          <fieldset>
             <legend>Pepeha</legend>
             <label>Maunga
               <input type="text" id="edit-maunga" name="pepeha_maunga" />
@@ -205,6 +238,7 @@
       <script src="assets/config.js"></script>
       <script src="assets/ui-auth-fallback.js"></script>
       <script src="assets/auth.js"></script>
+      <script src="assets/whanau.js"></script>
       <script>
         (function(){
           const statusEl = document.getElementById('profile-status');
@@ -235,6 +269,12 @@
           const editHapu = document.getElementById('edit-hapu');
           const editWaka = document.getElementById('edit-waka');
           const editMarae = document.getElementById('edit-marae');
+          const editDob = document.getElementById('edit-dob');
+          const editMarital = document.getElementById('edit-marital');
+          const editLocation = document.getElementById('edit-location');
+          const editHideDob = document.getElementById('edit-hide-dob');
+          const editHideMarital = document.getElementById('edit-hide-marital');
+          const editHideLocation = document.getElementById('edit-hide-location');
           const profileMsg = document.getElementById('profile-msg');
           // Photo modal elements
           const photoModal = document.getElementById('photo-modal');
@@ -270,6 +310,31 @@
           statusEl.style.display='none';
           const fullName = user.user_metadata?.full_name || '';
           if (profileName) profileName.textContent = fullName || '—';
+          // Show whānau name
+          try {
+            const wName = await window.getMyWhanauName();
+            const wEl = document.getElementById('profile-whanau');
+            if (wEl && wName) wEl.textContent = 'Whānau: ' + wName;
+          } catch {}
+          // Show DOB and marital status if not hidden
+          const detailsEl = document.getElementById('profile-details');
+          if (detailsEl) {
+            const parts = [];
+            const meta = user.user_metadata || {};
+            if (meta.date_of_birth && !meta.hide_dob) {
+              const d = new Date(meta.date_of_birth + 'T00:00:00');
+              const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+              parts.push('🎂 ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear());
+            }
+            if (meta.marital_status && !meta.hide_marital_status) {
+              const labels = { single:'Single', married:'Married', de_facto:'De Facto', divorced:'Divorced', widowed:'Widowed' };
+              parts.push('💍 ' + (labels[meta.marital_status] || meta.marital_status));
+            }
+            if (meta.location && !meta.hide_location) {
+              parts.push('📍 ' + meta.location);
+            }
+            detailsEl.textContent = parts.join('  ·  ');
+          }
           // Render pepeha if present
           const pepeha = user.user_metadata?.pepeha || null;
           renderPepeha(pepeha);
@@ -280,6 +345,12 @@
           applyCover(coverUrl || placeholderCover(user), user);
           // Prefill edit form
           if (editFullName) editFullName.value = fullName || '';
+          if (editDob) editDob.value = user.user_metadata?.date_of_birth || '';
+          if (editMarital) editMarital.value = user.user_metadata?.marital_status || '';
+          if (editLocation) editLocation.value = user.user_metadata?.location || '';
+          if (editHideDob) editHideDob.checked = !!user.user_metadata?.hide_dob;
+          if (editHideMarital) editHideMarital.checked = !!user.user_metadata?.hide_marital_status;
+          if (editHideLocation) editHideLocation.checked = !!user.user_metadata?.hide_location;
           if (pepeha){
             if (editMaunga) editMaunga.value = pepeha.maunga || '';
             if (editAwa) editAwa.value = pepeha.awa || '';
@@ -728,6 +799,13 @@
             const user = data.session?.user; if (!user){ profileMsg.textContent='Takiuru tuatahitia / Please login.'; return; }
             const updates = {};
             const full = (editFullName && editFullName.value || '').trim(); if (full) updates.full_name = full;
+            // DOB, marital status and privacy flags
+            if (editDob) updates.date_of_birth = editDob.value || null;
+            if (editMarital) updates.marital_status = editMarital.value || null;
+            if (editLocation) updates.location = editLocation.value.trim() || null;
+            if (editHideDob) updates.hide_dob = editHideDob.checked;
+            if (editHideMarital) updates.hide_marital_status = editHideMarital.checked;
+            if (editHideLocation) updates.hide_location = editHideLocation.checked;
             const pepehaUpdates = {};
             if (editMaunga && editMaunga.value.trim()) pepehaUpdates.maunga = editMaunga.value.trim();
             if (editAwa && editAwa.value.trim()) pepehaUpdates.awa = editAwa.value.trim();
@@ -765,21 +843,18 @@
                 if (updates.full_name) profileSync.full_name = updates.full_name;
                 if (updates.avatar_url) profileSync.avatar_url = updates.avatar_url;
                 if (updates.cover_url) profileSync.cover_url = updates.cover_url;
+                if (updates.date_of_birth !== undefined) profileSync.date_of_birth = updates.date_of_birth;
+                if (updates.marital_status !== undefined) profileSync.marital_status = updates.marital_status;
                 if (Object.keys(profileSync).length){
                   await sb.from('profiles').update(profileSync).eq('id', user.id);
                 }
-                // Update UI
-                const newUser = upd.user || user;
-                if (profileName) profileName.textContent = (updates.full_name || newUser.user_metadata?.full_name || '—');
-                renderPepeha(newUser.user_metadata?.pepeha || updates.pepeha || null);
-                if (avatarImg) { const url = updates.avatar_url || newUser.user_metadata?.avatar_url || placeholderAvatar(newUser); avatarImg.src = url; avatarImg.style.display='block'; }
-                { const url = updates.cover_url || newUser.user_metadata?.cover_url || placeholderCover(newUser); applyCover(url); }
               }
-              profileMsg.textContent = 'Kua tiakina / Saved';
               // reset file inputs
               if (editAvatar) editAvatar.value = '';
               if (editCover) editCover.value = '';
               hideEdit();
+              // Refresh profile UI with latest saved data
+              await ensureSession();
             }catch(err){ profileMsg.textContent = 'Hapa / Error saving profile.'; }
           });
         }

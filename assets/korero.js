@@ -153,26 +153,29 @@
           text: r.text || '',
           mediaUrl: r.media_url || '',
           authorId: r.author_id || '',
+          isPublic: r.is_public !== false,
           createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
           updatedAt: r.updated_at ? new Date(r.updated_at).getTime() : undefined
         }));
       },
-      async addPost(type, title, text, mediaUrl){
+      async addPost(type, title, text, mediaUrl, isPublic){
         const { data: sess } = await sb.auth.getSession();
         const user = sess.session?.user; if (!user) throw new Error('login-required');
-        let payload = { id: uid(), type, title, text, media_url: mediaUrl || null, author_id: user.id };
+        const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
+        let payload = { id: uid(), type, title, text, media_url: mediaUrl || null, author_id: user.id, is_public: isPublic !== false, whanau_id };
         let { error } = await sb.from('korero_posts').insert([payload]);
         if (error && String(error.message||'').toLowerCase().includes('title')){
-          payload = { id: payload.id, type, text, media_url: payload.media_url, author_id: payload.author_id };
+          payload = { id: payload.id, type, text, media_url: payload.media_url, author_id: payload.author_id, is_public: payload.is_public, whanau_id };
           const retry = await sb.from('korero_posts').insert([payload]); if (retry.error) throw retry.error;
         } else if (error) throw error;
-        return { id: payload.id, type, title: payload.title||'', text, mediaUrl: payload.media_url||'', authorId: payload.author_id, createdAt: Date.now() };
+        return { id: payload.id, type, title: payload.title||'', text, mediaUrl: payload.media_url||'', authorId: payload.author_id, isPublic: payload.is_public, createdAt: Date.now() };
       },
       async updatePost(id, fields){
         const patch = {};
         if (typeof fields.title === 'string') patch.title = fields.title;
         if (typeof fields.text === 'string') patch.text = fields.text;
         if (typeof fields.mediaUrl === 'string') patch.media_url = fields.mediaUrl;
+        if (typeof fields.isPublic === 'boolean') patch.is_public = fields.isPublic;
         patch.updated_at = new Date().toISOString();
         let { error } = await sb.from('korero_posts').update(patch).eq('id', id);
         if (error && String(error.message||'').toLowerCase().includes('title')){
@@ -262,7 +265,8 @@
     const body = document.createElement('div'); body.className='card-body';
     const tagLabel = p.type === 'vlog' ? 'Vlog' : 'Story';
     const popularTag = (opts && opts.popular) ? ' <span class="tag popular">Most popular</span>' : '';
-    body.innerHTML = `<div><span class=\"tag\">${tagLabel}</span>${popularTag}</div>` +
+    const privacyTag = p.isPublic === false ? ' <span class="tag">🔒 Whānau Only</span>' : '';
+    body.innerHTML = `<div><span class=\"tag\">${tagLabel}</span>${popularTag}${privacyTag}</div>` +
       (p.title ? `<h3 class=\"post-title\">${esc(p.title)}</h3>` : '') +
       `<div class=\"small muted\">${fmtTS(p.createdAt)}</div>`;
 
@@ -352,6 +356,8 @@
         managePost = p;
         editTitleHeading && (editTitleHeading.textContent = p.type==='story' ? 'Whakatika Kōrero / Edit Story' : 'Whakatika Vlog URL');
         if (editTitleInput) editTitleInput.value = p.title || '';
+        const editPublicCb = document.getElementById('edit-public');
+        if (editPublicCb) editPublicCb.checked = p.isPublic !== false;
         if (p.type==='story'){ 
           editStoryWrap.hidden = false; editVlogWrap.hidden = true; if (editVlogStoryWrap) editVlogStoryWrap.hidden = true; 
           if (editStoryText) editStoryText.value = p.text || ''; 
@@ -474,11 +480,13 @@
     const title = (postTitle?.value||'').trim();
     const text = (t==='story') ? (storyText.value||'').trim() : (t==='vlog') ? (vlogStoryText?.value||'').trim() : '';
     const url = (t==='vlog') ? (vlogUrl.value||'').trim() : '';
+    const postPublicCb = document.getElementById('post-public');
+    const isPublic = postPublicCb ? postPublicCb.checked : true;
     if (t==='story' && !text) return alert('Tāuruhia he kōrero. / Enter a story.');
     if (t==='vlog' && !url) return alert('Whakaurua he hono ataata. / Enter a video URL.');
     listEl.setAttribute('aria-busy','true');
     try {
-      await backend.addPost(t, title, text, url);
+      await backend.addPost(t, title, text, url, isPublic);
       form.reset(); if (selType) selType.value='story'; if (storyWrap && vlogWrap) { storyWrap.hidden=false; vlogWrap.hidden=true; if (vlogStoryWrap) vlogStoryWrap.hidden=true; }
       hideCreate();
       await refresh();
@@ -493,13 +501,15 @@
       e.preventDefault(); if (!managePost) return;
       try {
         const title = (editTitleInput?.value||'').trim();
+        const editPublicCb = document.getElementById('edit-public');
+        const isPublic = editPublicCb ? editPublicCb.checked : true;
         if (managePost.type==='story'){
           const text = (editStoryText?.value||'').trim(); if (!text) return alert('Kōrero wātea kore.');
-          await backend.updatePost(managePost.id, { title, text });
+          await backend.updatePost(managePost.id, { title, text, isPublic });
         } else {
           const mediaUrl = (editVlogUrl?.value||'').trim(); if (!mediaUrl) return alert('Tāuruhia te URL.');
           const text = (editVlogStoryText?.value||'').trim();
-          await backend.updatePost(managePost.id, { title, text, mediaUrl });
+          await backend.updatePost(managePost.id, { title, text, mediaUrl, isPublic });
         }
         hideEdit(); await refresh();
       } catch(err){ alert('Hapa whakatika'); console.error(err); }

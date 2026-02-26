@@ -43,6 +43,18 @@
         </div>
       </section>
 
+      <!-- Quick Actions (full width) -->
+      <section class="panel quick-actions-bar">
+        <h2>➕ Quick Actions</h2>
+        <div class="quick-actions-full">
+          <a href="korero.html" class="qa-btn qa-story"><span class="qa-icon">📖</span><span>Add a Story</span></a>
+          <a href="whakapapa.html" class="qa-btn qa-whakapapa"><span class="qa-icon">🌲</span><span>Update Whakapapa</span></a>
+          <a href="nga-toi.html" class="qa-btn qa-photos"><span class="qa-icon">🎨</span><span>Upload Photos</span></a>
+          <a href="hui.html" class="qa-btn qa-hui"><span class="qa-icon">📅</span><span>Add an Event</span></a>
+          <a href="tauparapara.html" class="qa-btn qa-tauparapara"><span class="qa-icon">🙏</span><span>Tauparapara</span></a>
+        </div>
+      </section>
+
       <!-- Dashboard Grid -->
       <div class="dashboard-grid">
         <!-- Left Column -->
@@ -71,81 +83,19 @@
                 <span class="stat-value" id="stat-waiata">--</span>
                 <span class="stat-label">Waiata</span>
               </div>
+              <div class="stat-card">
+                <span class="stat-icon">🌳</span>
+                <span class="stat-value" id="stat-whakapapa">--</span>
+                <span class="stat-label">Whakapapa People</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-icon">🙏</span>
+                <span class="stat-value" id="stat-tauparapara">--</span>
+                <span class="stat-label">Tauparapara</span>
+              </div>
             </div>
           </section>
 
-          <!-- Quick Access -->
-          <section class="panel">
-            <h2>⚡ Quick Access</h2>
-            <div class="quick-access-grid">
-              <a href="whakapapa.html" class="quick-tile">
-                <span class="tile-icon">🌲</span>
-                <span class="tile-label">Whakapapa</span>
-              </a>
-              <a href="korero.html" class="quick-tile">
-                <span class="tile-icon">📖</span>
-                <span class="tile-label">Kōrero</span>
-              </a>
-              <a href="nga-toi.html" class="quick-tile">
-                <span class="tile-icon">🎨</span>
-                <span class="tile-label">Ngā Toi</span>
-              </a>
-              <a href="tauparapara.html" class="quick-tile">
-                <span class="tile-icon">🙏</span>
-                <span class="tile-label">Tauparapara</span>
-              </a>
-              <a href="mahi.html" class="quick-tile">
-                <span class="tile-icon">🛠️</span>
-                <span class="tile-label">Mahi</span>
-              </a>
-              <a href="hui.html" class="quick-tile">
-                <span class="tile-icon">📅</span>
-                <span class="tile-label">Hui</span>
-              </a>
-              <a href="profile.html" class="quick-tile">
-                <span class="tile-icon">👤</span>
-                <span class="tile-label">Profile</span>
-              </a>
-            </div>
-          </section>
-
-          <!-- Upcoming Events -->
-          <section class="panel">
-            <h2>📅 Upcoming Events</h2>
-            <p class="muted small"><a href="hui.html">View all events →</a></p>
-            <div class="dashboard-events" id="dashboard-events">
-              <div class="event-item">
-                <div class="event-date-small">
-                  <span class="day">22</span>
-                  <span class="month">Feb</span>
-                </div>
-                <div class="event-info">
-                  <strong>Whānau Reunion 2026</strong>
-                  <span class="muted">Rotorua · 10:00 AM</span>
-                </div>
-              </div>
-              <div class="event-item">
-                <div class="event-date-small">
-                  <span class="day">06</span>
-                  <span class="month">Mar</span>
-                </div>
-                <div class="event-info">
-                  <strong>Whakapapa Workshop</strong>
-                  <span class="muted">Online · 7:00 PM</span>
-                </div>
-              </div>
-              <div class="event-item">
-                <div class="event-date-small">
-                  <span class="day">15</span>
-                  <span class="month">Mar</span>
-                </div>
-                <div class="event-info">
-                  <strong>Kapa Haka Practice</strong>
-                  <span class="muted">Auckland · 6:00 PM</span>
-                </div>
-              </div>
-            </div>
-          </section>
         </div>
 
         <!-- Right Column -->
@@ -154,68 +104,73 @@
           <section class="panel">
             <h2>🔔 Recent Activity</h2>
             <div class="activity-feed" id="activity-feed">
-              <div class="activity-item">
-                <div class="activity-icon">📖</div>
-                <div class="activity-content">
-                  <p><strong>New story added</strong> by Aroha W.</p>
-                  <span class="muted small">"Koro's Journey to Aotearoa"</span>
-                  <span class="activity-time">2 hours ago</span>
-                </div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-icon">🌲</div>
-                <div class="activity-content">
-                  <p><strong>Whakapapa updated</strong> by Hemi K.</p>
-                  <span class="muted small">Added 3 new members to Te Arawa tree</span>
-                  <span class="activity-time">5 hours ago</span>
-                </div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-icon">🖼️</div>
-                <div class="activity-content">
-                  <p><strong>Photos uploaded</strong> by Mereana R.</p>
-                  <span class="muted small">12 photos from Whānau Day 2025</span>
-                  <span class="activity-time">Yesterday</span>
-                </div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-icon">🎵</div>
-                <div class="activity-content">
-                  <p><strong>Waiata shared</strong> by Tama M.</p>
-                  <span class="muted small">"E Rērē Rā" - audio recording</span>
-                  <span class="activity-time">2 days ago</span>
-                </div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-icon">👥</div>
-                <div class="activity-content">
-                  <p><strong>New member joined</strong></p>
-                  <span class="muted small">Wikitoria P. joined the whānau</span>
-                  <span class="activity-time">3 days ago</span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Whakataukī of the Day -->
-          <section class="panel whakatauki-panel">
-            <h2>💬 Whakataukī o te Rā</h2>
-            <blockquote class="whakatauki-quote">
-              <p>"He aha te mea nui o te ao? He tangata, he tangata, he tangata."</p>
-              <cite>What is the greatest thing in the world? It is people, it is people, it is people.</cite>
-            </blockquote>
-          </section>
-
-          <!-- Quick Actions -->
-          <section class="panel">
-            <h2>➕ Quick Actions</h2>
-            <div class="quick-actions">
-              <a href="korero.html" class="btn outline">Add a Story</a>
-              <a href="whakapapa.html" class="btn outline">Update Whakapapa</a>
-              <a href="nga-toi.html" class="btn outline">Upload Photos</a>
+              <p class="muted small">Loading activity…</p>
             </div>
           </section>
         </div>
+      </div>
+
+      <!-- Three-column sections -->
+      <div class="dashboard-grid-3">
+        <section class="panel">
+          <h2>🎂 Rā Whānau / Upcoming Birthdays</h2>
+          <div id="dashboard-birthdays">
+            <p class="muted small">Loading…</p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>👋 Recently Joined</h2>
+          <div id="dashboard-recent-members">
+            <p class="muted small">Loading…</p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>📅 Upcoming Events</h2>
+          <p class="muted small"><a href="hui.html">View all events →</a></p>
+          <div class="dashboard-events" id="dashboard-events">
+            <p class="muted small">Loading events…</p>
+          </div>
+        </section>
+
+        <section class="panel maramataka-panel">
+          <h2>🌙 Maramataka</h2>
+          <div id="dashboard-maramataka">
+            <p class="muted small">Calculating…</p>
+          </div>
+        </section>
+
+        <section class="panel kupu-panel">
+          <h2>🗣️ Kupu o te Rā</h2>
+          <div id="dashboard-kupu">
+            <p class="muted small">Loading…</p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>📖 Latest Kōrero</h2>
+          <div id="dashboard-latest-korero">
+            <p class="muted small">Loading…</p>
+          </div>
+          <p class="muted small" style="margin-top:.5rem"><a href="korero.html">View all stories →</a></p>
+        </section>
+
+        <section class="panel">
+          <h2>📸 Recent Photos</h2>
+          <div class="dash-photos-grid" id="dashboard-photos">
+            <p class="muted small">Loading…</p>
+          </div>
+          <p class="muted small" style="margin-top:.5rem"><a href="nga-toi.html">View all →</a></p>
+        </section>
+
+        <section class="panel whakatauki-panel">
+          <h2>💬 Whakataukī o te Rā</h2>
+          <blockquote class="whakatauki-quote">
+            <p>"He aha te mea nui o te ao? He tangata, he tangata, he tangata."</p>
+            <cite>What is the greatest thing in the world? It is people, it is people, it is people.</cite>
+          </blockquote>
+        </section>
       </div>
     </main>
 
@@ -261,6 +216,9 @@
     <script src="assets/config.js"></script>
     <script src="assets/ui-auth-fallback.js"></script>
     <script src="assets/auth.js"></script>
+    <script src="assets/whanau.js"></script>
     <script src="assets/app.js"></script>
+    <script src="assets/dashboard.js"></script>
+    <script src="assets/hui.js"></script>
   </body>
 </html>

@@ -108,6 +108,13 @@
             <span>Kōrero / Story (optional)</span>
             <textarea id="vlog-story-text" rows="4" placeholder="Add a story about this vlog..."></textarea>
           </label>
+          <div class="form-row" style="margin-top:.5rem">
+            <label class="checkbox-label">
+              <input type="checkbox" id="post-public" checked />
+              <span>Public — visible to everyone</span>
+            </label>
+            <p class="muted small" id="visibility-hint">Uncheck to make this private — only whānau in your whakapapa can see it.</p>
+          </div>
           <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.25rem">
             <button type="button" class="btn outline" id="korero-cancel">Cancel</button>
             <button type="submit" class="btn">Tuku / Post</button>
@@ -138,6 +145,13 @@
             <span>Kōrero / Story (optional)</span>
             <textarea id="edit-vlog-story-text" rows="4" placeholder="Add a story about this vlog..."></textarea>
           </label>
+          <div class="form-row" style="margin-top:.5rem">
+            <label class="checkbox-label">
+              <input type="checkbox" id="edit-public" checked />
+              <span>Public — visible to everyone</span>
+            </label>
+            <p class="muted small">Uncheck to make this private — only whānau in your whakapapa can see it.</p>
+          </div>
           <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.25rem">
             <button type="button" class="btn outline" id="korero-edit-cancel">Cancel</button>
             <button type="submit" class="btn" id="korero-edit-save">Save</button>
@@ -174,6 +188,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/config.js"></script>
     <script src="assets/auth.js"></script>
+    <script src="assets/whanau.js"></script>
     <script src="assets/backend.js"></script>
     <script src="assets/korero.js"></script>
   </body>

@@ -368,7 +368,8 @@
       if (peopleIds.includes(profile_id)){ if (personMsg) personMsg.textContent = 'Kua tāpirihia kē / Already added.'; return; }
 
       if (sb){
-        const { error } = await sb.from('whakapapa_people').insert([{ user_id: userId, profile_id }]);
+        const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
+        const { error } = await sb.from('whakapapa_people').insert([{ user_id: userId, profile_id, whanau_id }]);
         if (error) throw error;
       }
       peopleIds.push(profile_id);
@@ -404,7 +405,8 @@
       if (!userId){ if (relMsg) relMsg.textContent = 'Takiuru hei tiaki / Login to save.'; return; }
       const rel = { from_id, to_id, type };
       if (sb){
-        const { error } = await sb.from('whakapapa_relations').insert([{ ...rel, user_id: userId }]);
+        const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
+        const { error } = await sb.from('whakapapa_relations').insert([{ ...rel, user_id: userId, whanau_id }]);
         if (error) throw error;
       }
       relations.push(rel);

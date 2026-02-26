@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="mi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Public Kōrero — Te Kōrero Whānau</title>
+    <meta name="description" content="Read public stories shared by the whānau." />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <header class="papa">
+      <div class="logo">Te Kōrero Whānau</div>
+      <nav>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="whanau-nav" title="Whakatuwhera tahua / Open menu">≡</button>
+        <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Kōwhiri āhua / Toggle theme">☀︎</button>
+        <ul id="whanau-nav" class="nav-list">
+          <li><a href="landing.html">Kāinga</a></li>
+          <li><a href="korero-public.html">Kōrero</a></li>
+          <li id="nav-login-item"><a id="open-auth" href="#">Takiuru</a></li>
+          <li id="nav-profile-item" style="display:none"><a href="profile.html">Kōtaha</a></li>
+          <li id="nav-signout-item" style="display:none"><a id="signout" href="#">Takiputa</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h1>📖 Ngā Kōrero Tūmatanui / Public Stories</h1>
+        <p class="muted">Stories shared publicly by our whānau. <a href="landing.html">Join the whānau</a> to share your own!</p>
+      </section>
+
+      <section class="panel" id="public-korero-section">
+        <div id="public-korero-list" class="cards" aria-live="polite">
+          <p class="muted small">Loading stories…</p>
+        </div>
+        <p id="public-korero-empty" class="muted small" style="display:none">Kāore anō he kōrero tūmatanui. / No public stories yet.</p>
+      </section>
+    </main>
+
+    <!-- Korero view modal (read more) -->
+    <div id="korero-view-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="korero-view-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="korero-view-close">×</button>
+        <h2 id="korero-view-title">Kōrero</h2>
+        <div id="korero-view-body" style="white-space:pre-wrap"></div>
+      </div>
+    </div>
+
+    <footer>
+      <small>© <span id="year"></span> Te Kōrero Whānau — He taonga tuku iho.</small>
+    </footer>
+
+    <!-- Auth modal -->
+    <div id="auth-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="auth-title">
+      <div class="modal-content">
+        <button class="modal-close" aria-label="Katia te matapihi / Close" id="auth-close">×</button>
+        <h2 id="auth-title">Takiuru / Rēhita</h2>
+        <div class="tabpanes">
+          <form id="login-form" class="form" autocomplete="on">
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Takiuru</button>
+            <p class="muted small" id="login-msg"></p>
+          </form>
+          <form id="register-form" class="form" autocomplete="on" hidden>
+            <label>Ingoa / Full name (optional)
+              <input type="text" name="full_name" />
+            </label>
+            <label>Email
+              <input type="email" name="email" required />
+            </label>
+            <label>Kupuhipa / Password
+              <input type="password" name="password" required minlength="6" />
+            </label>
+            <button type="submit" class="btn">Rēhita</button>
+            <p class="muted small" id="register-msg"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/config.js"></script>
+    <script src="assets/ui-auth-fallback.js"></script>
+    <script src="assets/auth.js"></script>
+    <script src="assets/app.js"></script>
+    <script>
+    // Public korero: load and display only public posts (read-only)
+    (function(){
+      const listEl = document.getElementById('public-korero-list');
+      const emptyEl = document.getElementById('public-korero-empty');
+      const viewModal = document.getElementById('korero-view-modal');
+      const viewCloseBtn = document.getElementById('korero-view-close');
+      const viewBody = document.getElementById('korero-view-body');
+      if (!listEl) return;
+
+      const esc = (s) => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+      const fmtTS = (ts) => new Date(ts).toLocaleString();
+
+      // View modal handlers
+      if (viewCloseBtn) viewCloseBtn.addEventListener('click', () => { if (viewModal){ viewModal.hidden=true; viewModal.setAttribute('aria-hidden','true'); } });
+      if (viewModal) viewModal.addEventListener('click', (e) => { if (e.target === viewModal){ viewModal.hidden=true; viewModal.setAttribute('aria-hidden','true'); } });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && viewModal){ viewModal.hidden=true; viewModal.setAttribute('aria-hidden','true'); } });
+
+      function buildCard(p){
+        const card = document.createElement('article'); card.className='card';
+        const body = document.createElement('div'); body.className='card-body';
+        const tagLabel = p.type === 'vlog' ? 'Vlog' : 'Story';
+        body.innerHTML = `<div><span class="tag">${tagLabel}</span></div>` +
+          (p.title ? `<h3 class="post-title">${esc(p.title)}</h3>` : '') +
+          `<div class="small muted">${fmtTS(p.created_at)}</div>`;
+
+        if (p.type === 'story' && p.text){
+          const T = String(p.text||'');
+          const LIMIT = 280;
+          if (T.length > LIMIT){
+            const preview = document.createElement('p'); preview.style.whiteSpace='pre-wrap'; preview.style.margin='.5rem 0 0';
+            preview.textContent = T.slice(0, LIMIT).trim() + '… ';
+            const more = document.createElement('a'); more.href='#'; more.textContent='Read more'; more.style.color='var(--accent)'; more.style.textDecoration='none';
+            more.addEventListener('click', (e)=>{ e.preventDefault(); if (viewBody) viewBody.textContent = T; if (viewModal){ viewModal.hidden=false; viewModal.setAttribute('aria-hidden','false'); } });
+            preview.appendChild(more);
+            body.appendChild(preview);
+          } else {
+            const pre = document.createElement('p'); pre.textContent = T; pre.style.whiteSpace='pre-wrap'; pre.style.margin='.5rem 0 0'; body.appendChild(pre);
+          }
+        }
+        if (p.type === 'vlog' && p.media_url){
+          const url = p.media_url.trim();
+          const ytId = (u) => {
+            try {
+              const x = new URL(u);
+              const host = x.hostname.replace(/^www\./,'');
+              if (host.includes('youtu.be')) return (x.pathname.split('/')[1]||'').slice(0,11);
+              if (host.includes('youtube.com')){
+                const v = x.searchParams.get('v');
+                if (v) return v.slice(0,11);
+                if (x.pathname.startsWith('/embed/')) return (x.pathname.split('/')[2]||'').slice(0,11);
+              }
+            } catch {}
+            return '';
+          };
+          const id = ytId(url);
+          if (id){
+            const iframe = document.createElement('iframe');
+            iframe.width='560'; iframe.height='315'; iframe.loading='lazy';
+            iframe.src=`https://www.youtube.com/embed/${id}`; iframe.title='YouTube video'; iframe.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'; iframe.allowFullscreen=true;
+            iframe.style.width='100%'; iframe.style.aspectRatio='16/9'; iframe.style.border='0';
+            body.appendChild(iframe);
+          } else {
+            const a = document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener noreferrer'; a.textContent='Open video'; body.appendChild(a);
+          }
+          if (p.text && p.text.trim()){
+            const storyDiv = document.createElement('div'); storyDiv.style.marginTop='1rem'; storyDiv.style.padding='.75rem'; storyDiv.style.background='var(--surface)'; storyDiv.style.borderRadius='var(--radius)';
+            const pre = document.createElement('p'); pre.textContent = p.text; pre.style.whiteSpace='pre-wrap'; pre.style.margin='0'; storyDiv.appendChild(pre);
+            body.appendChild(storyDiv);
+          }
+        }
+
+        card.appendChild(body);
+        return card;
+      }
+
+      async function loadPublic(){
+        // Wait for sb to be available
+        const waitForSb = (cb, tries) => {
+          tries = tries || 0;
+          if (window.sb) return cb(window.sb);
+          if (tries > 30) { listEl.innerHTML = '<p class="muted">Could not connect to database.</p>'; return; }
+          setTimeout(() => waitForSb(cb, tries + 1), 100);
+        };
+        waitForSb(async (sb) => {
+          const { data, error } = await sb.from('korero_posts')
+            .select('*')
+            .eq('is_public', true)
+            .order('created_at', { ascending: false });
+          if (error){ listEl.innerHTML = '<p class="muted">Error loading stories.</p>'; console.error(error); return; }
+          if (!data || data.length === 0){
+            listEl.innerHTML = '';
+            if (emptyEl) emptyEl.style.display = 'block';
+            return;
+          }
+          if (emptyEl) emptyEl.style.display = 'none';
+          listEl.innerHTML = '';
+          const frag = document.createDocumentFragment();
+          for (const p of data){
+            try { frag.appendChild(buildCard(p)); } catch(e){ console.error(e); }
+          }
+          listEl.appendChild(frag);
+        });
+      }
+
+      loadPublic();
+    })();
+    </script>
+  </body>
+</html>
