@@ -839,12 +839,29 @@
                 const { data: upd, error } = await sb.auth.updateUser({ data: updates });
                 if (error) throw error;
                 // Sync public fields to profiles table so other users can see them
+                // Respect privacy: only sync fields that are NOT hidden
                 const profileSync = {};
                 if (updates.full_name) profileSync.full_name = updates.full_name;
                 if (updates.avatar_url) profileSync.avatar_url = updates.avatar_url;
                 if (updates.cover_url) profileSync.cover_url = updates.cover_url;
-                if (updates.date_of_birth !== undefined) profileSync.date_of_birth = updates.date_of_birth;
-                if (updates.marital_status !== undefined) profileSync.marital_status = updates.marital_status;
+                // DOB: sync value if visible, clear if hidden
+                if (updates.hide_dob) {
+                  profileSync.date_of_birth = null;
+                } else if (updates.date_of_birth !== undefined) {
+                  profileSync.date_of_birth = updates.date_of_birth;
+                }
+                // Marital status: sync value if visible, clear if hidden
+                if (updates.hide_marital_status) {
+                  profileSync.marital_status = null;
+                } else if (updates.marital_status !== undefined) {
+                  profileSync.marital_status = updates.marital_status;
+                }
+                // Location: sync value if visible, clear if hidden
+                if (updates.hide_location) {
+                  profileSync.location = null;
+                } else if (updates.location !== undefined) {
+                  profileSync.location = updates.location;
+                }
                 if (Object.keys(profileSync).length){
                   await sb.from('profiles').update(profileSync).eq('id', user.id);
                 }
@@ -867,13 +884,15 @@
           if (composerEl) composerEl.style.display = 'none';
 
           // Load from profiles table
+          let profile = null;
           try {
-            const { data: profile, error } = await sb.from('profiles').select('*').eq('id', profileId).single();
-            if (error || !profile) {
+            const { data, error } = await sb.from('profiles').select('*').eq('id', profileId).single();
+            if (error || !data) {
               statusEl.textContent = 'Kāore i kitea te kōtaha / Profile not found.';
               statusEl.style.display = '';
               return;
             }
+            profile = data;
             const name = profile.full_name || '—';
             if (profileName) profileName.textContent = name;
             const fakeUser = { id: profileId, user_metadata: { full_name: name }, email: '' };
@@ -881,12 +900,43 @@
               avatarImg.src = profile.avatar_url || placeholderAvatar(fakeUser);
               avatarImg.style.display = 'block';
             }
-            // Use the user's actual uploaded cover, fall back to placeholder
             applyCover(profile.cover_url || placeholderCover(fakeUser));
           } catch {
             statusEl.textContent = 'Kāore i kitea te kōtaha / Profile not found.';
             statusEl.style.display = '';
             return;
+          }
+
+          // Show THIS user's details (from profiles table), replacing the logged-in user's data
+          const detailsEl = document.getElementById('profile-details');
+          if (detailsEl && profile) {
+            const parts = [];
+            if (profile.date_of_birth) {
+              const d = new Date(profile.date_of_birth + 'T00:00:00');
+              const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+              parts.push('🎂 ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear());
+            }
+            if (profile.marital_status) {
+              const labels = { single:'Single', married:'Married', de_facto:'De Facto', divorced:'Divorced', widowed:'Widowed' };
+              parts.push('💍 ' + (labels[profile.marital_status] || profile.marital_status));
+            }
+            if (profile.location) {
+              parts.push('📍 ' + profile.location);
+            }
+            detailsEl.textContent = parts.length ? parts.join('  ·  ') : '';
+          }
+
+          // Show their whānau name
+          const wEl = document.getElementById('profile-whanau');
+          if (wEl) {
+            wEl.textContent = '';
+            try {
+              const { data: mem } = await sb.from('whanau_members').select('whanau_id').eq('user_id', profileId).limit(1).maybeSingle();
+              if (mem && mem.whanau_id) {
+                const { data: w } = await sb.from('whanau').select('name').eq('id', mem.whanau_id).single();
+                if (w) wEl.textContent = 'Whānau: ' + w.name;
+              }
+            } catch {}
           }
 
           // Pepeha is stored in user_metadata (not accessible for other users)

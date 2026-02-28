@@ -41,20 +41,23 @@
     if (!listEl) return;
     listEl.innerHTML = '<p class="muted small">Loading…</p>';
     const { data, error } = await sb.from('whanau')
-      .select('id, name, description, whanau_members(user_id)')
-      .order('created_at', { ascending: false });
-    if (error) { listEl.innerHTML = '<p class="muted small">Could not load whānau.</p>'; return; }
+      .select('id, name, description')
+      .order('name', { ascending: true });
+    if (error) {
+      console.error('Whānau load error:', error);
+      listEl.innerHTML = '<p class="muted small">Could not load whānau. Please try refreshing.</p>';
+      return;
+    }
     allWhanau = (data || []).map(w => ({
       id: w.id,
       name: w.name,
-      description: w.description,
-      memberCount: (w.whanau_members || []).length
+      description: w.description
     }));
-    renderList('');
-    // Auto-select the first whānau if any
-    if (allWhanau.length && selectedIdEl) {
-      selectWhanau(allWhanau[0].id, allWhanau[0].name);
+    if (!allWhanau.length) {
+      listEl.innerHTML = '<p class="muted small">No whānau yet — create the first one!</p>';
+      return;
     }
+    renderList('');
   }
 
   function renderList(q){
@@ -71,8 +74,8 @@
     for (const w of filtered){
       const row = document.createElement('div');
       const isSelected = selectedIdEl && selectedIdEl.value === w.id;
-      row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:.4rem .25rem; border-bottom:1px solid var(--border); cursor:pointer;' + (isSelected ? 'background:var(--accent-low, rgba(0,196,179,0.1));' : '');
-      row.innerHTML = `<div><strong>${esc(w.name)}</strong>${w.description ? ' <span class="small muted">— ' + esc(w.description) + '</span>' : ''}<br><span class="small muted">${w.memberCount} member${w.memberCount !== 1 ? 's' : ''}</span></div>`;
+      row.className = 'whanau-option' + (isSelected ? ' selected' : '');
+      row.innerHTML = `<div class="whanau-option-info"><strong>${esc(w.name)}</strong>${w.description ? '<span class="small muted"> — ' + esc(w.description) + '</span>' : ''}</div><span class="whanau-check">${isSelected ? '✔' : ''}</span>`;
       row.addEventListener('click', () => selectWhanau(w.id, w.name));
       frag.appendChild(row);
     }
