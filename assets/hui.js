@@ -56,8 +56,144 @@
     });
   }
 
+  // ─── Creator profile cache ─────────────────────────────────────
+  let creatorProfiles = {}; // { userId: { id, full_name, avatar_url } }
+
+  async function loadCreatorProfiles(sb, events){
+    const creatorIds = [...new Set(events.map(ev => ev.created_by).filter(Boolean))];
+    if (!creatorIds.length) return;
+    // Only fetch ones we don't already have
+    const missing = creatorIds.filter(id => !creatorProfiles[id]);
+    if (!missing.length) return;
+    const { data: profiles } = await sb.from('profiles')
+      .select('id, full_name, avatar_url')
+      .in('id', missing);
+    (profiles || []).forEach(p => { creatorProfiles[p.id] = p; });
+  }
+
+  function renderCreatorByline(ev){
+    const p = creatorProfiles[ev.created_by];
+    const name = p?.full_name || 'Whānau Member';
+    const initials = name.split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0, 2);
+    const avatarHtml = p?.avatar_url
+      ? `<img class="hui-creator-avatar" src="${esc(p.avatar_url)}" alt="${esc(name)}" />`
+      : `<span class="hui-creator-avatar hui-creator-initials">${initials}</span>`;
+    return `<div class="hui-creator">${avatarHtml} <span class="hui-creator-name">Created by <strong>${esc(name)}</strong></span></div>`;
+  }
+
+  // ─── RSVP helpers ──────────────────────────────────────────────
+  // Cache: { eventId: { rsvps: [...], profiles: { userId: {...} } } }
+  let rsvpCache = {};
+
+  async function loadRsvpsForEvents(sb, eventIds){
+    if (!eventIds.length) return;
+    const { data: rsvps } = await sb.from('hui_rsvps')
+      .select('event_id, user_id, status')
+      .in('event_id', eventIds);
+    if (!rsvps) return;
+
+    // Group by event
+    const byEvent = {};
+    const userIds = new Set();
+    rsvps.forEach(r => {
+      if (!byEvent[r.event_id]) byEvent[r.event_id] = [];
+      byEvent[r.event_id].push(r);
+      userIds.add(r.user_id);
+    });
+
+    // Fetch profiles for avatar display
+    let profileMap = {};
+    if (userIds.size) {
+      const { data: profiles } = await sb.from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', Array.from(userIds));
+      (profiles || []).forEach(p => { profileMap[p.id] = p; });
+    }
+
+    eventIds.forEach(eid => {
+      rsvpCache[eid] = { rsvps: byEvent[eid] || [], profiles: profileMap };
+    });
+  }
+
+  async function submitRsvp(sb, eventId, status){
+    const { data: sessionData } = await sb.auth.getSession();
+    const user = sessionData.session?.user;
+    if (!user) return;
+
+    // If clicking the same status again, remove RSVP
+    const existing = (rsvpCache[eventId]?.rsvps || []).find(r => r.user_id === user.id);
+    if (existing && existing.status === status) {
+      await sb.from('hui_rsvps').delete().eq('event_id', eventId).eq('user_id', user.id);
+    } else {
+      // Upsert RSVP
+      await sb.from('hui_rsvps').upsert(
+        { event_id: eventId, user_id: user.id, status },
+        { onConflict: 'event_id,user_id' }
+      );
+    }
+
+    // Refresh cache for this event
+    delete rsvpCache[eventId];
+    await loadRsvpsForEvents(sb, [eventId]);
+  }
+
+  function renderAttendeeAvatars(eventId, maxShow){
+    maxShow = maxShow || 6;
+    const cache = rsvpCache[eventId];
+    if (!cache) return '';
+    const attending = cache.rsvps.filter(r => r.status === 'attending');
+    if (!attending.length) return '';
+
+    const shown = attending.slice(0, maxShow);
+    const overflow = attending.length - maxShow;
+
+    let avatarsHtml = shown.map(r => {
+      const p = cache.profiles[r.user_id];
+      const name = p?.full_name || 'Whānau';
+      const initials = name.split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0, 2);
+      if (p?.avatar_url) {
+        return `<div class="hui-avatar" title="${esc(name)}"><img src="${esc(p.avatar_url)}" alt="${esc(name)}" /></div>`;
+      }
+      return `<div class="hui-avatar" title="${esc(name)}">${initials}</div>`;
+    }).join('');
+
+    if (overflow > 0) {
+      avatarsHtml += `<div class="hui-avatar hui-avatar-overflow">+${overflow}</div>`;
+    }
+
+    return `<div class="hui-attendees">
+      <span class="hui-attendees-label">Attending:</span>
+      <div class="hui-avatar-stack">${avatarsHtml}</div>
+      <span class="hui-rsvp-count">${attending.length} going</span>
+    </div>`;
+  }
+
+  function renderRsvpButtons(eventId, currentUserId){
+    const cache = rsvpCache[eventId];
+    const myRsvp = cache ? cache.rsvps.find(r => r.user_id === currentUserId) : null;
+    const myStatus = myRsvp?.status || '';
+
+    const counts = { attending: 0, maybe: 0, declined: 0 };
+    if (cache) cache.rsvps.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+
+    return `<div class="hui-rsvp">
+      <div class="hui-rsvp-buttons">
+        <button class="hui-rsvp-btn${myStatus === 'attending' ? ' active-attending' : ''}" data-event="${eventId}" data-status="attending">
+          <span class="rsvp-icon">✅</span> Attending${counts.attending ? ' (' + counts.attending + ')' : ''}
+        </button>
+        <button class="hui-rsvp-btn${myStatus === 'maybe' ? ' active-maybe' : ''}" data-event="${eventId}" data-status="maybe">
+          <span class="rsvp-icon">🤔</span> Maybe${counts.maybe ? ' (' + counts.maybe + ')' : ''}
+        </button>
+        <button class="hui-rsvp-btn${myStatus === 'declined' ? ' active-declined' : ''}" data-event="${eventId}" data-status="declined">
+          <span class="rsvp-icon">❌</span> Can't Attend${counts.declined ? ' (' + counts.declined + ')' : ''}
+        </button>
+      </div>
+      ${renderAttendeeAvatars(eventId)}
+    </div>`;
+  }
+
   // ─── Render a full hui-card (used on hui.html) ────────────────
-  function renderHuiCard(ev, isPast){
+  function renderHuiCard(ev, isPast, currentUserId){
     const d = new Date(ev.event_date + 'T00:00:00');
     const day = String(d.getDate()).padStart(2,'0');
     const mon = MONTHS[d.getMonth()];
@@ -68,6 +204,12 @@
     if (ev.is_public) tags.push('Public');
     if (isPast) tags.push('Completed');
 
+    const rsvpSection = currentUserId ? renderRsvpButtons(ev.id, currentUserId) : renderAttendeeAvatars(ev.id);
+    const isOwner = currentUserId && ev.created_by === currentUserId;
+    const deleteBtn = isOwner
+      ? `<button class="hui-delete-btn" data-event="${ev.id}" title="Delete this event">🗑️ Delete</button>`
+      : '';
+
     return `<article class="hui-card${isPast ? ' past' : ''}">
       <div class="hui-date">
         <span class="hui-day">${day}</span>
@@ -75,15 +217,73 @@
         <span class="hui-year">${year}</span>
       </div>
       <div class="hui-details">
-        <h3>${esc(ev.event_name)}</h3>
+        <div class="hui-card-header">
+          <h3>${esc(ev.event_name)}</h3>
+          ${deleteBtn}
+        </div>
+        ${renderCreatorByline(ev)}
         <div class="hui-meta">
           <span class="hui-location">📍 ${esc(ev.event_location)}</span>
           ${time ? `<span class="hui-time">🕐 ${time}</span>` : ''}
         </div>
         ${desc ? `<p>${esc(desc)}</p>` : ''}
         <div class="hui-tags">${tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+        ${rsvpSection}
       </div>
     </article>`;
+  }
+
+  // ─── Bind RSVP button clicks (delegated) ──────────────────────
+  function bindRsvpClicks(sb, containerEl){
+    containerEl.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.hui-rsvp-btn');
+      if (!btn) return;
+      const eventId = btn.dataset.event;
+      const status = btn.dataset.status;
+      if (!eventId || !status) return;
+
+      const { data: sessionData } = await sb.auth.getSession();
+      if (!sessionData.session?.user) return;
+
+      btn.disabled = true;
+      await submitRsvp(sb, eventId, status);
+      // Re-render just this card's RSVP section
+      const card = btn.closest('.hui-card');
+      if (card) {
+        const rsvpEl = card.querySelector('.hui-rsvp') || card.querySelector('.hui-attendees');
+        if (rsvpEl) {
+          const userId = sessionData.session.user.id;
+          const tmp = document.createElement('div');
+          tmp.innerHTML = renderRsvpButtons(eventId, userId);
+          rsvpEl.replaceWith(tmp.firstElementChild);
+        }
+      }
+    });
+  }
+
+  // ─── Bind delete button clicks (delegated) ─────────────────────
+  function bindDeleteClicks(sb, containerEl){
+    containerEl.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.hui-delete-btn');
+      if (!btn) return;
+      const eventId = btn.dataset.event;
+      if (!eventId) return;
+
+      if (!confirm('Are you sure you want to delete this hui? This cannot be undone.')) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Deleting…';
+      const { error } = await sb.from('hui_events').delete().eq('id', eventId);
+      if (error){
+        alert('Could not delete: ' + error.message);
+        btn.disabled = false;
+        btn.textContent = '🗑️ Delete';
+        return;
+      }
+      // Remove the card from DOM
+      const card = btn.closest('.hui-card');
+      if (card) card.remove();
+    });
   }
 
   // ─── Load events for hui.html ─────────────────────────────────
@@ -92,13 +292,22 @@
     const pastGrid = document.getElementById('past-events-grid');
     if (!upGrid && !pastGrid) return;
 
+    // Get current user
+    const { data: sessionData } = await sb.auth.getSession();
+    const currentUserId = sessionData.session?.user?.id || null;
+
     const today = todayStr();
     // Upcoming
     if (upGrid){
       const { data, error } = await sb.from('hui_events')
         .select('*').gte('event_date', today).order('event_date', { ascending: true });
       if (!error && data && data.length){
-        upGrid.innerHTML = data.map(ev => renderHuiCard(ev, false)).join('');
+        // Pre-load creator profiles and RSVPs for these events
+        await loadCreatorProfiles(sb, data);
+        await loadRsvpsForEvents(sb, data.map(ev => ev.id));
+        upGrid.innerHTML = data.map(ev => renderHuiCard(ev, false, currentUserId)).join('');
+        bindRsvpClicks(sb, upGrid);
+        bindDeleteClicks(sb, upGrid);
       } else {
         upGrid.innerHTML = '<p class="muted">Kāore he hui kei te haere mai. / No upcoming events yet.</p>';
       }
@@ -108,7 +317,11 @@
       const { data, error } = await sb.from('hui_events')
         .select('*').lt('event_date', today).order('event_date', { ascending: false }).limit(10);
       if (!error && data && data.length){
-        pastGrid.innerHTML = data.map(ev => renderHuiCard(ev, true)).join('');
+        await loadCreatorProfiles(sb, data);
+        await loadRsvpsForEvents(sb, data.map(ev => ev.id));
+        pastGrid.innerHTML = data.map(ev => renderHuiCard(ev, true, currentUserId)).join('');
+        bindRsvpClicks(sb, pastGrid);
+        bindDeleteClicks(sb, pastGrid);
       } else {
         pastGrid.innerHTML = '<p class="muted">Kāore he hui kua pahure. / No past events yet.</p>';
       }
@@ -210,6 +423,11 @@
       const { data } = await sb.from('hui_events').select('id, event_name, created_at').order('created_at', { ascending: false }).limit(5);
       (data || []).forEach(r => items.push({ icon: '📅', label: 'New event added', detail: r.event_name || '', time: r.created_at, link: 'hui.html' }));
     } catch {}
+    // Recent mahi projects
+    try {
+      const { data } = await sb.from('mahi_projects').select('id, project_name, status, created_at').order('created_at', { ascending: false }).limit(5);
+      (data || []).forEach(r => items.push({ icon: '🛠️', label: 'New mahi project created', detail: r.project_name || '', time: r.created_at, link: 'mahi.html' }));
+    } catch {}
 
     // Sort by time descending, take top 5
     items.sort((a, b) => new Date(b.time) - new Date(a.time));
@@ -222,14 +440,14 @@
 
     feed.innerHTML = top.map(it => {
       const ago = timeAgo(it.time);
-      return `<div class="activity-item">
+      return `<a href="${esc(it.link)}" class="activity-item activity-link">
         <div class="activity-icon">${it.icon}</div>
         <div class="activity-content">
           <p><strong>${esc(it.label)}</strong></p>
           ${it.detail ? `<span class="muted small">${esc(it.detail)}</span>` : ''}
           <span class="activity-time">${ago}</span>
         </div>
-      </div>`;
+      </a>`;
     }).join('');
   }
 

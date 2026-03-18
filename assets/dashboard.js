@@ -3,60 +3,9 @@
   const sb = window.sb;
   if (!sb) return;
   // Only run on dashboard (check for a dashboard-specific element)
-  if (!document.getElementById('stat-members')) return;
+  if (!document.getElementById('activity-feed')) return;
 
   const esc = (s) => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-  // ─── Stats ───
-  async function loadStats(){
-    try {
-      const wid = typeof window.getMyWhanauId === 'function' ? await window.getMyWhanauId() : null;
-
-      // Members
-      const { count: memberCount } = await sb.from('whanau_members')
-        .select('user_id', { count: 'exact', head: true })
-        .eq('whanau_id', wid);
-      const el1 = document.getElementById('stat-members');
-      if (el1) el1.textContent = memberCount ?? '--';
-
-      // Stories
-      const { count: storyCount } = await sb.from('korero_posts')
-        .select('id', { count: 'exact', head: true })
-        .eq('whanau_id', wid);
-      const el2 = document.getElementById('stat-stories');
-      if (el2) el2.textContent = storyCount ?? '--';
-
-      // Photos (ngatoi_items)
-      const { count: photoCount } = await sb.from('ngatoi_items')
-        .select('id', { count: 'exact', head: true })
-        .eq('whanau_id', wid);
-      const el3 = document.getElementById('stat-photos');
-      if (el3) el3.textContent = photoCount ?? '--';
-
-      // Waiata
-      const { count: waiataCount } = await sb.from('waiata_items')
-        .select('id', { count: 'exact', head: true })
-        .eq('whanau_id', wid)
-        .eq('category', 'waiata');
-      const el4 = document.getElementById('stat-waiata');
-      if (el4) el4.textContent = waiataCount ?? '--';
-
-      // Whakapapa people
-      const { count: whakapapaCount } = await sb.from('whakapapa_people')
-        .select('id', { count: 'exact', head: true })
-        .eq('whanau_id', wid);
-      const el5 = document.getElementById('stat-whakapapa');
-      if (el5) el5.textContent = whakapapaCount ?? '--';
-
-      // Tauparapara
-      const { count: taupCount } = await sb.from('waiata_items')
-        .select('id', { count: 'exact', head: true })
-        .eq('whanau_id', wid)
-        .in('category', ['tauparapara','karakia']);
-      const el6 = document.getElementById('stat-tauparapara');
-      if (el6) el6.textContent = taupCount ?? '--';
-    } catch(e){ console.error('Stats error', e); }
-  }
 
   // ─── Upcoming Birthdays ───
   async function loadBirthdays(){
@@ -320,6 +269,45 @@
       </div>`;
   }
 
+  // ─── Latest Mahi Projects ───
+  async function loadLatestMahi(){
+    const root = document.getElementById('dashboard-latest-mahi');
+    if (!root) return;
+    try {
+      const { data } = await sb.from('mahi_projects')
+        .select('id, project_name, project_description, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(4);
+      if (!data || !data.length) {
+        root.innerHTML = '<p class="muted small">No mahi projects yet. <a href="mahi.html">Start one!</a></p>';
+        return;
+      }
+
+      const statusEmoji = { active: '🟢', paused: '🟡', completed: '✅' };
+      const statusLabel = { active: 'Active', paused: 'Paused', completed: 'Completed' };
+
+      root.innerHTML = '';
+      data.forEach(p => {
+        const desc = p.project_description
+          ? p.project_description.slice(0, 80) + (p.project_description.length > 80 ? '…' : '')
+          : '';
+        const ago = relativeTime(p.created_at);
+        const emoji = statusEmoji[p.status] || '';
+        const label = statusLabel[p.status] || p.status;
+        const item = document.createElement('a');
+        item.href = 'mahi.html';
+        item.className = 'mahi-preview';
+        item.innerHTML = `<div class="mahi-preview-header">
+            <strong>${esc(p.project_name)}</strong>
+            <span class="tag ${esc(p.status)}">${emoji} ${esc(label)}</span>
+          </div>
+          ${desc ? `<p class="muted small">${esc(desc)}</p>` : ''}
+          <span class="muted small">${ago}</span>`;
+        root.appendChild(item);
+      });
+    } catch(e){ console.error('Latest mahi error', e); root.innerHTML = '<p class="muted small">Could not load projects.</p>'; }
+  }
+
   // ─── Helpers ───
   function relativeTime(dateStr){
     const d = new Date(dateStr);
@@ -344,11 +332,11 @@
 
     // Fire all in parallel
     await Promise.allSettled([
-      loadStats(),
       loadBirthdays(),
       loadRecentMembers(),
       loadLatestKorero(),
-      loadRecentPhotos()
+      loadRecentPhotos(),
+      loadLatestMahi()
     ]);
     // These are synchronous / client-side only
     renderMaramataka();

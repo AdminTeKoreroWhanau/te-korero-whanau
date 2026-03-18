@@ -52,63 +52,17 @@
           <a href="nga-toi.html" class="qa-btn qa-photos"><span class="qa-icon">🎨</span><span>Upload Photos</span></a>
           <a href="hui.html" class="qa-btn qa-hui"><span class="qa-icon">📅</span><span>Add an Event</span></a>
           <a href="tauparapara.html" class="qa-btn qa-tauparapara"><span class="qa-icon">🙏</span><span>Tauparapara</span></a>
+          <a href="mahi.html" class="qa-btn qa-mahi"><span class="qa-icon">🛠️</span><span>Add a Project</span></a>
         </div>
       </section>
 
-      <!-- Dashboard Grid -->
-      <div class="dashboard-grid">
-        <!-- Left Column -->
-        <div class="dashboard-col">
-          <!-- Quick Stats -->
-          <section class="panel dashboard-stats">
-            <h2>📊 Whānau Stats</h2>
-            <div class="stats-grid">
-              <div class="stat-card">
-                <span class="stat-icon">🌲</span>
-                <span class="stat-value" id="stat-members">--</span>
-                <span class="stat-label">Whānau Members</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-icon">📖</span>
-                <span class="stat-value" id="stat-stories">--</span>
-                <span class="stat-label">Stories Shared</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-icon">🖼️</span>
-                <span class="stat-value" id="stat-photos">--</span>
-                <span class="stat-label">Photos</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-icon">🎵</span>
-                <span class="stat-value" id="stat-waiata">--</span>
-                <span class="stat-label">Waiata</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-icon">🌳</span>
-                <span class="stat-value" id="stat-whakapapa">--</span>
-                <span class="stat-label">Whakapapa People</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-icon">🙏</span>
-                <span class="stat-value" id="stat-tauparapara">--</span>
-                <span class="stat-label">Tauparapara</span>
-              </div>
-            </div>
-          </section>
-
+      <!-- Recent Activity (full width) -->
+      <section class="panel" style="margin-top:1.5rem">
+        <h2>🔔 Recent Activity</h2>
+        <div class="activity-feed" id="activity-feed">
+          <p class="muted small">Loading activity…</p>
         </div>
-
-        <!-- Right Column -->
-        <div class="dashboard-col">
-          <!-- Recent Activity -->
-          <section class="panel">
-            <h2>🔔 Recent Activity</h2>
-            <div class="activity-feed" id="activity-feed">
-              <p class="muted small">Loading activity…</p>
-            </div>
-          </section>
-        </div>
-      </div>
+      </section>
 
       <!-- Three-column sections -->
       <div class="dashboard-grid-3">
@@ -162,6 +116,14 @@
             <p class="muted small">Loading…</p>
           </div>
           <p class="muted small" style="margin-top:.5rem"><a href="nga-toi.html">View all →</a></p>
+        </section>
+
+        <section class="panel">
+          <h2>🛠️ Latest Mahi</h2>
+          <div id="dashboard-latest-mahi">
+            <p class="muted small">Loading…</p>
+          </div>
+          <p class="muted small" style="margin-top:.5rem"><a href="mahi.html">View all projects →</a></p>
         </section>
 
         <section class="panel whakatauki-panel">

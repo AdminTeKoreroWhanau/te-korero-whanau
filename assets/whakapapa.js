@@ -1,6 +1,6 @@
 // Whakapapa (family tree) drag-and-drop builder
-// Admin arranges nodes via drag-and-drop; positions persist to Supabase.
-// All users can view the shared tree. Clicking a node opens that member's profile.
+// Drag a member node onto another to link them. Double-click a link to edit/remove.
+// Right sidebar: unplaced members, stats. All changes auto-save.
 (function(){
   const hasVis = !!window.vis;
   const container = document.getElementById('whakapapa-tree');
@@ -8,25 +8,37 @@
   if (!container || !hasVis) { if (msg) msg.textContent = 'Network library failed to load.'; return; }
 
   const fitBtn = document.getElementById('fit');
-  const saveBtn = document.getElementById('save-layout');
-  const saveMsg = document.getElementById('save-msg');
-  const adminHint = document.getElementById('whakapapa-admin-hint');
-  const adminForms = document.getElementById('whakapapa-admin-forms');
-
-  const personForm = document.getElementById('person-form');
+  const sidebarRight = document.getElementById('whakapapa-sidebar-right');
   const personMsg = document.getElementById('person-msg');
-  const relForm = document.getElementById('rel-form');
-  const relMsg = document.getElementById('rel-msg');
+
+  // Stats elements
+  const statOnTree = document.getElementById('stat-on-tree');
+  const statUnplaced = document.getElementById('stat-unplaced');
+  const statRelations = document.getElementById('stat-relations');
+  const unplacedListEl = document.getElementById('unplaced-list');
 
   // Supabase client (set by auth.js)
   const sb = window.sb || null;
 
-  let isAdminUser = false;
+  let isFamilyMember = false;
   let positions = {};
   let profiles = [];
   let profileMap = new Map();
   let peopleIds = [];
   let relations = [];
+
+  // Current appearance settings
+  let treeSettings = {
+    direction: 'free',
+    edgeStyle: 'cubicBezier',
+    nodeSize: 40,
+    edgeColor: '#6ec5be',
+    spouseColor: '#c58f6e',
+    showLabels: true,
+    physics: false,
+    snapToGrid: true,
+    gridSize: 120
+  };
 
   // --- Helpers ---
   function avatarOf(p){ return p.avatar_url || p.photo_url || p.image_url || p.avatar || null; }
@@ -46,7 +58,7 @@
       shape: 'circularImage',
       image: img,
       borderWidth: 2,
-      size: 40
+      size: treeSettings.nodeSize
     };
     if (positions[p.id]) {
       node.x = positions[p.id].x;
@@ -57,42 +69,68 @@
   }
 
   function toEdge(r){
-    if (r.type === 'parent' || r.type === 'mother' || r.type === 'father'){
-      return { from: r.from_id, to: r.to_id, arrows: 'to', label: r.type, color: { color: '#6ec5be' }, width: 2 };
+    const showLabel = treeSettings.showLabels;
+    const id = r.from_id + '__' + r.to_id + '__' + r.type;
+    if (r.type === 'parent' || r.type === 'mother' || r.type === 'father' || r.type === 'grandparent'){
+      return { id, from: r.from_id, to: r.to_id, arrows: 'to', label: showLabel ? r.type : '', color: { color: treeSettings.edgeColor }, width: 2 };
     }
     if (r.type === 'spouse' || r.type === 'partner'){
-      return { from: r.from_id, to: r.to_id, dashes: true, label: r.type, color: { color: '#c58f6e' }, width: 2 };
+      return { id, from: r.from_id, to: r.to_id, dashes: true, label: showLabel ? r.type : '', color: { color: treeSettings.spouseColor }, width: 2 };
     }
-    return { from: r.from_id, to: r.to_id, label: r.type || '', color: { color: '#9aa3a7' }, width: 2 };
+    if (r.type === 'uncle_aunt'){
+      return { id, from: r.from_id, to: r.to_id, arrows: 'to', label: showLabel ? 'uncle/aunt' : '', color: { color: treeSettings.edgeColor }, width: 2 };
+    }
+    if (r.type === 'cousin'){
+      return { id, from: r.from_id, to: r.to_id, label: showLabel ? 'cousin' : '', color: { color: '#9aa3a7' }, width: 2 };
+    }
+    return { id, from: r.from_id, to: r.to_id, label: showLabel ? (r.type || '') : '', color: { color: '#9aa3a7' }, width: 2 };
   }
 
-  // --- Network setup (free-form layout) ---
-  const opts = {
-    layout: { randomSeed: 42 },
-    physics: {
-      enabled: true,
-      stabilization: { iterations: 200 },
-      barnesHut: { gravitationalConstant: -3000, springLength: 200, springConstant: 0.04 }
-    },
-    interaction: {
-      dragNodes: false,
-      dragView: true,
-      zoomView: true,
-      hover: true,
-      tooltipDelay: 200
-    },
-    nodes: {
-      color: { background: '#12181a', border: '#1e2629' },
-      font: { color: '#eef2f3', size: 14, face: 'arial', strokeWidth: 1, strokeColor: '#000000' },
-      borderWidth: 2,
-      shapeProperties: { useBorderWithImage: true }
-    },
-    edges: {
-      smooth: { type: 'cubicBezier' },
-      font: { color: '#a7b1b5', size: 12 }
+  // --- Build vis.js options from treeSettings ---
+  function buildNetworkOptions(){
+    const base = {
+      physics: {
+        enabled: treeSettings.physics,
+        stabilization: { iterations: 200 },
+        barnesHut: { gravitationalConstant: -3000, springLength: 200, springConstant: 0.04 }
+      },
+      interaction: {
+        dragNodes: true,
+        dragView: true,
+        zoomView: true,
+        hover: true,
+        tooltipDelay: 200
+      },
+      nodes: {
+        color: { background: '#12181a', border: '#1e2629' },
+        font: { color: '#eef2f3', size: 14, face: 'arial', strokeWidth: 1, strokeColor: '#000000' },
+        borderWidth: 2,
+        shapeProperties: { useBorderWithImage: true },
+        size: treeSettings.nodeSize
+      },
+      edges: {
+        smooth: { type: treeSettings.edgeStyle },
+        font: { color: '#eef2f3', size: 14, face: 'arial', background: 'rgba(18,24,26,0.85)', strokeWidth: 2, strokeColor: '#000000', align: 'top' }
+      }
+    };
+    if (treeSettings.direction === 'free'){
+      base.layout = { randomSeed: 42 };
+    } else {
+      base.layout = {
+        hierarchical: {
+          enabled: true,
+          direction: treeSettings.direction,
+          sortMethod: 'directed',
+          levelSeparation: 150,
+          nodeSpacing: 120
+        }
+      };
     }
-  };
+    return base;
+  }
 
+  // --- Network setup ---
+  let opts = buildNetworkOptions();
   let allNodes = new vis.DataSet([]);
   let allEdges = new vis.DataSet([]);
   let network = new vis.Network(container, { nodes: allNodes, edges: allEdges }, opts);
@@ -110,6 +148,7 @@
     const panel = getCSSVar('--panel', theme === 'light' ? '#ffffff' : '#12181a');
     const border = getCSSVar('--border', theme === 'light' ? '#d8e1e5' : '#1e2629');
     const strokeColor = theme === 'light' ? '#ffffff' : '#000000';
+    const edgeBg = theme === 'light' ? 'rgba(255,255,255,0.85)' : 'rgba(18,24,26,0.85)';
     network.setOptions({
       nodes: {
         color: { background: panel, border },
@@ -117,7 +156,7 @@
         borderWidth: 2,
         shapeProperties: { useBorderWithImage: true }
       },
-      edges: { font: { color: muted } }
+      edges: { font: { color: fg, size: 14, face: 'arial', background: edgeBg, strokeWidth: 2, strokeColor, align: 'top' } }
     });
   }
   const themeObserver = new MutationObserver(() => applyThemeToNetwork());
@@ -129,7 +168,7 @@
     try { const { data } = await sb.auth.getSession(); return data.session?.user?.id || null; } catch { return null; }
   }
 
-  async function checkIsAdmin(){
+  async function checkIsFamilyMember(){
     if (!sb) return false;
     try {
       const { data } = await sb.auth.getSession();
@@ -138,7 +177,13 @@
       const emails = (window.ADMIN_EMAILS || []).map(e => String(e||'').toLowerCase());
       if (user.email && emails.includes(String(user.email).toLowerCase())) return true;
       const { data: row } = await sb.from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle();
-      return !!(row && row.user_id);
+      if (row && row.user_id) return true;
+      // Any whānau member can edit
+      if (typeof window.getMyWhanauId === 'function'){
+        const wid = await window.getMyWhanauId();
+        if (wid) return true;
+      }
+      return !!user.id;
     } catch { return false; }
   }
 
@@ -160,8 +205,6 @@
     const nodePositions = network.getPositions();
     if (!sb){
       try { localStorage.setItem('whakapapa.positions.v1', JSON.stringify(nodePositions)); } catch {}
-      if (saveMsg) saveMsg.textContent = 'Kua tiakina (local) / Saved locally.';
-      setTimeout(() => { if (saveMsg) saveMsg.textContent = ''; }, 3000);
       return;
     }
     try {
@@ -175,71 +218,363 @@
         const { error } = await sb.from('whakapapa_positions').upsert(rec, { onConflict: 'profile_id' });
         if (error) throw error;
       }
-      if (saveMsg) saveMsg.textContent = 'Kua tiakina / Layout saved!';
-      setTimeout(() => { if (saveMsg) saveMsg.textContent = ''; }, 3000);
     } catch (err){
       console.error('Failed to save positions:', err);
-      if (saveMsg) saveMsg.textContent = 'Hapa tiaki / Failed to save layout.';
     }
   }
 
-  // --- Populate form selects (admin only) ---
-  function populatePersonSelect(){
-    const selP = document.getElementById('person-select');
-    const btn = document.getElementById('person-add-btn');
-    if (!selP) return;
-    selP.innerHTML = '';
-    if (!sb){ selP.disabled = true; if (btn) btn.disabled = true; return; }
-    const notAdded = profiles.filter(p => !peopleIds.includes(p.id));
-    if (!profiles.length){
-      const opt = document.createElement('option'); opt.value=''; opt.textContent='No profiles available'; selP.appendChild(opt);
-      selP.disabled = true; if (btn) btn.disabled = true; return;
+
+  // --- Right sidebar: unplaced members ---
+  function renderUnplacedMembers(){
+    if (!unplacedListEl) return;
+    const unplaced = profiles.filter(p => !peopleIds.includes(p.id));
+    if (statOnTree) statOnTree.textContent = peopleIds.length;
+    if (statUnplaced) statUnplaced.textContent = unplaced.length;
+    if (statRelations) statRelations.textContent = relations.length;
+
+    if (!unplaced.length){
+      unplacedListEl.innerHTML = '<p class="small muted">Kua whakaritea katoa / All members are on the tree! \ud83c\udf89</p>';
+      return;
     }
-    for (const p of notAdded){
-      const opt = document.createElement('option');
-      opt.value = p.id; opt.textContent = displayName(p);
-      selP.appendChild(opt);
+    unplacedListEl.innerHTML = '';
+    for (const p of unplaced){
+      const item = document.createElement('div');
+      item.className = 'unplaced-member-item';
+      item.setAttribute('data-id', p.id);
+      const img = avatarOf(p) || avatarPlaceholder(displayName(p));
+      item.innerHTML =
+        '<img src="' + img + '" alt="" class="unplaced-avatar" onerror="this.src=\'' + avatarPlaceholder(displayName(p)) + '\'"/>' +
+        '<div class="unplaced-info"><strong>' + displayName(p) + '</strong></div>' +
+        '<button class="btn outline unplaced-add-btn" type="button" title="Add to tree">+</button>';
+      item.querySelector('.unplaced-add-btn').addEventListener('click', async () => {
+        await addPersonToTree(p.id);
+      });
+      unplacedListEl.appendChild(item);
     }
-    if (!notAdded.length){
-      const opt = document.createElement('option'); opt.value=''; opt.textContent='All profiles already added'; selP.appendChild(opt);
-    }
-    const has = notAdded.length > 0;
-    selP.disabled = !has; if (btn) btn.disabled = !has;
   }
 
-  function populateRelSelects(){
-    const a = document.getElementById('rel-a');
-    const b = document.getElementById('rel-b');
-    if (!a || !b) return;
-    const people = peopleIds.map(id => profileMap.get(id)).filter(Boolean);
-    const add = (el) => {
-      el.innerHTML = '';
-      people.forEach(p => { const opt = document.createElement('option'); opt.value = p.id; opt.textContent = displayName(p); el.appendChild(opt); });
-    };
-    add(a); add(b);
+  // --- Add person to tree (shared logic) ---
+  async function addPersonToTree(profile_id){
+    if (personMsg) personMsg.textContent = '';
+    try {
+      const userId = await currentUserId();
+      if (!userId){ if (personMsg) personMsg.textContent = 'Takiuru hei tiaki / Login to save.'; return; }
+      if (peopleIds.includes(profile_id)){ if (personMsg) personMsg.textContent = 'Kua tāpirihia kē / Already added.'; return; }
+
+      if (sb){
+        const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
+        const { error } = await sb.from('whakapapa_people').insert([{ user_id: userId, profile_id, whanau_id }]);
+        if (error) throw error;
+      }
+      peopleIds.push(profile_id);
+      const prof = profileMap.get(profile_id);
+      if (prof){
+        const pos = getNewNodePosition();
+        const node = toNode(prof);
+        node.x = pos.x;
+        node.y = pos.y;
+        node.fixed = false;
+        allNodes.add(node);
+      }
+      renderUnplacedMembers();
+      autoSavePositions();
+      if (personMsg) personMsg.textContent = 'Kua tāpirihia / Added!';
+      if (msg) msg.textContent = '';
+    } catch (err){
+      console.error(err);
+      if (personMsg) personMsg.textContent = 'Hapa tāpiri / Failed to add person.';
+    }
   }
+
+  // --- Grid snap helpers ---
+  function snapToGrid(val){
+    const g = treeSettings.gridSize;
+    return Math.round(val / g) * g;
+  }
+
+  function snapNodeToGrid(nodeId){
+    if (!treeSettings.snapToGrid) return;
+    const pos = network.getPositions([nodeId]);
+    if (!pos[nodeId]) return;
+    const sx = snapToGrid(pos[nodeId].x);
+    const sy = snapToGrid(pos[nodeId].y);
+    allNodes.update({ id: nodeId, x: sx, y: sy });
+  }
+
+  function snapAllNodesToGrid(){
+    const g = treeSettings.gridSize;
+    const posMap = network.getPositions();
+    const occupied = new Set();
+    const updates = [];
+    for (const id of Object.keys(posMap)){
+      let sx = Math.round(posMap[id].x / g) * g;
+      let sy = Math.round(posMap[id].y / g) * g;
+      // Avoid stacking: nudge if another node already occupies this cell
+      let key = sx + ',' + sy;
+      while (occupied.has(key)){
+        sx += g;
+        key = sx + ',' + sy;
+      }
+      occupied.add(key);
+      updates.push({ id, x: sx, y: sy });
+    }
+    if (updates.length) allNodes.update(updates);
+    network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
+    // Auto-save after snap-all
+    saveAllPositions();
+  }
+
+  // --- Auto-save a single node position (debounced) ---
+  let _saveTimer = null;
+  function autoSavePositions(){
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(function(){ saveAllPositions(); }, 800);
+  }
+
+  // --- Arrange linked nodes after a new relationship ---
+  function autoArrangeAfterLink(){
+    if (!treeSettings.snapToGrid){
+      network.fit({ animation: true });
+      autoSavePositions();
+      return;
+    }
+    snapAllNodesToGrid();
+  }
+
+  // --- Drag-to-link state ---
+  let draggedNodeId = null;
+  let dragStartPos = null;
+  let wasDragging = false;
 
   // --- Interaction events ---
-
-  // Click node → open profile
   network.on('click', function(params){
+    // Don't navigate if we just finished a drag
+    if (wasDragging){ wasDragging = false; return; }
     if (params.nodes.length > 0){
       const nodeId = params.nodes[0];
       window.location.href = 'profile.html?id=' + encodeURIComponent(nodeId);
     }
   });
 
-  // Cursor styling
+  // Double-click edge to edit/delete relationship
+  network.on('doubleClick', function(params){
+    if (!isFamilyMember) return;
+    if (params.edges.length === 1 && params.nodes.length === 0){
+      const edgeId = String(params.edges[0]);
+      const parts = edgeId.split('__');
+      if (parts.length < 3) return;
+      const from_id = parts[0];
+      const to_id = parts[1];
+      const type = parts.slice(2).join('__');
+      showDragLinkPopup(from_id, to_id, type);
+    }
+  });
+
   network.on('hoverNode', function(){ container.style.cursor = 'pointer'; });
-  network.on('blurNode', function(){ container.style.cursor = isAdminUser ? 'grab' : 'default'; });
-  network.on('dragStart', function(){ if (isAdminUser) container.style.cursor = 'grabbing'; });
-  network.on('dragEnd', function(){ if (isAdminUser) container.style.cursor = 'grab'; });
+  network.on('blurNode', function(){ container.style.cursor = 'grab'; });
 
-  // Buttons
+  network.on('dragStart', function(params){
+    container.style.cursor = 'grabbing';
+    if (params.nodes.length === 1){
+      draggedNodeId = params.nodes[0];
+      const pos = network.getPositions([draggedNodeId]);
+      dragStartPos = pos[draggedNodeId] ? { x: pos[draggedNodeId].x, y: pos[draggedNodeId].y } : null;
+    }
+  });
+
+  network.on('dragEnd', function(params){
+    container.style.cursor = 'grab';
+    if (!isFamilyMember || !draggedNodeId || params.nodes.length !== 1){
+      draggedNodeId = null;
+      dragStartPos = null;
+      return;
+    }
+    wasDragging = true;
+
+    // Check if dropped near another node (drag-to-link)
+    const dropCanvas = params.pointer.canvas;
+    const threshold = treeSettings.nodeSize * 2.5;
+    let targetNodeId = null;
+    let closestDist = Infinity;
+
+    const allPositions = network.getPositions();
+    for (const id of Object.keys(allPositions)){
+      if (id === draggedNodeId) continue;
+      const pos = allPositions[id];
+      const dx = pos.x - dropCanvas.x;
+      const dy = pos.y - dropCanvas.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < threshold && dist < closestDist){
+        closestDist = dist;
+        targetNodeId = id;
+      }
+    }
+
+    if (targetNodeId){
+      // Snap dragged node back — this is a link gesture, not a move
+      if (dragStartPos){
+        allNodes.update({ id: draggedNodeId, x: dragStartPos.x, y: dragStartPos.y });
+      }
+      showDragLinkPopup(draggedNodeId, targetNodeId);
+    } else {
+      // Normal drag — snap to grid and auto-save
+      snapNodeToGrid(draggedNodeId);
+      autoSavePositions();
+    }
+
+    draggedNodeId = null;
+    dragStartPos = null;
+  });
+
+  // --- Drag-to-link popup (also used for edit mode) ---
+  function showDragLinkPopup(fromId, toId, editType){
+    const modal = document.getElementById('drag-link-modal');
+    if (!modal) return;
+    const profA = profileMap.get(fromId);
+    const profB = profileMap.get(toId);
+    if (!profA || !profB) return;
+
+    const nameA = displayName(profA);
+    const nameB = displayName(profB);
+    const imgA = avatarOf(profA) || avatarPlaceholder(nameA);
+    const imgB = avatarOf(profB) || avatarPlaceholder(nameB);
+
+    document.getElementById('drag-link-a-name').textContent = nameA;
+    document.getElementById('drag-link-b-name').textContent = nameB;
+    const aImg = document.getElementById('drag-link-a-img');
+    const bImg = document.getElementById('drag-link-b-img');
+    if (aImg) aImg.src = imgA;
+    if (bImg) bImg.src = imgB;
+    document.getElementById('drag-link-msg').textContent = '';
+
+    const isEdit = !!editType;
+    modal._fromId = fromId;
+    modal._toId = toId;
+    modal._mode = isEdit ? 'edit' : 'create';
+    modal._originalType = editType || null;
+
+    document.getElementById('drag-link-type').value = editType || 'parent';
+
+    const titleEl = document.getElementById('drag-link-title');
+    const descEl = modal.querySelector('.drag-link-desc');
+    const submitBtn = document.getElementById('drag-link-submit');
+    const deleteBtn = document.getElementById('drag-link-delete');
+
+    if (isEdit){
+      if (titleEl) titleEl.textContent = '✏️ Whakatika / Edit Link';
+      if (descEl) descEl.textContent = 'Change the relationship type or remove this link.';
+      if (submitBtn) submitBtn.textContent = 'Whakahou / Update';
+      if (deleteBtn) deleteBtn.hidden = false;
+    } else {
+      if (titleEl) titleEl.textContent = '🔗 Honoa / Link Members';
+      if (descEl) descEl.textContent = 'How are these whānau members related?';
+      if (submitBtn) submitBtn.textContent = 'Honoa / Link';
+      if (deleteBtn) deleteBtn.hidden = true;
+    }
+
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeDragLinkPopup(){
+    const modal = document.getElementById('drag-link-modal');
+    if (modal){ modal.hidden = true; modal.setAttribute('aria-hidden', 'true'); }
+  }
+
+  // Close button & cancel
+  document.getElementById('drag-link-close')?.addEventListener('click', closeDragLinkPopup);
+  document.getElementById('drag-link-cancel')?.addEventListener('click', closeDragLinkPopup);
+  // Close on backdrop click
+  document.getElementById('drag-link-modal')?.addEventListener('click', function(e){
+    if (e.target === this) closeDragLinkPopup();
+  });
+
+  // Submit drag-link form (handles both create and edit)
+  document.getElementById('drag-link-form')?.addEventListener('submit', async function(e){
+    e.preventDefault();
+    const modal = document.getElementById('drag-link-modal');
+    const msgEl = document.getElementById('drag-link-msg');
+    if (!modal) return;
+    const from_id = modal._fromId;
+    const to_id = modal._toId;
+    const newType = document.getElementById('drag-link-type').value;
+    if (!from_id || !to_id || !newType) return;
+    if (from_id === to_id){ if (msgEl) msgEl.textContent = 'K\u0101ore e tika / Cannot relate a person to themselves.'; return; }
+
+    const isEdit = modal._mode === 'edit';
+    const oldType = modal._originalType;
+
+    try {
+      const userId = await currentUserId();
+      if (!userId){ if (msgEl) msgEl.textContent = 'Takiuru hei tiaki / Login to save.'; return; }
+
+      if (isEdit && oldType){
+        // Update existing relationship
+        if (sb){
+          const { error } = await sb.from('whakapapa_relations')
+            .update({ type: newType })
+            .eq('from_id', from_id)
+            .eq('to_id', to_id)
+            .eq('type', oldType);
+          if (error) throw error;
+        }
+        const idx = relations.findIndex(r => r.from_id === from_id && r.to_id === to_id && r.type === oldType);
+        if (idx !== -1) relations[idx].type = newType;
+        const oldEdgeId = from_id + '__' + to_id + '__' + oldType;
+        allEdges.remove(oldEdgeId);
+        allEdges.add(toEdge({ from_id, to_id, type: newType }));
+        autoSavePositions();
+      } else {
+        // Create new relationship
+        const rel = { from_id, to_id, type: newType };
+        if (sb){
+          const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
+          const { error } = await sb.from('whakapapa_relations').insert([{ ...rel, user_id: userId, whanau_id }]);
+          if (error) throw error;
+        }
+        relations.push(rel);
+        allEdges.add(toEdge(rel));
+        autoArrangeAfterLink();
+      }
+      renderUnplacedMembers();
+      closeDragLinkPopup();
+    } catch (err){
+      if (msgEl) msgEl.textContent = isEdit ? 'Hapa whakahou / Failed to update.' : 'Hapa t\u0101piri / Failed to add relation.';
+    }
+  });
+
+  // Delete relationship from edit popup
+  document.getElementById('drag-link-delete')?.addEventListener('click', async function(){
+    const modal = document.getElementById('drag-link-modal');
+    const msgEl = document.getElementById('drag-link-msg');
+    if (!modal || modal._mode !== 'edit') return;
+    const from_id = modal._fromId;
+    const to_id = modal._toId;
+    const type = modal._originalType;
+    if (!from_id || !to_id || !type) return;
+    try {
+      if (sb){
+        const { error } = await sb.from('whakapapa_relations')
+          .delete()
+          .eq('from_id', from_id)
+          .eq('to_id', to_id)
+          .eq('type', type);
+        if (error) throw error;
+      }
+      const idx = relations.findIndex(r => r.from_id === from_id && r.to_id === to_id && r.type === type);
+      if (idx !== -1) relations.splice(idx, 1);
+      allEdges.remove(from_id + '__' + to_id + '__' + type);
+      renderUnplacedMembers();
+      autoSavePositions();
+      closeDragLinkPopup();
+    } catch (err){
+      console.error(err);
+      if (msgEl) msgEl.textContent = 'Hapa muku / Failed to remove link.';
+    }
+  });
+
   fitBtn && fitBtn.addEventListener('click', () => network.fit({ animation: true }));
-  saveBtn && saveBtn.addEventListener('click', saveAllPositions);
 
-  // Default position for newly added nodes
   function getNewNodePosition(){
     const viewPos = network.getViewPosition();
     const offset = 80 + Math.random() * 120;
@@ -251,7 +586,7 @@
   async function bootstrap(){
     container.setAttribute('aria-busy','true');
     try {
-      isAdminUser = await checkIsAdmin();
+      isFamilyMember = await checkIsFamilyMember();
       positions = await loadPositions();
 
       // Load all profiles
@@ -263,7 +598,6 @@
         } else {
           profiles = Array.isArray(profs) ? profs : [];
         }
-        // Fallback: include current user if table is empty
         if (!profiles.length){
           try {
             const { data: sess } = await sb.auth.getSession();
@@ -280,7 +614,7 @@
       }
       profileMap = new Map(profiles.map(p => [p.id, p]));
 
-      // Load people and relations (shared tree — all entries, deduplicated)
+      // Load people and relations
       if (sb){
         const { data: people } = await sb.from('whakapapa_people').select('profile_id');
         peopleIds = [...new Set((people || []).map(r => r.profile_id).filter(Boolean))];
@@ -305,42 +639,36 @@
       network.setData({ nodes: allNodes, edges: allEdges });
       applyThemeToNetwork();
 
-      // If all nodes have saved positions, skip physics entirely
       const allHavePositions = nodes.length > 0 && nodes.every(n => positions[n.id]);
       if (allHavePositions){
         network.setOptions({ physics: { enabled: false } });
       }
 
-      // After physics stabilizes, freeze and allow admin dragging
       network.once('stabilized', function(){
         network.setOptions({ physics: { enabled: false } });
-        if (isAdminUser){
-          allNodes.forEach(n => { allNodes.update({ id: n.id, fixed: false }); });
-        }
+        allNodes.forEach(n => { allNodes.update({ id: n.id, fixed: false }); });
       });
 
-      // Enable admin mode UI
-      if (isAdminUser){
-        network.setOptions({ interaction: { dragNodes: true } });
-        if (saveBtn) saveBtn.style.display = '';
-        if (adminHint) adminHint.style.display = '';
-        if (adminForms) adminForms.style.display = '';
+      // Show sidebar for family members
+      if (isFamilyMember){
+        if (sidebarRight) sidebarRight.classList.add('active');
         container.style.cursor = 'grab';
         container.classList.add('admin-mode');
 
-        // Unfix nodes immediately if all positions loaded (physics already off)
         if (allHavePositions){
           allNodes.forEach(n => { allNodes.update({ id: n.id, fixed: false }); });
         }
-
-        populatePersonSelect();
-        populateRelSelects();
+      } else {
+        if (sidebarRight) sidebarRight.classList.add('hidden');
+        const layout = document.querySelector('.whakapapa-layout');
+        if (layout) layout.classList.add('view-only');
       }
 
-      // Status messages
+      renderUnplacedMembers();
+
       if (!peopleIds.length){
-        if (msg) msg.textContent = isAdminUser
-          ? 'Tāpirihia ngā kōtaha ki te rākau. / Add profiles to the tree below.'
+        if (msg) msg.textContent = isFamilyMember
+          ? 'Tāpirihia ngā kōtaha ki te rākau. / Add profiles to the tree using the sidebar.'
           : 'Kāore anō he tāngata i te rākau. / No members in the tree yet.';
       } else {
         if (msg) msg.textContent = '';
@@ -354,68 +682,6 @@
       container.setAttribute('aria-busy','false');
     }
   }
-
-  // --- Add person (admin only) ---
-  personForm && personForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (personMsg) personMsg.textContent = '';
-    if (!isAdminUser) return;
-    try {
-      const userId = await currentUserId();
-      if (!userId){ if (personMsg) personMsg.textContent = 'Takiuru hei tiaki / Login to save.'; return; }
-      const profile_id = String(document.getElementById('person-select').value||'').trim();
-      if (!profile_id){ if (personMsg) personMsg.textContent = 'Kōwhiria tētahi kōtaha / Select a profile.'; return; }
-      if (peopleIds.includes(profile_id)){ if (personMsg) personMsg.textContent = 'Kua tāpirihia kē / Already added.'; return; }
-
-      if (sb){
-        const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
-        const { error } = await sb.from('whakapapa_people').insert([{ user_id: userId, profile_id, whanau_id }]);
-        if (error) throw error;
-      }
-      peopleIds.push(profile_id);
-      const prof = profileMap.get(profile_id);
-      if (prof){
-        const pos = getNewNodePosition();
-        const node = toNode(prof);
-        node.x = pos.x;
-        node.y = pos.y;
-        allNodes.add(node);
-      }
-      populatePersonSelect();
-      populateRelSelects();
-      if (personMsg) personMsg.textContent = 'Kua tāpirihia / Added. Drag them into position then save.';
-      if (msg) msg.textContent = '';
-    } catch (err){
-      if (personMsg) personMsg.textContent = 'Hapa tāpiri / Failed to add person.';
-    }
-  });
-
-  // --- Add relation (admin only) ---
-  relForm && relForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (relMsg) relMsg.textContent = '';
-    if (!isAdminUser) return;
-    const from_id = document.getElementById('rel-a').value;
-    const to_id = document.getElementById('rel-b').value;
-    const type = document.getElementById('rel-type').value;
-    if (!from_id || !to_id || !type){ if (relMsg) relMsg.textContent = 'Kōwhiria te tāngata me te momo hononga / Select people and relation type.'; return; }
-    if (from_id === to_id){ if (relMsg) relMsg.textContent = 'Kāore e tika / Cannot relate a person to themselves.'; return; }
-    try {
-      const userId = await currentUserId();
-      if (!userId){ if (relMsg) relMsg.textContent = 'Takiuru hei tiaki / Login to save.'; return; }
-      const rel = { from_id, to_id, type };
-      if (sb){
-        const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
-        const { error } = await sb.from('whakapapa_relations').insert([{ ...rel, user_id: userId, whanau_id }]);
-        if (error) throw error;
-      }
-      relations.push(rel);
-      allEdges.add(toEdge(rel));
-      if (relMsg) relMsg.textContent = 'Kua tāpirihia / Relationship added.';
-    } catch (err){
-      if (relMsg) relMsg.textContent = 'Hapa tāpiri / Failed to add relation.';
-    }
-  });
 
   bootstrap();
 })();

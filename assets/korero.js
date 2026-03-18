@@ -429,7 +429,7 @@
       const addCard = document.createElement('article'); addCard.className='card add-card';
       const addBody = document.createElement('div'); addBody.className='card-body';
       const addBtn = document.createElement('button'); addBtn.type='button'; addBtn.className='image-btn'; addBtn.setAttribute('aria-label','Add a story or vlog');
-      addBtn.innerHTML = `<img class=\"image-btn-img\" loading=\"lazy\" decoding=\"async\" alt=\"Video camera next to an open diary with a pen on a wooden desk\" src=\"assets/korero-button.jpg\" />`;
+addBtn.innerHTML = `<img class=\"image-btn-img\" loading=\"lazy\" decoding=\"async\" alt=\"Open journal and video camera — add a story or vlog\" src=\"assets/korero-button.svg\" />`;
       addBtn.addEventListener('click', () => showCreate());
       addBody.appendChild(addBtn); addCard.appendChild(addBody); ffrag.appendChild(addCard);
 
@@ -465,7 +465,7 @@
       const addCard = document.createElement('article'); addCard.className='card add-card';
       const addBody = document.createElement('div'); addBody.className='card-body';
       const addBtn = document.createElement('button'); addBtn.type='button'; addBtn.className='image-btn'; addBtn.setAttribute('aria-label','Add a story or vlog');
-      addBtn.innerHTML = `<img class=\"image-btn-img\" loading=\"lazy\" decoding=\"async\" alt=\"Video camera next to an open diary with a pen on a wooden desk\" src=\"assets/korero-button.jpg\" />`;
+addBtn.innerHTML = `<img class=\"image-btn-img\" loading=\"lazy\" decoding=\"async\" alt=\"Open journal and video camera — add a story or vlog\" src=\"assets/korero-button.svg\" />`;
       addBtn.addEventListener('click', () => showCreate());
       addBody.appendChild(addBtn); addCard.appendChild(addBody);
       if (featuredEl) featuredEl.appendChild(addCard); else listEl.appendChild(addCard);

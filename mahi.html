@@ -30,20 +30,88 @@
     </header>
 
     <main>
-      <section id="mahi" class="panel">
-        <h1>Mahi</h1>
-        <figure class="hero-figure">
-          <img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Ngā mahi a te whānau — working together" src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&h=420&q=80" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&h=420&q=80';" />
-          <figcaption class="visually-hidden">Working together</figcaption>
-        </figure>
-        <p>Ngā mahi a te whānau: use this space to outline projects, kaupapa, and tasks we’re working on.</p>
-        <div class="cards">
-          <article class="card">
-            <div class="card-body">
-              <h3>He tauira / Example</h3>
-              <p class="muted small">Add your mahi here — e.g., reunion planning, archiving photos, marae visits.</p>
-            </div>
-          </article>
+      <!-- Page Header -->
+      <section class="hero panel">
+        <h1>🛠️ Mahi</h1>
+        <p class="lead">Ngā mahi a te whānau</p>
+        <p class="muted">Projects, kaupapa, and tasks we're working on</p>
+      </section>
+
+      <!-- Add Project Form (visible when logged in) -->
+      <section class="panel mahi-form-section" id="mahi-form-section" style="display:none">
+        <h2>➕ Tāpiri Mahi Hou / Add New Project</h2>
+        <form id="mahi-form" class="form mahi-form">
+          <div class="form-grid">
+            <label>
+              Ingoa Mahi / Project Name *
+              <input type="text" name="project_name" required placeholder="e.g., Marae Renovation 2026" />
+            </label>
+            <label>
+              Tūnga / Status
+              <select name="status">
+                <option value="active">🟢 Active</option>
+                <option value="paused">🟡 Paused</option>
+                <option value="completed">✅ Completed</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            Whakamārama / Description
+            <textarea name="project_description" rows="3" placeholder="Describe the kaupapa — what are we working on?"></textarea>
+          </label>
+          <div class="form-row">
+            <label class="checkbox-label">
+              <input type="checkbox" name="is_public" checked />
+              <span>Public project (visible to everyone)</span>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn">Tāpiri Mahi / Add Project</button>
+            <button type="reset" class="btn outline">Whakakore / Clear</button>
+          </div>
+          <p class="muted small" id="mahi-form-msg"></p>
+        </form>
+      </section>
+
+      <!-- Login prompt for non-authenticated users -->
+      <section class="panel mahi-login-prompt" id="mahi-login-prompt">
+        <div class="login-prompt-content">
+          <span class="prompt-icon">🔐</span>
+          <h3>Takiuru ki te tāpiri mahi</h3>
+          <p class="muted">Log in to add projects for the whānau</p>
+          <a href="landing.html" class="btn">Takiuru / Login</a>
+        </div>
+      </section>
+
+      <!-- Active Projects -->
+      <section class="panel">
+        <h2>🚀 Ngā Mahi Kei Te Haere / Active Projects</h2>
+        <div class="mahi-grid" id="active-projects-grid">
+          <p class="muted">Loading projects…</p>
+        </div>
+      </section>
+
+      <!-- Paused Projects -->
+      <section class="panel">
+        <h2>⏸️ Ngā Mahi Kua Tārewa / Paused Projects</h2>
+        <div class="mahi-grid" id="paused-projects-grid">
+          <p class="muted">Loading paused projects…</p>
+        </div>
+      </section>
+
+      <!-- Project Updates Feed -->
+      <section class="panel">
+        <h2>📢 Ngā Whakahōutanga / Recent Updates</h2>
+        <div class="mahi-updates-feed" id="mahi-updates-feed">
+          <p class="muted">Loading updates…</p>
+        </div>
+      </section>
+
+      <!-- Completed Projects -->
+      <section class="panel">
+        <h2>✅ Ngā Mahi Kua Oti / Completed Projects</h2>
+        <div class="mahi-grid" id="completed-projects-grid">
+          <p class="muted">Loading completed projects…</p>
         </div>
       </section>
     </main>
@@ -87,7 +155,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/config.js"></script>
+    <script src="assets/ui-auth-fallback.js"></script>
     <script src="assets/auth.js"></script>
     <script src="assets/app.js"></script>
+    <script src="assets/mahi.js"></script>
   </body>
 </html>

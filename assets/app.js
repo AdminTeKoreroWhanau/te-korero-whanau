@@ -322,6 +322,48 @@ if (searchInput) {
   // Event form submission is handled by hui.js (saves to Supabase)
 })();
 
+// Mahi page - show/hide project form based on auth
+(function initMahiPage(){
+  const mahiFormSection = document.getElementById('mahi-form-section');
+  const mahiLoginPrompt = document.getElementById('mahi-login-prompt');
+
+  if (!mahiFormSection && !mahiLoginPrompt) return; // Not on mahi page
+
+  const updateUI = (user) => {
+    if (user) {
+      if (mahiFormSection) mahiFormSection.style.display = '';
+      if (mahiLoginPrompt) mahiLoginPrompt.style.display = 'none';
+    } else {
+      if (mahiFormSection) mahiFormSection.style.display = 'none';
+      if (mahiLoginPrompt) mahiLoginPrompt.style.display = '';
+    }
+  };
+
+  const checkAuth = async () => {
+    try {
+      if (window.sb) {
+        const { data } = await window.sb.auth.getSession();
+        updateUI(data.session?.user || null);
+      } else {
+        updateUI(null);
+      }
+    } catch {
+      updateUI(null);
+    }
+  };
+
+  setTimeout(checkAuth, 100);
+
+  const setupAuthListener = () => {
+    if (window.sb) {
+      window.sb.auth.onAuthStateChange((_event, session) => {
+        updateUI(session?.user || null);
+      });
+    }
+  };
+  setTimeout(setupAuthListener, 100);
+})();
+
 // Dashboard initialization
 (function initDashboard(){
   const userNameEl = document.getElementById('user-name');

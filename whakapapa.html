@@ -29,78 +29,87 @@
       </nav>
     </header>
 
-    <main>
-      <section id="whakapapa" class="panel">
-        <h1>Whakapapa</h1>
-        <p>He rākau whānau, he hononga tāngata. Pāwhiria tētahi uri ki te tiro i tōna kōtaha. / Family tree and connections. Click any member to view their profile.</p>
-        <details class="fold">
-          <summary>What info is helpful for whakapapa?</summary>
-          <p>Full names, birth years, marae, iwi/hapū, and known relationships. Photos are a bonus.</p>
-        </details>
-
-        <p id="whakapapa-msg" class="muted"></p>
-
-        <!-- Toolbar -->
-        <div class="toolbar" role="group" aria-label="Whakapapa controls" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin:.5rem 0 1rem;">
-          <button id="fit" class="btn outline" type="button">Fit</button>
-          <button id="save-layout" class="btn" type="button" style="display:none">💾 Tiaki Tāhanga / Save Layout</button>
-          <span id="save-msg" class="small muted"></span>
+    <main class="whakapapa-main">
+      <section id="whakapapa">
+        <div class="whakapapa-header panel">
+          <h1>Whakapapa</h1>
+          <p>He rākau whānau, he hononga tāngata. Pāwhiria tētahi uri ki te tiro i tōna kōtaha. / Family tree and connections. Click any member to view their profile.</p>
+          <p id="whakapapa-msg" class="muted"></p>
         </div>
 
-        <!-- Admin hint -->
-        <p id="whakapapa-admin-hint" class="small muted" style="display:none; margin:0 0 .5rem;">
-          Kumea ngā nōta ki te whakarite i te rākau, kātahi ka tiaki. / Drag nodes to arrange the tree, then save.
-        </p>
-
-        <div id="whakapapa-tree" style="height: 520px; border: 1px solid var(--border); border-radius: .5rem;" aria-busy="false"></div>
-
-        <!-- Admin forms (hidden by default, shown for admin users) -->
-        <div id="whakapapa-admin-forms" style="display:none;">
-          <div class="grid" style="margin-top:1rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
-            <article class="card">
-              <div class="card-body">
-                <h3>Tāpirihia he tangata / Add person</h3>
-                <form id="person-form" class="form">
-                  <label>Kōwhiria te kōtaha / Select profile
-                    <select id="person-select"></select>
-                  </label>
-                  <button id="person-add-btn" type="submit" class="btn">Tāpiri / Add</button>
-                  <p class="small muted">Avatars and names come from user profiles.</p>
-                  <p id="person-msg" class="small muted"></p>
-                </form>
-              </div>
-            </article>
-
-            <article class="card">
-              <div class="card-body">
-                <h3>Tāpirihia he hononga / Add relationship</h3>
-                <form id="rel-form" class="form">
-                  <label>Tangata A
-                    <select id="rel-a"></select>
-                  </label>
-                  <label>Momo / Type
-                    <select id="rel-type">
-                      <option value="parent">Mātua / Parent → Child</option>
-                      <option value="mother">Whaea / Mother → Child</option>
-                      <option value="father">Matua / Father → Child</option>
-                      <option value="spouse">Hoa rangatira / Spouse</option>
-                      <option value="partner">Hoa / Partner</option>
-                      <option value="sibling">Tuakana/Teina / Sibling</option>
-                    </select>
-                  </label>
-                  <label>Tangata B
-                    <select id="rel-b"></select>
-                  </label>
-                  <button type="submit" class="btn">Tāpiri / Add</button>
-                  <p id="rel-msg" class="small muted"></p>
-                </form>
-              </div>
-            </article>
+        <div class="whakapapa-layout">
+          <!-- CENTER — Tree canvas -->
+          <div class="whakapapa-center">
+            <div id="whakapapa-tree" aria-busy="false"></div>
           </div>
+
+          <!-- RIGHT SIDEBAR — Unplaced members, stats, tree tools -->
+          <aside id="whakapapa-sidebar-right" class="whakapapa-sidebar whakapapa-sidebar-right">
+            <div class="sidebar-section">
+              <h3>👥 Kāore anō i whakaritea / Unplaced Members</h3>
+              <p class="small muted">These whānau members haven't been added to the tree yet. Click + to add, then drag one member onto another to link them.</p>
+              <p id="person-msg" class="small muted"></p>
+              <div id="unplaced-list" class="unplaced-member-list">
+                <p class="small muted">Loading…</p>
+              </div>
+            </div>
+            <div class="sidebar-section">
+              <h3>📊 Rākau Stats</h3>
+              <div id="tree-stats" class="tree-stats">
+                <div class="tree-stat-row"><span class="muted">On tree:</span> <strong id="stat-on-tree">0</strong></div>
+                <div class="tree-stat-row"><span class="muted">Unplaced:</span> <strong id="stat-unplaced">0</strong></div>
+                <div class="tree-stat-row"><span class="muted">Relationships:</span> <strong id="stat-relations">0</strong></div>
+              </div>
+            </div>
+
+            <div class="sidebar-section" style="text-align:center">
+              <button id="fit" class="btn outline" type="button" style="width:100%">Fit View</button>
+            </div>
+          </aside>
         </div>
       </section>
-
     </main>
+
+    <!-- Drag-to-link relationship modal -->
+    <div id="drag-link-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="drag-link-title">
+      <div class="modal-content drag-link-modal-content">
+        <button class="modal-close" id="drag-link-close" aria-label="Katia / Close">&times;</button>
+        <h2 id="drag-link-title">🔗 Honoa / Link Members</h2>
+        <p class="drag-link-desc">How are these whānau members related?</p>
+        <div class="drag-link-people">
+          <div class="drag-link-person">
+            <img id="drag-link-a-img" src="" alt="" class="drag-link-avatar" />
+            <strong id="drag-link-a-name"></strong>
+          </div>
+          <span class="drag-link-arrow">↔</span>
+          <div class="drag-link-person">
+            <img id="drag-link-b-img" src="" alt="" class="drag-link-avatar" />
+            <strong id="drag-link-b-name"></strong>
+          </div>
+        </div>
+        <form id="drag-link-form" class="form">
+          <label>Momo hononga / Relationship type
+            <select id="drag-link-type">
+              <option value="parent">Mātua / Parent → Child</option>
+              <option value="mother">Whaea / Mother → Child</option>
+              <option value="father">Matua / Father → Child</option>
+              <option value="spouse">Hoa rangatira / Spouse</option>
+              <option value="partner">Hoa / Partner</option>
+              <option value="sibling">Tuakana/Teina / Sibling</option>
+              <option value="grandparent">Tipuna / Grandparent → Grandchild</option>
+              <option value="uncle_aunt">Matua kēkē / Uncle/Aunt → Niece/Nephew</option>
+              <option value="cousin">Karangatanga / Cousin</option>
+            </select>
+          </label>
+          <div style="display:flex;gap:.5rem">
+            <button type="submit" class="btn" id="drag-link-submit" style="flex:1">Honoa / Link</button>
+            <button type="button" class="btn outline" id="drag-link-cancel" style="flex:1">Whakakore / Cancel</button>
+          </div>
+          <button type="button" class="btn" id="drag-link-delete" style="width:100%;margin-top:.35rem;background:#c0392b;border-color:#c0392b" hidden>🗑️ Mukua / Remove Link</button>
+          <p id="drag-link-msg" class="small muted"></p>
+        </form>
+      </div>
+    </div>
 
     <!-- Auth modal -->
     <div id="auth-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-labelledby="auth-title">
