@@ -44,6 +44,22 @@
   const esc = (s) => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
   const fmtTS = (ts) => new Date(ts).toLocaleString();
 
+  // Profile cache: authorId -> { full_name, avatar_url }
+  let profileMap = {};
+  async function fetchProfiles(authorIds){
+    if (!authorIds.length) return {};
+    const cfg = window.KORERO_BACKEND;
+    if (!cfg || cfg.type !== 'supabase' || !window.sb) return {};
+    try {
+      const { data } = await window.sb.from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', authorIds);
+      const map = {};
+      (data || []).forEach(p => { map[p.id] = p; });
+      return map;
+    } catch { return {}; }
+  }
+
   // Aroha animation with fireworks
   function showArohaAnimation(x, y) {
     // Create "Aroha!" text popup
@@ -258,7 +274,23 @@
   let cache = [];
   let reactMap = new Map();
   let currentUserId = '';
+  let currentIsAdmin = false;
   const setBusy = (b) => listEl.setAttribute('aria-busy', String(!!b));
+
+  // Check admin status (mirrors auth.js isAdmin logic)
+  async function checkIsAdmin(){
+    if (!window.sb) return false;
+    try {
+      const { data: sess } = await window.sb.auth.getSession();
+      const user = sess.session?.user;
+      if (!user) return false;
+      const emails = (window.ADMIN_EMAILS || []).map(e => String(e||'').toLowerCase());
+      if (user.email && emails.includes(String(user.email).toLowerCase())) return true;
+      const { data, error } = await window.sb.from('admin_users').select('user_id').eq('user_id', user.id).maybeSingle();
+      if (!error && data && data.user_id) return true;
+    } catch {}
+    return false;
+  }
 
   function buildPostCard(p, opts){
     const card = document.createElement('article'); card.className='card';
@@ -266,9 +298,12 @@
     const tagLabel = p.type === 'vlog' ? 'Vlog' : 'Story';
     const popularTag = (opts && opts.popular) ? ' <span class="tag popular">Most popular</span>' : '';
     const privacyTag = p.isPublic === false ? ' <span class="tag">🔒 Whānau Only</span>' : '';
+    const profile = profileMap[p.authorId];
+    const authorName = profile?.full_name || '';
+    const authorLine = authorName ? `<span class="small muted"> · ${esc(authorName)}</span>` : '';
     body.innerHTML = `<div><span class=\"tag\">${tagLabel}</span>${popularTag}${privacyTag}</div>` +
       (p.title ? `<h3 class=\"post-title\">${esc(p.title)}</h3>` : '') +
-      `<div class=\"small muted\">${fmtTS(p.createdAt)}</div>`;
+      `<div class=\"small muted\">${fmtTS(p.createdAt)}${authorLine}</div>`;
 
     if (p.type === 'story' && p.text){
       const T = String(p.text||'');
@@ -347,9 +382,10 @@
     });
     actions.appendChild(btnAroha);
 
-    // Owner buttons in bottom-right container
+    // Owner / admin buttons in bottom-right container
     const ownerActions = document.createElement('div'); ownerActions.className='owner-actions';
     const isOwner = p.authorId && currentUserId && p.authorId === currentUserId;
+    const canDelete = isOwner || currentIsAdmin;
     if (isOwner){
       const btnEdit = document.createElement('button'); btnEdit.type='button'; btnEdit.className='btn lang-swap'; btnEdit.innerHTML='<span class="lang mi">Whakatika</span><span class="lang en" aria-hidden="true">Edit</span>';
       btnEdit.addEventListener('click', () => {
@@ -369,12 +405,15 @@
         }
         showEdit();
       });
+      ownerActions.appendChild(btnEdit);
+    }
+    if (canDelete){
       const btnDel = document.createElement('button'); btnDel.type='button'; btnDel.className='btn danger outline lang-swap'; btnDel.innerHTML='<span class="lang mi">Muku</span><span class="lang en" aria-hidden="true">Delete</span>';
       btnDel.addEventListener('click', () => { managePost = p; showDelete(); });
-      ownerActions.appendChild(btnEdit); ownerActions.appendChild(btnDel);
+      ownerActions.appendChild(btnDel);
     }
 
-    if (isOwner) actions.appendChild(ownerActions);
+    if (isOwner || canDelete) actions.appendChild(ownerActions);
     body.appendChild(actions);
     markMine();
     card.appendChild(body);
@@ -387,6 +426,10 @@
       cache = await backend.listPosts();
       reactMap = await backend.getReactionsMap();
       try { currentUserId = await backend.userId(); } catch { currentUserId = ''; }
+      currentIsAdmin = await checkIsAdmin();
+      // Fetch author profiles
+      const authorIds = [...new Set(cache.map(p => p.authorId).filter(Boolean))];
+      profileMap = await fetchProfiles(authorIds);
       render();
     } finally { setBusy(false); }
   }

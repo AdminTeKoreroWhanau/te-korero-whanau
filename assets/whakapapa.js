@@ -30,7 +30,7 @@
   // Current appearance settings
   let treeSettings = {
     direction: 'free',
-    edgeStyle: 'cubicBezier',
+    edgeStyle: 'continuous',
     nodeSize: 40,
     edgeColor: '#6ec5be',
     spouseColor: '#c58f6e',
@@ -109,8 +109,8 @@
         size: treeSettings.nodeSize
       },
       edges: {
-        smooth: { type: treeSettings.edgeStyle },
-        font: { color: '#eef2f3', size: 14, face: 'arial', background: 'rgba(18,24,26,0.85)', strokeWidth: 2, strokeColor: '#000000', align: 'top' }
+        smooth: false,
+        font: { color: '#eef2f3', size: 14, face: 'arial', background: 'rgba(18,24,26,0.85)', strokeWidth: 2, strokeColor: '#000000' }
       }
     };
     if (treeSettings.direction === 'free'){
@@ -156,7 +156,7 @@
         borderWidth: 2,
         shapeProperties: { useBorderWithImage: true }
       },
-      edges: { font: { color: fg, size: 14, face: 'arial', background: edgeBg, strokeWidth: 2, strokeColor, align: 'top' } }
+      edges: { font: { color: fg, size: 14, face: 'arial', background: edgeBg, strokeWidth: 2, strokeColor } }
     });
   }
   const themeObserver = new MutationObserver(() => applyThemeToNetwork());
@@ -299,6 +299,7 @@
     const sx = snapToGrid(pos[nodeId].x);
     const sy = snapToGrid(pos[nodeId].y);
     allNodes.update({ id: nodeId, x: sx, y: sy });
+    network.redraw();
   }
 
   function snapAllNodesToGrid(){
@@ -319,6 +320,7 @@
       updates.push({ id, x: sx, y: sy });
     }
     if (updates.length) allNodes.update(updates);
+    network.redraw();
     network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
     // Auto-save after snap-all
     saveAllPositions();
