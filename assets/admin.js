@@ -6,6 +6,8 @@
   const waiataEmpty = document.getElementById('waiata-admin-empty');
   const karakiaList = document.getElementById('karakia-admin-list');
   const karakiaEmpty = document.getElementById('karakia-admin-empty');
+  const ngatoiList = document.getElementById('ngatoi-admin-list');
+  const ngatoiEmpty = document.getElementById('ngatoi-admin-empty');
 
   // Admin story view modal
   const viewModal = document.getElementById('admin-view-modal');
@@ -17,7 +19,7 @@
   const delClose = document.getElementById('admin-delete-close');
   const delCancel = document.getElementById('admin-delete-cancel');
   const delConfirm = document.getElementById('admin-delete-confirm');
-  let pendingDelete = null; // { kind: 'korero'|'waiata'|'karakia', id?, item? }
+  let pendingDelete = null; // { kind: 'korero'|'waiata'|'karakia'|'ngatoi', id?, item? }
 
 
   const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -31,12 +33,14 @@
 
   const sb = (window.sb || (isSupa(kb) ? window.supabase.createClient(kb.url, kb.anonKey) : null));
   const waiataBucket = wb.bucket || 'waiata';
+  const artBucket = wb.artBucket || 'ngatoi';
 
   const localKeys = {
     WAIATA: 'waiataItems.v1',
     KARAKIA: 'karakiaDocs.v1',
     KORERO: 'korero.posts.v1',
     REACT: 'korero.reactions.v1',
+    NGATOI: 'ngatoiItems.v1',
   };
 
   const backend = {
@@ -92,6 +96,24 @@
       }
       if (item.storage_path){ await sb.storage.from(waiataBucket).remove([item.storage_path]); }
       await sb.from('waiata_items').delete().eq('id', item.id);
+    },
+    async listArt(){
+      if (!isSupa(wb)){
+        try { return JSON.parse(localStorage.getItem(localKeys.NGATOI)||'[]'); } catch { return []; }
+      }
+      const { data, error } = await sb.from('ngatoi_items').select('*').order('created_at', { ascending:false });
+      if (error) { console.error(error); return []; }
+      return (data||[]).map(r => ({ id:r.id, title:r.title||'', author:r.author||'', createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now(), image: r.image_url||'', storage_path: r.storage_path||null }));
+    },
+    async delArt(item){
+      if (!isSupa(wb)){
+        const cur = await this.listArt();
+        const next = cur.filter(x => x.id !== item.id);
+        try { localStorage.setItem(localKeys.NGATOI, JSON.stringify(next)); } catch {}
+        return;
+      }
+      if (item.storage_path){ await sb.storage.from(artBucket).remove([item.storage_path]); }
+      await sb.from('ngatoi_items').delete().eq('id', item.id);
     }
   };
 
@@ -170,7 +192,7 @@
       del.addEventListener('mouseenter', ()=>{ del.textContent='Delete'; });
       del.addEventListener('mouseleave', ()=>{ del.textContent='Muku'; });
       del.addEventListener('click', ()=>{
-        const kind = (root===waiataList) ? 'waiata' : (root===karakiaList ? 'karakia' : 'unknown');
+        const kind = (root===waiataList) ? 'waiata' : (root===karakiaList ? 'karakia' : (root===ngatoiList ? 'ngatoi' : 'unknown'));
         pendingDelete = { kind, item: it };
         showDelete();
       });
@@ -180,17 +202,45 @@
     root.appendChild(frag);
   }
 
+  function renderArt(list){
+    ngatoiList.innerHTML = '';
+    if (!list || !list.length){ ngatoiEmpty.style.display='block'; return; }
+    ngatoiEmpty.style.display='none';
+    const frag = document.createDocumentFragment();
+    for (const it of list){
+      const card = document.createElement('article'); card.className='card';
+      const body = document.createElement('div'); body.className='card-body';
+      const title = it.title || it.id;
+      const ts = it.createdAt || Date.now();
+      body.innerHTML = `<h3>${esc(title)}</h3><div class=\"small muted\">${esc(it.author||'')}${it.author?' • ':''}${fmt(ts)}</div>`;
+      if (it.image){
+        const img = document.createElement('img'); img.src = it.image; img.alt = it.title||'Art';
+        img.loading='lazy'; img.style.maxWidth='200px'; img.style.maxHeight='150px'; img.style.borderRadius='var(--radius,.5rem)'; img.style.marginTop='.5rem';
+        body.appendChild(img);
+      }
+      const actions = document.createElement('div'); actions.className='actions';
+      const del = document.createElement('button'); del.className='btn outline'; del.textContent='Muku';
+      del.addEventListener('mouseenter', ()=>{ del.textContent='Delete'; });
+      del.addEventListener('mouseleave', ()=>{ del.textContent='Muku'; });
+      del.addEventListener('click', ()=>{ pendingDelete = { kind:'ngatoi', item: it }; showDelete(); });
+      actions.appendChild(del); body.appendChild(actions);
+      card.appendChild(body); frag.appendChild(card);
+    }
+    ngatoiList.appendChild(frag);
+  }
+
   async function refresh(){
-    postList.setAttribute('aria-busy','true'); waiataList.setAttribute('aria-busy','true'); karakiaList.setAttribute('aria-busy','true');
+    postList.setAttribute('aria-busy','true'); waiataList.setAttribute('aria-busy','true'); karakiaList.setAttribute('aria-busy','true'); ngatoiList.setAttribute('aria-busy','true');
     try{
-      const [kp, wi, kd] = await Promise.all([
-        backend.listKorero(), backend.listWaiata(), backend.listKarakia()
+      const [kp, wi, kd, art] = await Promise.all([
+        backend.listKorero(), backend.listWaiata(), backend.listKarakia(), backend.listArt()
       ]);
       renderKorero(kp);
       renderGeneric(wi, waiataList, waiataEmpty);
       renderGeneric(kd, karakiaList, karakiaEmpty);
+      renderArt(art);
     } finally {
-      postList.setAttribute('aria-busy','false'); waiataList.setAttribute('aria-busy','false'); karakiaList.setAttribute('aria-busy','false');
+      postList.setAttribute('aria-busy','false'); waiataList.setAttribute('aria-busy','false'); karakiaList.setAttribute('aria-busy','false'); ngatoiList.setAttribute('aria-busy','false');
     }
   }
 
@@ -211,6 +261,7 @@
       if (pendingDelete.kind === 'korero') await backend.delKorero(pendingDelete.id);
       else if (pendingDelete.kind === 'waiata') await backend.delWaiata(pendingDelete.item);
       else if (pendingDelete.kind === 'karakia') await backend.delKarakia(pendingDelete.item);
+      else if (pendingDelete.kind === 'ngatoi') await backend.delArt(pendingDelete.item);
       await refresh();
     } finally { hideDelete(); }
   });

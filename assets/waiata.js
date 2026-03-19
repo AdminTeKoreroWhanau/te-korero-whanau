@@ -60,6 +60,17 @@
     } catch { return 'anon'; }
   }
 
+  // One-time migration: remove old art items that lack userId tracking
+  try {
+    const _mKey = 'ngatoi.migrated.v1';
+    if (!localStorage.getItem(_mKey)) {
+      localStorage.removeItem('ngatoiItems.v1');
+      localStorage.removeItem('ngatoi.reactions.v1');
+      localStorage.removeItem('ngatoi.comments.v1');
+      localStorage.setItem(_mKey, '1');
+    }
+  } catch {}
+
   // Backend adapter (extended with local reactions/comments for waiata and art)
   function createBackend(cfg){
     // Local fallback
@@ -108,7 +119,7 @@
       async listArt(){ try { return JSON.parse(localStorage.getItem(KEY_A) || '[]'); } catch { return []; } },
       async addArt(title, author, file){
         const dataUrl = await fileToDataURL(file);
-        const item = { id: uid(), type: 'art', title, author, createdAt: Date.now(), image: dataUrl };
+        const item = { id: uid(), type: 'art', title, author, createdAt: Date.now(), image: dataUrl, userId: getAnonId() };
         const cur = await this.listArt(); cur.unshift(item);
         try { localStorage.setItem(KEY_A, JSON.stringify(cur)); } catch {}
       },
@@ -243,6 +254,12 @@
         if (ins.error) { await sb.storage.from(bucket).remove([path]); throw ins.error; }
       },
       async remove(item){
+        if (item.type === 'art') {
+          if (item.storage_path) await sb.storage.from(bucketArt).remove([item.storage_path]);
+          const del = await sb.from('ngatoi_items').delete().eq('id', item.id);
+          if (del.error) throw del.error;
+          return;
+        }
         if (item.type === 'audio' && item.storage_path) {
           await sb.storage.from(bucketW).remove([item.storage_path]);
         }
@@ -253,7 +270,7 @@
       async listArt(){
         const { data, error } = await sb.from('ngatoi_items').select('*').order('created_at', { ascending: false });
         if (error) { console.error(error); return []; }
-        return (data||[]).map(r => ({ id:r.id, type:'art', title:r.title||'', author:r.author||'', createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now(), image: r.image_url||'', storage_path: r.storage_path||null }));
+        return (data||[]).map(r => ({ id:r.id, type:'art', title:r.title||'', author:r.author||'', createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now(), image: r.image_url||'', storage_path: r.storage_path||null, userId: r.user_id||null }));
       },
       async addArt(title, author, file){
         const id = uid();
@@ -264,7 +281,9 @@
         const { data: pub } = sb.storage.from(bucketArt).getPublicUrl(path);
         const image_url = pub.publicUrl;
         const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
-        const ins = await sb.from('ngatoi_items').insert([{ id, title, author, image_url, storage_path: path, whanau_id }]);
+        const { data: sess } = await sb.auth.getSession();
+        const user_id = sess.session?.user?.id || null;
+        const ins = await sb.from('ngatoi_items').insert([{ id, title, author, image_url, storage_path: path, whanau_id, user_id }]);
         if (ins.error) { await sb.storage.from(bucketArt).remove([path]); throw ins.error; }
       },
       // Reactions/comments for art via Supabase
@@ -452,7 +471,21 @@
       const fig = document.createElement('figure'); fig.setAttribute('data-art-id', it.id);
       const img = document.createElement('img'); img.loading='lazy'; img.decoding='async'; img.alt = it.title || 'Whakaahua'; img.src = it.image;
       const cap = document.createElement('figcaption'); cap.textContent = it.title || '';
-      fig.appendChild(img); fig.appendChild(cap); frag.appendChild(fig);
+      fig.appendChild(img); fig.appendChild(cap);
+      // Delete button visible only to the user who uploaded this art
+      if (it.userId && currentUserId && it.userId === currentUserId) {
+        const del = document.createElement('button');
+        del.className = 'btn-link';
+        del.type = 'button';
+        del.textContent = 'Muku / Delete';
+        del.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (!confirm('Muku tēnei whakaahua? / Delete this image?')) return;
+          try { await backend.remove(it); await refreshArt(); setupArtUI(); } catch (err) { alert('Hapa muku / Delete error'); console.error(err); }
+        });
+        fig.appendChild(del);
+      }
+      frag.appendChild(fig);
     }
     gallery.appendChild(frag);
   }

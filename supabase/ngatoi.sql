@@ -33,6 +33,12 @@ create policy "Owners delete ngatoi"
   on storage.objects for delete to authenticated
   using (bucket_id = 'ngatoi' and auth.uid() = owner);
 
+-- Admins can delete any objects in 'ngatoi'
+drop policy if exists "Admins delete ngatoi storage" on storage.objects;
+create policy "Admins delete ngatoi storage"
+  on storage.objects for delete to authenticated
+  using (bucket_id = 'ngatoi' and public.is_admin());
+
 -- Tables for Ngā Toi gallery items, reactions, and comments
 create table if not exists public.ngatoi_items (
   id text primary key,
@@ -40,6 +46,7 @@ create table if not exists public.ngatoi_items (
   author text,
   image_url text,
   storage_path text,
+  user_id uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
@@ -56,6 +63,18 @@ drop policy if exists "Users can add ngatoi items" on public.ngatoi_items;
 create policy "Users can add ngatoi items"
   on public.ngatoi_items for insert to authenticated
   with check (true);
+
+-- Owner can delete their own art
+drop policy if exists "Owner can delete ngatoi items" on public.ngatoi_items;
+create policy "Owner can delete ngatoi items"
+  on public.ngatoi_items for delete to authenticated
+  using (auth.uid() = user_id);
+
+-- Admins can delete any art (requires is_admin() from admin.sql)
+drop policy if exists "Admins can delete ngatoi items" on public.ngatoi_items;
+create policy "Admins can delete ngatoi items"
+  on public.ngatoi_items for delete to authenticated
+  using (public.is_admin());
 
 -- Reactions
 create table if not exists public.ngatoi_reactions (

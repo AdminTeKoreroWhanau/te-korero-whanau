@@ -63,12 +63,56 @@ header.papa{position:sticky;top:0;z-index:100;display:flex;align-items:center;ju
 .nav-list a:hover,.nav-list button:hover{text-decoration:none}
 .nav-list a.active{border-color:var(--accent)}
 @media (min-width:721px){.nav-list{display:flex !important}}
-@media (max-width:720px){.nav-toggle,.theme-toggle{display:inline-block}.nav-list{display:none;flex-direction:column;gap:0.5rem}}
+/* Mobile login icon — base styles (hidden on desktop) */
+.mobile-login-btn{display:none;background:none;border:1px solid var(--border);color:var(--fg);cursor:pointer;transition:color .2s ease,border-color .2s ease,background .2s ease;-webkit-tap-highlight-color:transparent}
+.mobile-login-btn:hover,.mobile-login-btn:focus{color:var(--accent);border-color:var(--accent);background:rgba(0,196,179,.08);outline:none}
+body.authed .mobile-login-btn{display:none !important}
+
+/* Mobile: hide hamburger + nav-list, show login & theme as identical icon buttons */
+@media (max-width:720px){
+  .nav-toggle{display:none !important}
+  .nav-list{display:none !important}
+  .mobile-login-btn,.theme-toggle{display:inline-flex !important;align-items:center;justify-content:center;width:40px;height:40px;padding:0;border:1px solid var(--border);border-radius:8px;background:none;color:var(--fg);font-size:1.2rem;line-height:1;vertical-align:middle}
+  .theme-toggle{margin-left:0.5rem}
+  .mobile-login-btn svg{width:20px;height:20px;display:block}
+  body.authed .mobile-login-btn{display:none !important}
+}
 
 /* Responsive tweaks */
 header.papa nav{position:relative}
 @media (max-width:900px){header.papa{padding:1rem 1.25rem}.logo{font-size:1.45rem}.nav-list{gap:1rem}.nav-list a{font-size:1.1rem;padding:0.55rem}}
 @media (max-width:720px){.nav-list{position:absolute;top:100%;left:0;right:0;background:var(--bg);border-bottom:1px solid var(--border);padding:.5rem 1rem;box-shadow:0 6px 12px rgba(0,0,0,.25)}.nav-list a{display:block;padding:.75rem 0}}
+
+/* ========================================
+   MOBILE BOTTOM TAB BAR (Facebook-style)
+   ======================================== */
+.mobile-tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--panel);border-top:1px solid var(--border);box-shadow:0 -2px 12px rgba(0,0,0,.18);height:60px;padding:0 0.25rem;padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (max-width:720px){
+  body.authed .mobile-tab-bar{display:flex;justify-content:space-around;align-items:center}
+  body.authed{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
+  body.authed footer{padding-bottom:0.5rem}
+}
+.tab-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex:1;min-width:0;padding:6px 2px;color:var(--muted);text-decoration:none;font-size:0.6rem;font-weight:600;letter-spacing:0.01em;background:none;border:none;cursor:pointer;transition:color .2s ease;-webkit-tap-highlight-color:transparent;position:relative}
+.tab-item:hover,.tab-item:focus{text-decoration:none}
+.tab-item.active{color:var(--accent)}
+.tab-item.active::after{content:'';position:absolute;top:0;left:20%;right:20%;height:2.5px;background:var(--accent);border-radius:0 0 2px 2px}
+.tab-item svg{width:24px;height:24px;flex-shrink:0}
+.tab-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.2}
+
+/* More Drawer */
+.more-drawer-overlay{position:fixed;inset:0;z-index:198;background:rgba(0,0,0,.35);visibility:hidden;opacity:0;transition:visibility .25s,opacity .25s ease}
+.more-drawer-overlay.open{visibility:visible;opacity:1}
+.more-drawer{position:fixed;bottom:calc(60px + env(safe-area-inset-bottom,0px));left:0;right:0;z-index:199;background:var(--panel);border-top:1px solid var(--border);border-radius:16px 16px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.25);padding:0.5rem 0.75rem 0.75rem;visibility:hidden;opacity:0;transform:translateY(16px);transition:visibility .25s,opacity .25s ease,transform .25s ease}
+.more-drawer.open{visibility:visible;opacity:1;transform:translateY(0)}
+.more-drawer-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 0.5rem}
+.more-drawer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem}
+.more-drawer-item{display:flex;flex-direction:column;align-items:center;gap:0.4rem;padding:0.85rem 0.5rem;color:var(--fg);text-decoration:none;border-radius:12px;font-size:0.85rem;font-weight:500;transition:background .2s ease;text-align:center;-webkit-tap-highlight-color:transparent}
+.more-drawer-item:hover{background:rgba(0,196,179,.1);text-decoration:none}
+.more-drawer-item.active{color:var(--accent);background:rgba(0,196,179,.08)}
+.more-drawer-icon{width:40px;height:40px;border-radius:12px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.3rem;transition:border-color .2s ease,transform .2s ease}
+.more-drawer-item:hover .more-drawer-icon{border-color:var(--accent);transform:scale(1.05)}
+.more-drawer-item.active .more-drawer-icon{border-color:var(--accent);background:rgba(0,196,179,.1)}
+.more-drawer-divider{grid-column:1/-1;height:1px;background:var(--border);margin:0.25rem 0}
 
 .hero{padding:3rem 1rem;text-align:center;background:radial-gradient(80% 60% at 50% 0%,rgba(0,196,179,.25),transparent 70%)}
 .lead{color:var(--muted)}
@@ -270,14 +314,13 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
    LANDING PAGE - MĀORI INSPIRED DESIGN
    ======================================== */
 
-/* Landing Layout with Sidebars */
-.landing-layout{display:grid;grid-template-columns:minmax(250px,320px) 1fr minmax(250px,320px);gap:2rem;width:100%;margin:0;padding:2rem 3rem;box-sizing:border-box}
+/* Landing Layout — 2-column (center + right sidebar) */
+.landing-layout{display:grid;grid-template-columns:1fr minmax(250px,320px);gap:2rem;width:100%;margin:0;padding:2rem 3rem;box-sizing:border-box}
 .landing-center{min-width:0;width:100%;display:flex;flex-direction:column;gap:1.5rem}
 .landing-center .panel{width:100%;margin:0;box-sizing:border-box}
 /* Base grid-column placement (must be before responsive overrides) */
-.sidebar-left{grid-column:1}
-.landing-center{grid-column:2;scroll-behavior:smooth}
-.sidebar-right{grid-column:3}
+.landing-center{grid-column:1;scroll-behavior:smooth}
+.sidebar-right{grid-column:2}
 
 /* Sidebars (base — must be before responsive overrides) */
 .sidebar{display:flex;flex-direction:column;gap:1.25rem;position:sticky;top:80px;height:fit-content;padding-bottom:1rem;min-width:0;box-sizing:border-box;overflow:hidden}
@@ -286,24 +329,23 @@ footer{padding:1rem;color:var(--muted);text-align:center;border-top:1px solid va
 .sidebar-section h3{font-size:1rem;margin:0 0 1rem;display:flex;align-items:center;gap:0.5rem;color:var(--fg)}
 
 /* Desktop XL (1800px+) */
-@media (min-width:1800px){.landing-layout{grid-template-columns:minmax(280px,380px) 1fr minmax(280px,380px);gap:3rem;padding:2.5rem 5rem}}
+@media (min-width:1800px){.landing-layout{grid-template-columns:1fr minmax(280px,380px);gap:3rem;padding:2.5rem 5rem}}
 
 /* Desktop Large (1400-1799px) */
-@media (max-width:1799px) and (min-width:1400px){.landing-layout{grid-template-columns:minmax(260px,340px) 1fr minmax(260px,340px);gap:2.5rem;padding:2rem 4rem}}
+@media (max-width:1799px) and (min-width:1400px){.landing-layout{grid-template-columns:1fr minmax(260px,340px);gap:2.5rem;padding:2rem 4rem}}
 
 /* Desktop (1200-1399px) */
-@media (max-width:1399px) and (min-width:1200px){.landing-layout{grid-template-columns:minmax(240px,280px) 1fr minmax(240px,280px);gap:2rem;padding:1.5rem 2rem}}
+@media (max-width:1399px) and (min-width:1200px){.landing-layout{grid-template-columns:1fr minmax(240px,280px);gap:2rem;padding:1.5rem 2rem}}
 
 /* Tablet Landscape (900-1199px) */
-@media (max-width:1199px) and (min-width:900px){.landing-layout{grid-template-columns:220px 1fr 220px;gap:1.5rem;padding:1.25rem 1.5rem}}
+@media (max-width:1199px) and (min-width:900px){.landing-layout{grid-template-columns:1fr 220px;gap:1.5rem;padding:1.25rem 1.5rem}}
 
-/* Tablet Portrait (600-899px) - Single sidebar */
-@media (max-width:899px) and (min-width:600px){.landing-layout{grid-template-columns:1fr 220px;gap:1rem;padding:1rem}.sidebar-left{display:none}.landing-center{grid-column:1}.sidebar-right{grid-column:2}}
+/* Tablet Portrait (600-899px) */
+@media (max-width:899px) and (min-width:600px){.landing-layout{grid-template-columns:1fr 220px;gap:1rem;padding:1rem}}
 
 /* Mobile (<600px) - Single column, no sidebars overlapping */
 @media (max-width:599px){
   .landing-layout{grid-template-columns:1fr;gap:1rem;padding:.75rem}
-  .sidebar-left{display:none}
   .sidebar,.sidebar-right{position:static;overflow:visible;height:auto;padding-bottom:0}
   .sidebar-right{display:flex;grid-column:1}
   .sidebar-right .sidebar-section{border-radius:12px}

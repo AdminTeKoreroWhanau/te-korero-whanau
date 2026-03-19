@@ -270,6 +270,254 @@ if (searchInput) {
 // Future: load content JSON for profiles, waiata, and whakapapa
 // fetch('content/whanau.json').then(r => r.json()).then(data => {/* render */});
 
+// ========================================
+// MOBILE LOGIN ICON (header, when logged out)
+// ========================================
+(function initMobileLoginBtn() {
+  const headerNav = document.querySelector('header.papa nav');
+  const themeToggle = document.getElementById('theme-toggle');
+  if (!headerNav) return;
+
+  const btn = document.createElement('button');
+  btn.className = 'mobile-login-btn';
+  btn.setAttribute('title', 'Takiuru / Login');
+  btn.setAttribute('aria-label', 'Takiuru / Login');
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+
+  // Insert before theme toggle so order is: [login] [theme]
+  if (themeToggle) {
+    headerNav.insertBefore(btn, themeToggle);
+  } else {
+    headerNav.appendChild(btn);
+  }
+
+  // Open auth modal on click
+  btn.addEventListener('click', () => {
+    const openAuth = document.getElementById('open-auth');
+    if (openAuth) openAuth.click();
+  });
+})();
+
+// ========================================
+// MOBILE BOTTOM TAB BAR (Facebook-style)
+// ========================================
+(function initMobileTabBar() {
+  const page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+
+  // SVG icons (solid/filled style)
+  const icons = {
+    home: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L2 12h3v8h5v-5h4v5h5v-8h3L12 3z"/></svg>',
+    whakapapa: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05C16.19 13.89 17 15.02 17 16.5V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>',
+    korero: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>',
+    hui: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>',
+    more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'
+  };
+
+  // Primary tabs
+  const tabs = [
+    { href: 'index.html', label: 'Kāinga', icon: icons.home, match: ['index.html', ''] },
+    { href: 'whakapapa.html', label: 'Whakapapa', icon: icons.whakapapa, match: ['whakapapa.html'] },
+    { href: 'korero.html', label: 'Kōrero', icon: icons.korero, match: ['korero.html', 'korero-public.html'] },
+    { href: 'hui.html', label: 'Hui', icon: icons.hui, match: ['hui.html'] }
+  ];
+
+  // More drawer items
+  const morePages = [
+    { href: 'mahi.html', label: 'Mahi', emoji: '🛠️', match: ['mahi.html'] },
+    { href: 'tauparapara.html', label: 'Tauparapara', emoji: '🙏', match: ['tauparapara.html'] },
+    { href: 'nga-toi.html', label: 'Ngā Toi', emoji: '🎨', match: ['nga-toi.html'] }
+  ];
+
+  const isActive = (match) => match.includes(page);
+  const inMore = morePages.some(m => isActive(m.match));
+
+  // --- Build tab bar ---
+  const bar = document.createElement('nav');
+  bar.className = 'mobile-tab-bar';
+  bar.setAttribute('aria-label', 'Mobile navigation');
+
+  tabs.forEach(t => {
+    const a = document.createElement('a');
+    a.href = t.href;
+    a.className = 'tab-item' + (isActive(t.match) ? ' active' : '');
+    a.innerHTML = t.icon + '<span class="tab-label">' + t.label + '</span>';
+    bar.appendChild(a);
+  });
+
+  // More button
+  const moreBtn = document.createElement('button');
+  moreBtn.className = 'tab-item' + (inMore ? ' active' : '');
+  moreBtn.id = 'mobile-more-btn';
+  moreBtn.setAttribute('aria-expanded', 'false');
+  moreBtn.setAttribute('aria-controls', 'mobile-more-drawer');
+  moreBtn.innerHTML = icons.more + '<span class="tab-label">More</span>';
+  bar.appendChild(moreBtn);
+
+  // --- Build overlay + drawer ---
+  const overlay = document.createElement('div');
+  overlay.className = 'more-drawer-overlay';
+  overlay.id = 'mobile-more-overlay';
+
+  const drawer = document.createElement('div');
+  drawer.className = 'more-drawer';
+  drawer.id = 'mobile-more-drawer';
+
+  // Drag handle
+  const handle = document.createElement('div');
+  handle.className = 'more-drawer-handle';
+  drawer.appendChild(handle);
+
+  const grid = document.createElement('div');
+  grid.className = 'more-drawer-grid';
+
+  // Page items
+  morePages.forEach(m => {
+    const a = document.createElement('a');
+    a.href = m.href;
+    a.className = 'more-drawer-item' + (isActive(m.match) ? ' active' : '');
+    a.innerHTML = '<span class="more-drawer-icon">' + m.emoji + '</span><span>' + m.label + '</span>';
+    grid.appendChild(a);
+  });
+
+  // Divider
+  const divider = document.createElement('div');
+  divider.className = 'more-drawer-divider';
+  grid.appendChild(divider);
+
+  // Auth-dependent items: Profile
+  const profileLink = document.createElement('a');
+  profileLink.href = 'profile.html';
+  profileLink.className = 'more-drawer-item' + (page === 'profile.html' ? ' active' : '');
+  profileLink.id = 'mobile-more-profile';
+  profileLink.innerHTML = '<span class="more-drawer-icon">👤</span><span>Kōtaha</span>';
+  profileLink.style.display = 'none';
+  grid.appendChild(profileLink);
+
+  // Auth-dependent: Admin
+  const adminLink = document.createElement('a');
+  adminLink.href = 'admin.html';
+  adminLink.className = 'more-drawer-item' + (page === 'admin.html' ? ' active' : '');
+  adminLink.id = 'mobile-more-admin';
+  adminLink.innerHTML = '<span class="more-drawer-icon">⚙️</span><span>Kaiwhakahaere</span>';
+  adminLink.style.display = 'none';
+  grid.appendChild(adminLink);
+
+  // Auth-dependent: Login
+  const loginLink = document.createElement('a');
+  loginLink.href = '#';
+  loginLink.className = 'more-drawer-item';
+  loginLink.id = 'mobile-more-login';
+  loginLink.innerHTML = '<span class="more-drawer-icon">🔑</span><span>Takiuru</span>';
+  grid.appendChild(loginLink);
+
+  // Auth-dependent: Sign out
+  const signoutLink = document.createElement('a');
+  signoutLink.href = '#';
+  signoutLink.className = 'more-drawer-item';
+  signoutLink.id = 'mobile-more-signout';
+  signoutLink.innerHTML = '<span class="more-drawer-icon">🚪</span><span>Takiputa</span>';
+  signoutLink.style.display = 'none';
+  grid.appendChild(signoutLink);
+
+  drawer.appendChild(grid);
+
+  // Append to body
+  document.body.appendChild(overlay);
+  document.body.appendChild(drawer);
+  document.body.appendChild(bar);
+
+  // --- Toggle logic ---
+  const toggleDrawer = (show) => {
+    const open = typeof show === 'boolean' ? show : !drawer.classList.contains('open');
+    drawer.classList.toggle('open', open);
+    overlay.classList.toggle('open', open);
+    moreBtn.setAttribute('aria-expanded', String(open));
+  };
+
+  moreBtn.addEventListener('click', () => toggleDrawer());
+  overlay.addEventListener('click', () => toggleDrawer(false));
+  drawer.addEventListener('click', (e) => {
+    if (e.target.closest('a')) toggleDrawer(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer.classList.contains('open')) toggleDrawer(false);
+  });
+
+  // --- Sync auth state from existing nav items ---
+  const syncAuth = () => {
+    const navProfile = document.getElementById('nav-profile-item');
+    const navAdmin = document.getElementById('nav-admin-item');
+    const navLogin = document.getElementById('nav-login-item');
+    const navSignout = document.getElementById('nav-signout-item');
+
+    if (navProfile) profileLink.style.display = navProfile.style.display;
+    if (navAdmin) adminLink.style.display = navAdmin.style.display;
+    if (navLogin) loginLink.style.display = navLogin.style.display;
+    if (navSignout) signoutLink.style.display = navSignout.style.display;
+  };
+
+  // Wire login link to open auth modal (same as header nav)
+  loginLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    toggleDrawer(false);
+    const openAuth = document.getElementById('open-auth');
+    if (openAuth) openAuth.click();
+  });
+
+  // Wire signout link
+  signoutLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    toggleDrawer(false);
+    const signoutBtn = document.getElementById('signout');
+    if (signoutBtn) signoutBtn.click();
+  });
+
+  // Observe changes on the original nav items to sync auth state
+  const observeTargets = ['nav-profile-item', 'nav-admin-item', 'nav-login-item', 'nav-signout-item'];
+  const observer = new MutationObserver(syncAuth);
+  observeTargets.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el, { attributes: true, attributeFilter: ['style'] });
+  });
+
+  // --- Auth-gate: only show tab bar when logged in ---
+  const setAuthed = (loggedIn) => {
+    document.body.classList.toggle('authed', loggedIn);
+    // Close drawer when signing out
+    if (!loggedIn) toggleDrawer(false);
+  };
+
+  const checkAuthState = async () => {
+    try {
+      if (window.sb) {
+        const { data } = await window.sb.auth.getSession();
+        setAuthed(!!data.session?.user);
+      } else {
+        setAuthed(false);
+      }
+    } catch { setAuthed(false); }
+  };
+
+  // Wait for Supabase client then listen for auth changes
+  const waitForSb = () => {
+    if (window.sb) {
+      checkAuthState();
+      syncAuth();
+      window.sb.auth.onAuthStateChange((_event, session) => {
+        setAuthed(!!session?.user);
+        syncAuth();
+      });
+    } else {
+      setTimeout(waitForSb, 100);
+    }
+  };
+  waitForSb();
+
+  // Initial sync (delayed fallback)
+  setTimeout(syncAuth, 200);
+  setTimeout(syncAuth, 1000);
+})();
+
 // Hui page - show/hide event form based on auth
 (function initHuiPage(){
   const eventFormSection = document.getElementById('event-form-section');

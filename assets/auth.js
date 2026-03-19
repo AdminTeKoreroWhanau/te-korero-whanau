@@ -51,9 +51,9 @@
     else { location.href = 'profile.html'; }
   });
   if (closeBtn) closeBtn.addEventListener('click', hideModal);
-  // Disable closing auth modal via ESC or backdrop; require explicit close button
-  document.addEventListener('keydown', (e) => { /* ESC close disabled for auth modal */ });
-  if (modal) modal.addEventListener('click', (e) => { /* Backdrop click close disabled for auth modal */ });
+  // Close auth modal via ESC or backdrop tap
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal && !modal.hidden) hideModal(); });
+  if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
 
   async function isAdmin(user){
     try {
