@@ -32,6 +32,13 @@
     <main class="korero-main">
       <section id="korero" class="panel">
         <h1>Ngā kōrero / Stories</h1>
+        <div id="korero-add-bar" class="korero-add-bar">
+          <button type="button" class="btn" id="open-korero-modal">+ Tāpiri Kōrero / Add Story or Vlog</button>
+        </div>
+        <div class="korero-tabs" role="tablist" aria-label="Story tabs">
+          <button class="korero-tab active" role="tab" aria-selected="true" data-tab="public" id="tab-public">📖 Tūmatanui / Public</button>
+          <button class="korero-tab" role="tab" aria-selected="false" data-tab="whanau" id="tab-whanau">🏠 Aku Whānau / My Whānau</button>
+        </div>
         <section id="korero-feed" class="panel" aria-labelledby="korero-feed-heading">
           <h2 id="korero-feed-heading" class="visually-hidden">Ngā kōrero / Stories</h2>
           <div id="korero-featured" class="cards"></div>

@@ -169,6 +169,7 @@
           text: r.text || '',
           mediaUrl: r.media_url || '',
           authorId: r.author_id || '',
+          whanauId: r.whanau_id || '',
           isPublic: r.is_public !== false,
           createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
           updatedAt: r.updated_at ? new Date(r.updated_at).getTime() : undefined
@@ -275,7 +276,20 @@
   let reactMap = new Map();
   let currentUserId = '';
   let currentIsAdmin = false;
+  let currentWhanauId = null;
+  let activeTab = 'public'; // 'public' or 'whanau'
   const setBusy = (b) => listEl.setAttribute('aria-busy', String(!!b));
+
+  // Tab switching
+  const tabBtns = document.querySelectorAll('.korero-tab');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeTab = btn.dataset.tab;
+      tabBtns.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+      btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+      render();
+    });
+  });
 
   // Check admin status (mirrors auth.js isAdmin logic)
   async function checkIsAdmin(){
@@ -427,6 +441,7 @@
       reactMap = await backend.getReactionsMap();
       try { currentUserId = await backend.userId(); } catch { currentUserId = ''; }
       currentIsAdmin = await checkIsAdmin();
+      try { currentWhanauId = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null; } catch { currentWhanauId = null; }
       // Fetch author profiles
       const authorIds = [...new Set(cache.map(p => p.authorId).filter(Boolean))];
       profileMap = await fetchProfiles(authorIds);
@@ -464,17 +479,31 @@
     try {
       if (featuredEl) featuredEl.innerHTML='';
       listEl.innerHTML = '';
-      const items = cache.slice();
-      if (!items.length){ emptyEl && (emptyEl.style.display='block'); } else { emptyEl && (emptyEl.style.display='none'); }
 
-      // Featured row: add button + most reacted story
+      // Filter posts based on active tab
+      let items;
+      if (activeTab === 'public') {
+        items = cache.filter(p => p.isPublic !== false);
+      } else {
+        // Whānau tab: show user's own posts + posts from same whānau
+        items = cache.filter(p => {
+          if (p.authorId && p.authorId === currentUserId) return true;
+          if (currentWhanauId && p.whanauId && p.whanauId === currentWhanauId) return true;
+          return false;
+        });
+      }
+
+      if (!items.length){
+        if (emptyEl) {
+          emptyEl.textContent = activeTab === 'public'
+            ? 'Kāore anō he kōrero tūmatanui. / No public stories yet.'
+            : 'Kāore anō he kōrero whānau. Tāpiri tētahi! / No whānau stories yet. Add one!';
+          emptyEl.style.display = 'block';
+        }
+      } else { emptyEl && (emptyEl.style.display='none'); }
+
+      // Featured row: most reacted story
       const ffrag = document.createDocumentFragment();
-      const addCard = document.createElement('article'); addCard.className='card add-card';
-      const addBody = document.createElement('div'); addBody.className='card-body';
-      const addBtn = document.createElement('button'); addBtn.type='button'; addBtn.className='image-btn'; addBtn.setAttribute('aria-label','Add a story or vlog');
-addBtn.innerHTML = `<img class=\"image-btn-img\" loading=\"lazy\" decoding=\"async\" alt=\"Open journal and video camera — add a story or vlog\" src=\"assets/korero-button.svg\" />`;
-      addBtn.addEventListener('click', () => showCreate());
-      addBody.appendChild(addBtn); addCard.appendChild(addBody); ffrag.appendChild(addCard);
 
       // pick most reacted story
       let featured = null; let bestScore = -1;
@@ -502,16 +531,9 @@ addBtn.innerHTML = `<img class=\"image-btn-img\" loading=\"lazy\" decoding=\"asy
       stabilizeLangSwapWidths(document);
     } catch (e){
       console.error('Render error', e);
-      // Minimal fallback: ensure add button shows
+      // Minimal fallback
       if (featuredEl) featuredEl.innerHTML='';
       listEl.innerHTML='';
-      const addCard = document.createElement('article'); addCard.className='card add-card';
-      const addBody = document.createElement('div'); addBody.className='card-body';
-      const addBtn = document.createElement('button'); addBtn.type='button'; addBtn.className='image-btn'; addBtn.setAttribute('aria-label','Add a story or vlog');
-addBtn.innerHTML = `<img class=\"image-btn-img\" loading=\"lazy\" decoding=\"async\" alt=\"Open journal and video camera — add a story or vlog\" src=\"assets/korero-button.svg\" />`;
-      addBtn.addEventListener('click', () => showCreate());
-      addBody.appendChild(addBtn); addCard.appendChild(addBody);
-      if (featuredEl) featuredEl.appendChild(addCard); else listEl.appendChild(addCard);
       stabilizeLangSwapWidths(document);
     }
   }
