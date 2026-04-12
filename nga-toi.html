@@ -36,7 +36,10 @@
 
       <section id="nga-toi" class="panel">
         <h1>Whakaahua / Art Gallery</h1>
-        <p class="muted">Tip: Click an image to open in a lightbox.</p>
+        <div class="korero-tabs" role="tablist" aria-label="Art tabs">
+          <button class="korero-tab active" role="tab" aria-selected="true" data-tab="public" id="art-tab-public">📖 Tūmatanui / Public</button>
+          <button class="korero-tab" role="tab" aria-selected="false" data-tab="whanau" id="art-tab-whanau">🏠 Whānau</button>
+        </div>
         <div class="gallery">
         </div>
 
@@ -53,9 +56,19 @@
               <input type="text" id="art-author" placeholder="Ko wai?" />
             </label>
             <label>
+              <span>Description (optional)</span>
+              <textarea id="art-description" rows="3" placeholder="He whakamārama mō te whakaahua..."></textarea>
+            </label>
+            <label>
               <span>Image file (jpg, png, webp)</span>
               <input type="file" id="art-file" accept="image/*" required />
             </label>
+            <div class="form-row" style="margin-top:.5rem">
+              <label class="checkbox-label">
+                <input type="checkbox" id="art-public" checked />
+                <span>Public — visible to everyone</span>
+              </label>
+            </div>
             <button type="submit" class="btn">Tuku / Upload</button>
           </form>
         </section>
@@ -63,84 +76,50 @@
       
       <section id="waiata" class="panel">
         <h1>Waiata / Songs</h1>
-        <figure class="hero-figure">
-          <img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Taonga pūoro / Guitar symbolising waiata" src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1200&h=420&q=80" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&h=420&q=80';" />
-          <figcaption class="visually-hidden">Guitar for song</figcaption>
-        </figure>
-        <section
-          <h2 id="waiata-showcase-heading">Ngā Tirohanga / Previews</h2>
-          <div class="slideshow" id="waiata-slideshow">
-            <div class="slides" id="waiata-slides">
-              <div class="slide">
-                <article class="card">
-                  <div class="card-body">
-                    <div><span class="tag">Audio</span></div>
-                    <h3>E Rere Rā (example)</h3>
-                    <p class="meta">Whānau Aroha</p>
-                  </div>
-                </article>
-              </div>
-              <div class="slide">
-                <article class="card">
-                  <div class="card-body">
-                    <div><span class="tag">Lyrics</span></div>
-                    <h3>Tūtira Mai Ngā Iwi (example)</h3>
-                    <p class="meta">"Tūtira mai ngā iwi, tātou tātou e..."</p>
-                  </div>
-                </article>
-              </div>
-            </div>
-            <div class="slide-nav">
-              <button type="button" id="waiata-prev" aria-label="Previous">‹</button>
-              <button type="button" id="waiata-next" aria-label="Next">›</button>
-            </div>
-            <div class="slide-dots" id="waiata-dots" aria-hidden="true"></div>
-          </div>
-        </section>
-
-        <section id="waiata-upload" class="panel" aria-labelledby="upload-heading">
-          <h2 id="upload-heading">Tāpiri waiata, kupu hoki / Add songs or lyrics</h2>
-          <p class="small muted">Uploads are stored on your device (no server). Share your device to show whānau.</p>
-          <div class="tabpanes">
-            <form id="form-audio" class="form">
-              <label>
-                <span>Title</span>
-                <input type="text" id="audio-title" placeholder="He waiata..." required />
-              </label>
-              <label>
-                <span>Contributor</span>
-                <input type="text" id="audio-author" placeholder="Ko wai?" />
-              </label>
-              <label>
-                <span>Audio file (mp3, m4a, wav)</span>
-                <input type="file" id="audio-file" accept="audio/*" required />
-              </label>
-              <button type="submit" class="btn">Tuku / Upload</button>
-            </form>
-
-            <form id="form-lyrics" class="form">
-              <label>
-                <span>Title</span>
-                <input type="text" id="lyrics-title" placeholder="He waiata, he karakia..." required />
-              </label>
-              <label>
-                <span>Contributor</span>
-                <input type="text" id="lyrics-author" placeholder="Ko wai?" />
-              </label>
-              <label>
-                <span>Lyrics</span>
-                <textarea id="lyrics-text" rows="6" placeholder="Tāuruhia ngā kupu..." required></textarea>
-              </label>
-              <button type="submit" class="btn">Tuku / Upload</button>
-            </form>
-          </div>
-        </section>
+        <div class="korero-tabs" role="tablist" aria-label="Waiata tabs">
+          <button class="korero-tab active" role="tab" aria-selected="true" data-tab="public" id="waiata-tab-public">📖 Tūmatanui / Public</button>
+          <button class="korero-tab" role="tab" aria-selected="false" data-tab="whanau" id="waiata-tab-whanau">🏠 Whānau</button>
+        </div>
 
         <section id="waiata-browse" class="panel" aria-labelledby="browse-heading">
           <h2 id="browse-heading">Tirohia ngā tāpiritanga / Browse uploads</h2>
           <input id="waiata-search" type="text" placeholder="Rapua te taitara, kaituhi, kupu..." aria-label="Search waiata" />
           <div id="waiata-list" class="cards" aria-live="polite" aria-busy="false"></div>
           <p id="waiata-empty" class="muted small">Kāore anō he tāpiritanga. Tāpiri he waiata, he kupu ki runga ake nei.</p>
+        </section>
+
+        <section id="waiata-upload"
+          <h2 id="upload-heading">Tāpiri waiata / Add a song</h2>
+          <p class="small muted">Upload a song with an optional lyrics sheet. If Supabase is configured, songs are shared with whānau.</p>
+          <form id="form-song" class="form">
+            <label>
+              <span>Title</span>
+              <input type="text" id="song-title" placeholder="He waiata..." required />
+            </label>
+            <label>
+              <span>Contributor</span>
+              <input type="text" id="song-author" placeholder="Ko wai?" />
+            </label>
+            <label>
+              <span>Audio file (mp3, m4a, wav)</span>
+              <input type="file" id="song-file" accept="audio/*" required />
+            </label>
+            <label>
+              <span>Description (optional)</span>
+              <textarea id="song-description" rows="3" placeholder="He whakamārama mō te waiata..."></textarea>
+            </label>
+            <label>
+              <span>Lyrics (optional)</span>
+              <textarea id="song-lyrics" rows="5" placeholder="Tāuruhia ngā kupu..."></textarea>
+            </label>
+            <div class="form-row" style="margin-top:.5rem">
+              <label class="checkbox-label">
+                <input type="checkbox" id="song-public" checked />
+                <span>Public — visible to everyone</span>
+              </label>
+            </div>
+            <button type="submit" class="btn">Tuku / Upload</button>
+          </form>
         </section>
 
       </section>

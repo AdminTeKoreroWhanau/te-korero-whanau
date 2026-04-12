@@ -10,11 +10,8 @@
   const kSearchEl = document.getElementById('karakia-search');
   const formKarakia = document.getElementById('form-karakia');
 
-  // Tabs
-  const tabAudio = document.getElementById('tab-audio');
-  const tabLyrics = document.getElementById('tab-lyrics');
-  const formAudio = document.getElementById('form-audio');
-  const formLyrics = document.getElementById('form-lyrics');
+  // Forms
+  const formSong = document.getElementById('form-song');
   const formArt = document.getElementById('form-art');
 
   if (!listEl && !kListEl) return; // not on this page
@@ -84,14 +81,9 @@
     const local = {
       async list(){ try { return JSON.parse(localStorage.getItem(KEY_W) || '[]'); } catch { return []; } },
       async listDocs(){ try { return JSON.parse(localStorage.getItem(KEY_K) || '[]'); } catch { return []; } },
-      async addAudio(title, author, file){
+      async addSong(title, author, file, lyrics, description, isPublic){
         const dataUrl = await fileToDataURL(file);
-        const item = { id: uid(), type: 'audio', title, author, createdAt: Date.now(), audio: dataUrl };
-        const cur = await this.list(); cur.unshift(item);
-        try { localStorage.setItem(KEY_W, JSON.stringify(cur)); } catch {}
-      },
-      async addLyrics(title, author, text){
-        const item = { id: uid(), type: 'lyrics', title, author, createdAt: Date.now(), lyrics: text };
+        const item = { id: uid(), type: 'audio', title, author, description: description || '', createdAt: Date.now(), audio: dataUrl, lyrics: lyrics || '', isPublic: isPublic !== false, userId: getAnonId() };
         const cur = await this.list(); cur.unshift(item);
         try { localStorage.setItem(KEY_W, JSON.stringify(cur)); } catch {}
       },
@@ -116,10 +108,21 @@
           try { localStorage.setItem(KEY_A, JSON.stringify(next)); } catch {}
         }
       },
+      async updateVisibility(id, isPublic, kind){
+        if (kind === 'art') {
+          const cur = await this.listArt();
+          const i = cur.findIndex(x => x.id === id);
+          if (i >= 0) { cur[i].isPublic = isPublic; try { localStorage.setItem(KEY_A, JSON.stringify(cur)); } catch {} }
+        } else {
+          const cur = await this.list();
+          const i = cur.findIndex(x => x.id === id);
+          if (i >= 0) { cur[i].isPublic = isPublic; try { localStorage.setItem(KEY_W, JSON.stringify(cur)); } catch {} }
+        }
+      },
       async listArt(){ try { return JSON.parse(localStorage.getItem(KEY_A) || '[]'); } catch { return []; } },
-      async addArt(title, author, file){
+      async addArt(title, author, description, file, isPublic){
         const dataUrl = await fileToDataURL(file);
-        const item = { id: uid(), type: 'art', title, author, createdAt: Date.now(), image: dataUrl, userId: getAnonId() };
+        const item = { id: uid(), type: 'art', title, author, description: description || '', createdAt: Date.now(), image: dataUrl, userId: getAnonId(), isPublic: isPublic !== false };
         const cur = await this.listArt(); cur.unshift(item);
         try { localStorage.setItem(KEY_A, JSON.stringify(cur)); } catch {}
       },
@@ -203,30 +206,28 @@
           title: r.title,
           author: r.author,
           createdAt: new Date(r.created_at || Date.now()).getTime(),
+          description: r.description || '',
           lyrics: r.lyrics || undefined,
           audio: r.audio_url || undefined,
-          storage_path: r.storage_path || undefined
+          storage_path: r.storage_path || undefined,
+          isPublic: r.is_public !== false,
+          whanauId: r.whanau_id || '',
+          userId: r.user_id || ''
         }));
       },
-      async addAudio(title, author, file){
+      async addSong(title, author, file, lyrics, description, isPublic){
         const id = uid();
         const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
         const path = `${id}.${ext}`;
         const up = await sb.storage.from(bucketW).upload(path, file, { upsert: false, contentType: file.type || 'application/octet-stream' });
         if (up.error) throw up.error;
         const { data: pub } = sb.storage.from(bucketW).getPublicUrl(path);
-;
         const audio_url = pub.publicUrl;
         const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
-        const ins = await sb.from('waiata_items').insert([{ id, type: 'audio', title, author, audio_url, storage_path: path, whanau_id }]);
+        const { data: sess } = await sb.auth.getSession();
+        const user_id = sess.session?.user?.id || null;
+        const ins = await sb.from('waiata_items').insert([{ id, type: 'audio', title, author, description: description || null, audio_url, lyrics: lyrics || null, storage_path: path, whanau_id, user_id, is_public: isPublic !== false }]);
         if (ins.error) { await sb.storage.from(bucketW).remove([path]); throw ins.error; }
-
-      },
-      async addLyrics(title, author, text){
-        const id = uid();
-        const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
-        const ins = await sb.from('waiata_items').insert([{ id, type: 'lyrics', title, author, lyrics: text, whanau_id }]);
-        if (ins.error) throw ins.error;
       },
       async listDocs(){
         const { data, error } = await sb.from('waiata_items').select('*').eq('type','doc').order('created_at', { ascending: false });
@@ -270,9 +271,9 @@
       async listArt(){
         const { data, error } = await sb.from('ngatoi_items').select('*').order('created_at', { ascending: false });
         if (error) { console.error(error); return []; }
-        return (data||[]).map(r => ({ id:r.id, type:'art', title:r.title||'', author:r.author||'', createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now(), image: r.image_url||'', storage_path: r.storage_path||null, userId: r.user_id||null }));
+        return (data||[]).map(r => ({ id:r.id, type:'art', title:r.title||'', author:r.author||'', description: r.description||'', createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now(), image: r.image_url||'', storage_path: r.storage_path||null, userId: r.user_id||null, whanauId: r.whanau_id||'', isPublic: r.is_public !== false }));
       },
-      async addArt(title, author, file){
+      async addArt(title, author, description, file, isPublic){
         const id = uid();
         const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
         const path = `${id}.${ext}`;
@@ -283,8 +284,17 @@
         const whanau_id = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null;
         const { data: sess } = await sb.auth.getSession();
         const user_id = sess.session?.user?.id || null;
-        const ins = await sb.from('ngatoi_items').insert([{ id, title, author, image_url, storage_path: path, whanau_id, user_id }]);
+        const ins = await sb.from('ngatoi_items').insert([{ id, title, author, description: description || null, image_url, storage_path: path, whanau_id, user_id, is_public: isPublic !== false }]);
         if (ins.error) { await sb.storage.from(bucketArt).remove([path]); throw ins.error; }
+      },
+      async updateVisibility(id, isPublic, kind){
+        if (kind === 'art') {
+          const { error } = await sb.from('ngatoi_items').update({ is_public: isPublic }).eq('id', id);
+          if (error) throw error;
+        } else {
+          const { error } = await sb.from('waiata_items').update({ is_public: isPublic }).eq('id', id);
+          if (error) throw error;
+        }
       },
       // Reactions/comments for art via Supabase
       async userId(){ const { data } = await sb.auth.getSession(); return data.session?.user?.id || ''; },
@@ -332,15 +342,43 @@
   let kcache = [];
   let reactMapW = new Map();
   let currentUserId = '';
+  let currentWhanauId = null;
   let artCache = [];
+  let activeArtTab = 'public';
+  let activeWaiataTab = 'public';
   const setBusy = (b) => listEl.setAttribute('aria-busy', String(!!b));
   const fmtDate = (ts) => new Date(ts).toLocaleDateString();
+
+  // Tab switching helpers
+  function setupTabSwitcher(prefix, onSwitch){
+    const btns = document.querySelectorAll('#' + prefix + '-tab-public, #' + prefix + '-tab-whanau');
+    btns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        btns.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+        btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+        onSwitch(btn.dataset.tab);
+      });
+    });
+  }
+  setupTabSwitcher('art', (tab) => { activeArtTab = tab; renderArtGallery(); setupArtUI(); });
+  setupTabSwitcher('waiata', (tab) => { activeWaiataTab = tab; render(searchEl ? searchEl.value.trim().toLowerCase() : ''); renderShowcase(); });
+
+  // Filtering helpers
+  function filterByTab(items, tab){
+    if (tab === 'public') return items.filter(p => p.isPublic !== false);
+    return items.filter(p => {
+      if (p.userId && p.userId === currentUserId) return true;
+      if (currentWhanauId && p.whanauId && p.whanauId === currentWhanauId) return true;
+      return false;
+    });
+  }
 
   const refresh = async () => {
     setBusy(true);
     try {
       cache = await backend.list();
       try { currentUserId = await backend.userId(); } catch { currentUserId = ''; }
+      try { currentWhanauId = (typeof window.getMyWhanauId === 'function') ? await window.getMyWhanauId() : null; } catch { currentWhanauId = null; }
       try { reactMapW = await backend.getWaiataReactionsMap(); } catch { reactMapW = new Map(); }
       render(searchEl ? searchEl.value.trim().toLowerCase() : '');
       renderShowcase();
@@ -350,7 +388,8 @@
   };
 
   const render = (q='') => {
-    const items = cache
+    const filtered = filterByTab(cache, activeWaiataTab);
+    const items = filtered
       .slice()
       .sort((a,b) => b.createdAt - a.createdAt)
       .filter(item => {
@@ -360,7 +399,12 @@
       });
     listEl.innerHTML = '';
     if (!items.length) {
-      emptyEl && (emptyEl.style.display = 'block');
+      if (emptyEl) {
+        emptyEl.textContent = activeWaiataTab === 'public'
+          ? 'Kāore anō he waiata tūmatanui. / No public songs yet.'
+          : 'Kāore anō he waiata whānau. Tāpiri tētahi! / No whānau songs yet. Add one!';
+        emptyEl.style.display = 'block';
+      }
       return;
     }
     emptyEl && (emptyEl.style.display = 'none');
@@ -375,21 +419,40 @@
       body.innerHTML = `
         <h3>${esc(it.title)}</h3>
         <div class=\"small muted\">${esc(it.author||'')}${it.author?' • ':''}${fmtDate(it.createdAt)}</div>
-      `;
+      ` + (it.description ? `<p class="small" style="margin:.25rem 0 0">${esc(it.description)}</p>` : '');
 
-      if (it.type === 'audio' && it.audio) {
+      // Audio player
+      if (it.audio) {
         const audio = document.createElement('audio');
         audio.controls = true;
+        audio.preload = 'metadata';
         audio.src = it.audio;
-        audio.style.width = '100%';
+        audio.style.cssText = 'width:100%;margin-top:.5rem;border-radius:8px';
         body.appendChild(audio);
       }
-      if (it.type === 'lyrics' && it.lyrics) {
+      // Lyrics (collapsible if present)
+      if (it.lyrics && it.lyrics.trim()) {
+        const details = document.createElement('details');
+        details.style.marginTop = '.5rem';
+        const summary = document.createElement('summary');
+        summary.textContent = 'Kupu / Lyrics';
+        summary.style.cssText = 'cursor:pointer;color:var(--accent);font-weight:600;font-size:.9rem';
         const pre = document.createElement('pre');
         pre.textContent = it.lyrics;
-        pre.style.whiteSpace = 'pre-wrap';
-        pre.style.margin = '.25rem 0 0';
-        body.appendChild(pre);
+        pre.style.cssText = 'white-space:pre-wrap;margin:.25rem 0 0;font-size:.9rem';
+        details.appendChild(summary);
+        details.appendChild(pre);
+        body.appendChild(details);
+      }
+      // Download button
+      if (it.audio) {
+        const dl = document.createElement('a');
+        dl.href = it.audio;
+        dl.download = (it.title || 'waiata').replace(/[^a-zA-Z0-9 _-]/g, '') + '.mp3';
+        dl.className = 'btn outline';
+        dl.textContent = '⬇ Tikiake / Download';
+        dl.style.cssText = 'display:inline-flex;align-items:center;gap:.25rem;margin-top:.5rem;text-decoration:none';
+        body.appendChild(dl);
       }
 
       const actions = document.createElement('div');
@@ -415,17 +478,28 @@
       });
       actions.appendChild(btnComment);
 
-      // Owner delete
-      const del = document.createElement('button');
-      del.className = 'btn-link';
-      del.type = 'button';
-      del.textContent = 'Muku / Delete';
-      del.addEventListener('click', async () => {
-        if (!confirm('Muku tēnei tāuru? / Delete this entry?')) return;
-        setBusy(true);
-        try { await backend.remove(it); await refresh(); } finally { setBusy(false); }
-      });
-      actions.appendChild(del);
+      // Owner actions
+      const isOwner = it.userId && currentUserId && it.userId === currentUserId;
+      if (isOwner) {
+        const btnVis = document.createElement('button'); btnVis.type='button'; btnVis.className='btn outline';
+        btnVis.textContent = it.isPublic !== false ? '🔓 Public' : '🔒 Whānau';
+        btnVis.addEventListener('click', async () => {
+          const newVis = it.isPublic === false;
+          try { await backend.updateVisibility(it.id, newVis, 'waiata'); await refresh(); } catch (e) { alert('Hapa whakahou / Update error'); console.error(e); }
+        });
+        actions.appendChild(btnVis);
+
+        const del = document.createElement('button');
+        del.className = 'btn-link';
+        del.type = 'button';
+        del.textContent = 'Muku / Delete';
+        del.addEventListener('click', async () => {
+          if (!confirm('Muku tēnei tāuru? / Delete this entry?')) return;
+          setBusy(true);
+          try { await backend.remove(it); await refresh(); } finally { setBusy(false); }
+        });
+        actions.appendChild(del);
+      }
       body.appendChild(actions);
       body.appendChild(commentWrap);
 
@@ -465,15 +539,29 @@
     const gallery = document.querySelector('#nga-toi .gallery'); if (!gallery) return;
     // remove previously rendered dynamic figures
     Array.from(gallery.querySelectorAll('figure[data-art-id]')).forEach(el => el.remove());
-    if (!artCache.length) return;
+    const visibleArt = filterByTab(artCache, activeArtTab);
+    if (!visibleArt.length) return;
     const frag = document.createDocumentFragment();
-    for (const it of artCache){
+    for (const it of visibleArt){
       const fig = document.createElement('figure'); fig.setAttribute('data-art-id', it.id);
       const img = document.createElement('img'); img.loading='lazy'; img.decoding='async'; img.alt = it.title || 'Whakaahua'; img.src = it.image;
-      const cap = document.createElement('figcaption'); cap.textContent = it.title || '';
+      const cap = document.createElement('figcaption');
+      cap.innerHTML = `<strong>${esc(it.title || '')}</strong>` +
+        (it.author ? `<span class="small muted" style="display:block">${esc(it.author)}${it.createdAt ? ' &bull; ' + fmtDate(it.createdAt) : ''}</span>` :
+        (it.createdAt ? `<span class="small muted" style="display:block">${fmtDate(it.createdAt)}</span>` : '')) +
+        (it.description ? `<span class="small" style="display:block;margin-top:.25rem">${esc(it.description)}</span>` : '');
       fig.appendChild(img); fig.appendChild(cap);
-      // Delete button visible only to the user who uploaded this art
+      // Owner actions: visibility toggle + delete
       if (it.userId && currentUserId && it.userId === currentUserId) {
+        const ownerBar = document.createElement('div'); ownerBar.className='actions'; ownerBar.style.marginTop='.25rem';
+        const btnVis = document.createElement('button'); btnVis.type='button'; btnVis.className='btn outline';
+        btnVis.textContent = it.isPublic !== false ? '🔓 Public' : '🔒 Whānau';
+        btnVis.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const newVis = it.isPublic === false;
+          try { await backend.updateVisibility(it.id, newVis, 'art'); await refreshArt(); setupArtUI(); } catch (err) { alert('Hapa whakahou / Update error'); console.error(err); }
+        });
+        ownerBar.appendChild(btnVis);
         const del = document.createElement('button');
         del.className = 'btn-link';
         del.type = 'button';
@@ -483,7 +571,8 @@
           if (!confirm('Muku tēnei whakaahua? / Delete this image?')) return;
           try { await backend.remove(it); await refreshArt(); setupArtUI(); } catch (err) { alert('Hapa muku / Delete error'); console.error(err); }
         });
-        fig.appendChild(del);
+        ownerBar.appendChild(del);
+        fig.appendChild(ownerBar);
       }
       frag.appendChild(fig);
     }
@@ -498,52 +587,24 @@
     });
   }
 
-  // Tabs switching
-  const activateTab = (kind) => {
-    // If tabs are not present, do nothing (both forms visible)
-    if (!tabAudio || !tabLyrics || !formAudio || !formLyrics) return;
-    const audioActive = kind === 'audio';
-    tabAudio.setAttribute('aria-selected', String(audioActive));
-    tabLyrics.setAttribute('aria-selected', String(!audioActive));
-    tabAudio.classList.toggle('active', audioActive);
-    tabLyrics.classList.toggle('active', !audioActive);
-    formAudio.hidden = !audioActive; formAudio.setAttribute('aria-hidden', String(!audioActive));
-    formLyrics.hidden = audioActive; formLyrics.setAttribute('aria-hidden', String(audioActive));
-  };
-  tabAudio && tabAudio.addEventListener('click', () => activateTab('audio'));
-  tabLyrics && tabLyrics.addEventListener('click', () => activateTab('lyrics'));
-
-  // Upload handlers
-  formAudio && formAudio.addEventListener('submit', async (e) => {
+  // Song upload handler
+  formSong && formSong.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const title = document.getElementById('audio-title').value.trim();
-    const author = document.getElementById('audio-author').value.trim();
-    const fileEl = document.getElementById('audio-file');
+    const title = document.getElementById('song-title').value.trim();
+    let author = document.getElementById('song-author').value.trim();
+    if (!author) author = await getUserDisplayName();
+    const fileEl = document.getElementById('song-file');
     const file = fileEl && fileEl.files && fileEl.files[0];
+    const lyrics = (document.getElementById('song-lyrics')?.value || '').trim();
     if (!title || !file) return alert('Whakaurua te taitara me te kōnae.');
-    if (!file.type.startsWith('audio/')) return alert('Kōnae oro anake.');
+    if (!file.type.startsWith('audio/')) return alert('Kōnae oro anake. / Audio files only.');
     setBusy(true);
     try {
-      await backend.addAudio(title, author, file);
-      formAudio.reset();
-      activateTab('audio');
-      await refresh();
-    } catch (e) {
-      alert('Hapa tuku / Upload error'); console.error(e);
-    } finally { setBusy(false); }
-  });
-
-  formLyrics && formLyrics.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const title = document.getElementById('lyrics-title').value.trim();
-    const author = document.getElementById('lyrics-author').value.trim();
-    const text = document.getElementById('lyrics-text').value.trim();
-    if (!title || !text) return alert('Whakaurua te taitara me ngā kupu.');
-    setBusy(true);
-    try {
-      await backend.addLyrics(title, author, text);
-      formLyrics.reset();
-      activateTab('lyrics');
+      const pubCb = document.getElementById('song-public');
+      const isPublic = pubCb ? pubCb.checked : true;
+      const description = (document.getElementById('song-description')?.value || '').trim();
+      await backend.addSong(title, author, file, lyrics, description, isPublic);
+      formSong.reset();
       await refresh();
     } catch (e) {
       alert('Hapa tuku / Upload error'); console.error(e);
@@ -567,18 +628,34 @@
     });
   }
 
+  // Get current user's display name for default contributor
+  async function getUserDisplayName(){
+    try {
+      if (window.sb) {
+        const { data } = await window.sb.auth.getSession();
+        const user = data.session?.user;
+        if (user) return user.user_metadata?.full_name || user.email?.split('@')[0] || '';
+      }
+    } catch {}
+    return '';
+  }
+
   // Art upload (gallery)
   formArt && formArt.addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = document.getElementById('art-title').value.trim();
-    const author = document.getElementById('art-author').value.trim();
+    let author = document.getElementById('art-author').value.trim();
+    if (!author) author = await getUserDisplayName();
     const fileEl = document.getElementById('art-file');
     const file = fileEl && fileEl.files && fileEl.files[0];
     if (!title || !file) return alert('Whakaurua te taitara me te kōnae.');
     if (!file.type.startsWith('image/')) return alert('He whakaahua anake.');
     setBusy(true);
     try {
-      await backend.addArt(title, author, file);
+      const artPubCb = document.getElementById('art-public');
+      const isPublic = artPubCb ? artPubCb.checked : true;
+      const description = (document.getElementById('art-description')?.value || '').trim();
+      await backend.addArt(title, author, description, file, isPublic);
       formArt.reset();
       await refreshArt();
       setupArtUI();
@@ -661,7 +738,7 @@
 
   function renderShowcase(){
     const container = document.getElementById('waiata-slides'); if (!container) return;
-    const items = cache.slice(0,5);
+    const items = filterByTab(cache, activeWaiataTab).slice(0,5);
     if (!items.length) { if (applyWaiataSliderCount) applyWaiataSliderCount(); return; }
     container.innerHTML = '';
     const frag = document.createDocumentFragment();
